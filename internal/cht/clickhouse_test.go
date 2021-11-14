@@ -73,9 +73,8 @@ func TestClickHouse(t *testing.T) {
 	// --pidfile=path                    Write the process ID of the application to
 	// given file.
 
-	const binary = "clickhouse-server"
-	if _, err := exec.LookPath(binary); err != nil {
-		t.Skipf("Binary %s not found: %v", binary, err)
+	if _, err := exec.LookPath(os.Getenv("CLICKHOUSE_BIN")); err != nil {
+		t.Skipf("Binary %s not found: %v", os.Getenv("CLICKHOUSE_BIN"), err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -116,7 +115,7 @@ func TestClickHouse(t *testing.T) {
 	}
 	require.NoError(t, os.WriteFile(userCfgPath, clickHouseUserConfig, 0700))
 
-	cmd := exec.CommandContext(ctx, "clickhouse-server",
+	cmd := exec.CommandContext(ctx, os.Getenv("CLICKHOUSE_BIN"), "server",
 		"--config-file", cfgPath,
 	)
 	start := time.Now()
