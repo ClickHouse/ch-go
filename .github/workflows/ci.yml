@@ -15,6 +15,26 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Set up ClickHouse cache
+        uses: actions/cache@v2.1.6
+        with:
+          path: /opt/ch
+          key: ClickHouse-21.12.1.8691
+
+      - name: Check ClickHouse
+        id: "ch_exists"
+        uses: andstor/file-existence-action@v1
+        with:
+          files: /opt/ch/clickhouse
+
+      - name: Download ClickHouse
+        if: steps.ch_exists.outputs.files_exists != 'true'
+        run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v21.12.1.8691-testing/clickhouse-common-static-21.12.1.8691.tgz"
+
+      - name: Install ClickHouse
+        if: steps.ch_exists.outputs.files_exists != 'true'
+        run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
+
       - name: Install Go
         uses: actions/setup-go@v2.1.4
         with:
@@ -32,25 +52,9 @@ jobs:
           path: |
             ${{ steps.go-env.outputs.cache }}
             ${{ steps.go-env.outputs.modcache }}
-            /opt/ch
           key: test-${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             test-${{ runner.os }}-go-
-
-      - name: Check ClickHouse
-        id: "ch_exists"
-        uses: andstor/file-existence-action@v1
-        with:
-          files: /opt/ch/clickhouse
-
-      - name: Download ClickHouse
-        if: steps.ch_exists.outputs.files_exists != 'true'
-        run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v21.12.1.8691-testing/clickhouse-common-static-21.12.1.8691.tgz"
-
-      - name: Install ClickHouse
-        if: steps.ch_exists.outputs.files_exists != 'true'
-        run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
-
 
       - name: Run tests
         env:
