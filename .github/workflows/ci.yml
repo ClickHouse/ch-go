@@ -14,9 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: install
+
+      - name: Download ClickHouse
         run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v21.12.1.8691-testing/clickhouse-common-static-21.12.1.8691.tgz"
-      - name: install
+
+      - name: Install ClickHouse
         run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
 
       - name: Install Go
