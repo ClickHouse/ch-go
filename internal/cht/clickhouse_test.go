@@ -73,10 +73,6 @@ func TestClickHouse(t *testing.T) {
 	// --pidfile=path                    Write the process ID of the application to
 	// given file.
 
-	if _, err := exec.LookPath(os.Getenv("CLICKHOUSE_BIN")); err != nil {
-		t.Skipf("Binary %s not found: %v", os.Getenv("CLICKHOUSE_BIN"), err)
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
