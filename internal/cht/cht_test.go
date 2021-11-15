@@ -1,11 +1,14 @@
 package cht
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	_ "embed"
+	"encoding/binary"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -28,6 +31,75 @@ func writeXML(t testing.TB, name string, v interface{}) {
 	require.NoError(t, os.WriteFile(name, buf.Bytes(), 0700))
 }
 
+const (
+	clientHello = 0
+	serverHello = 0
+)
+
+// Buffer implements ClickHouse binary protocol.
+type Buffer struct {
+	Buf []byte
+}
+
+// Reset buffer to zero length.
+func (b *Buffer) Reset() {
+	b.Buf = b.Buf[:0]
+}
+
+// Read implements io.Reader.
+func (b *Buffer) Read(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+	if len(b.Buf) == 0 {
+		return 0, io.EOF
+	}
+	n = copy(p, b.Buf)
+	b.Buf = b.Buf[n:]
+	return n, nil
+}
+
+// PutUvarint encodes x to buffer as uvarint.
+func (b *Buffer) PutUvarint(x uint64) {
+	buf := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutUvarint(buf, x)
+	b.Buf = append(b.Buf, buf[:n]...)
+}
+
+func (b *Buffer) PutInt(x int) {
+	b.PutUvarint(uint64(x))
+}
+
+// PutLen encodes length to buffer as uvarint.
+func (b *Buffer) PutLen(x int) {
+	b.PutUvarint(uint64(x))
+}
+
+// PutString encodes sting value to buffer.
+func (b *Buffer) PutString(s string) {
+	b.PutLen(len(s))
+	b.Buf = append(b.Buf, s...)
+}
+
+type ClientHello struct {
+	Name     string
+	Major    int
+	Minor    int
+	Revision int
+}
+
+func (c ClientHello) Encode(b *Buffer) {
+	b.PutString(c.Name)
+	b.PutInt(c.Major)
+	b.PutInt(c.Minor)
+	b.PutInt(c.Revision)
+}
+
+func writeTCP(conn *net.TCPConn, buf *Buffer) error {
+	_, err := conn.Write(buf.Buf)
+	return err
+}
+
 func TestRun(t *testing.T) {
 	// clickhouse-server [OPTION] [-- [ARG]...]
 	// positional arguments can be used to rewrite config.xml properties, for
@@ -44,7 +116,7 @@ func TestRun(t *testing.T) {
 	// --pidfile=path                    Write the process ID of the application to
 	// given file.
 
-	binary, err := Bin()
+	binaryPath, err := Bin()
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -86,16 +158,15 @@ func TestRun(t *testing.T) {
 	}
 	require.NoError(t, os.WriteFile(userCfgPath, usersCfg, 0700))
 
-
 	// Setup command.
 	var args []string
-	if !strings.HasSuffix(binary, "server") {
+	if !strings.HasSuffix(binaryPath, "server") {
 		// Binary bundle, adding subcommand.
 		// Like in static distributions.
 		args = append(args, "server")
 	}
 	args = append(args, "--config-file", cfgPath)
-	cmd := exec.CommandContext(ctx, binary, args...)
+	cmd := exec.CommandContext(ctx, binaryPath, args...)
 
 	start := time.Now()
 	require.NoError(t, cmd.Start())
@@ -103,24 +174,65 @@ func TestRun(t *testing.T) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.TCP)))
 	require.NoError(t, err)
 
-	// Pool ClickHouse until ready.
+	// Polling ClickHouse until ready.
 	for {
 		res, err := http.Get(fmt.Sprintf("http://%s:%d", cfg.Host, cfg.HTTP))
-		if err == nil {
-			t.Log("Started in", time.Since(start).Round(time.Millisecond))
-			_ = res.Body.Close()
-
-			conn, err := net.DialTCP("tcp4", nil, tcpAddr)
-			require.NoError(t, err)
-			require.NoError(t, conn.Close())
-
-			require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
-			break
+		if err != nil {
+			continue
 		}
+
+		t.Log("Started in", time.Since(start).Round(time.Millisecond))
+		_ = res.Body.Close()
+		break
 	}
 
+	conn, err := net.DialTCP("tcp4", nil, tcpAddr)
+	require.NoError(t, err)
+	require.NoError(t, conn.SetWriteDeadline(time.Now().Add(time.Second)))
+
+	// Perform handshake.
+	b := new(Buffer)
+	b.PutUvarint(clientHello)
+	(ClientHello{
+		Name:     "go-faster/ch",
+		Major:    1,
+		Minor:    1,
+		Revision: 54429,
+	}).Encode(b)
+	b.PutString("default")
+	b.PutString("default")
+	b.PutString("")
+
+	require.NoError(t, writeTCP(conn, b))
+
+	require.NoError(t, conn.SetReadDeadline(time.Now().Add(time.Second)))
+	r := bufio.NewReader(conn)
+
+	// Read message type.
+	n, err := binary.ReadUvarint(r)
+	require.NoError(t, err)
+	if n != serverHello {
+		t.Fatalf("got unexpected message: %d", n)
+	}
+
+	// Read string length.
+	n, err = binary.ReadUvarint(r)
+	require.NoError(t, err)
+
+	// Read server name. Should be "ClickHouse".
+	b.Reset()
+	b.Buf = append(b.Buf, make([]byte, n)...)
+	if _, err := io.ReadFull(r, b.Buf); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, "ClickHouse", string(b.Buf))
+	t.Log("Got ServerHello from", string(b.Buf))
+
+	require.NoError(t, conn.Close())
+	require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
+
 	// Done.
-	t.Log("Waiting for graceful shutdown")
+	t.Log("Shutting down")
 	startClose := time.Now()
 
 	if err := cmd.Wait(); err != nil {
