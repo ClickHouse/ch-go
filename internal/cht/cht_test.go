@@ -105,8 +105,7 @@ func TestRun(t *testing.T) {
 			t.Log("Started in", time.Since(start).Round(time.Millisecond))
 			_ = res.Body.Close()
 
-			// Can be faster with SIGKILL, but should be handled in cmd.Wait.
-			require.NoError(t, cmd.Process.Signal(syscall.SIGTERM))
+			require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
 			break
 		}
 	}
@@ -114,6 +113,13 @@ func TestRun(t *testing.T) {
 	// Done.
 	t.Log("Waiting for graceful shutdown")
 	startClose := time.Now()
-	require.NoError(t, cmd.Wait())
+
+	if err := cmd.Wait(); err != nil {
+		// Check for SIGKILL.
+		var exitErr *exec.ExitError
+		require.ErrorAs(t, err, &exitErr)
+		require.Equal(t, exitErr.Sys().(syscall.WaitStatus).Signal(), syscall.SIGKILL)
+	}
+
 	t.Log("Closed in", time.Since(startClose).Round(time.Millisecond))
 }
