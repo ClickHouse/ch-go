@@ -1,28 +1,33 @@
 package proto
 
-//go:generate go run github.com/dmarkham/enumer -type ServerCode -trimprefix Server -output server_code_gen.go
+//go:generate go run github.com/dmarkham/enumer -type ServerCode -trimprefix ServerCode -output server_code_gen.go
 
 // ServerCode is sent by server to client.
 type ServerCode byte
 
 const (
-	ServerHello        ServerCode = 0  // Server part of "handshake"
-	ServerData         ServerCode = 1  // data block (can be compressed)
-	ServerException    ServerCode = 2  // runtime exception
-	ServerProgress     ServerCode = 3  // query execution progress (bytes, lines)
-	ServerPong         ServerCode = 4  // ping response (ClientPing)
-	ServerEOF          ServerCode = 5  // end of stream
-	ServerProfile      ServerCode = 6  // profiling info
-	ServerTotals       ServerCode = 7  // packet with total values (can be compressed)
-	ServerExtremes     ServerCode = 8  // packet with minimums and maximums (can be compressed)
-	ServerTablesStatus ServerCode = 9  // response to TablesStatus
-	ServerLog          ServerCode = 10 // query execution system log
+	ServerCodeHello        ServerCode = 0  // Server part of "handshake"
+	ServerCodeData         ServerCode = 1  // data block (can be compressed)
+	ServerCodeException    ServerCode = 2  // runtime exception
+	ServerCodeProgress     ServerCode = 3  // query execution progress (bytes, lines)
+	ServerCodePong         ServerCode = 4  // ping response (ClientPing)
+	ServerCodeEOF          ServerCode = 5  // end of stream
+	ServerCodeProfile      ServerCode = 6  // profiling info
+	ServerCodeTotals       ServerCode = 7  // packet with total values (can be compressed)
+	ServerCodeExtremes     ServerCode = 8  // packet with minimums and maximums (can be compressed)
+	ServerCodeTablesStatus ServerCode = 9  // response to TablesStatus
+	ServerCodeLog          ServerCode = 10 // query execution system log
 )
+
+// Encode to buffer.
+func (c ServerCode) Encode(b *Buffer) {
+	b.PutUvarint(uint64(c))
+}
 
 // Compressible reports whether message can be compressed.
 func (c ServerCode) Compressible() bool {
 	switch c {
-	case ServerData, ServerTotals, ServerExtremes:
+	case ServerCodeData, ServerCodeTotals, ServerCodeExtremes:
 		return true
 	default:
 		return false

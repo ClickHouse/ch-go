@@ -33,71 +33,7 @@ func writeXML(t testing.TB, name string, v interface{}) {
 	require.NoError(t, os.WriteFile(name, buf.Bytes(), 0700))
 }
 
-const (
-	clientHello = 0
-	serverHello = 0
-)
-
-// Buffer implements ClickHouse binary protocol.
-type Buffer struct {
-	Buf []byte
-}
-
-// Reset buffer to zero length.
-func (b *Buffer) Reset() {
-	b.Buf = b.Buf[:0]
-}
-
-// Read implements io.Reader.
-func (b *Buffer) Read(p []byte) (n int, err error) {
-	if len(p) == 0 {
-		return 0, nil
-	}
-	if len(b.Buf) == 0 {
-		return 0, io.EOF
-	}
-	n = copy(p, b.Buf)
-	b.Buf = b.Buf[n:]
-	return n, nil
-}
-
-// PutUvarint encodes x to buffer as uvarint.
-func (b *Buffer) PutUvarint(x uint64) {
-	buf := make([]byte, binary.MaxVarintLen64)
-	n := binary.PutUvarint(buf, x)
-	b.Buf = append(b.Buf, buf[:n]...)
-}
-
-func (b *Buffer) PutInt(x int) {
-	b.PutUvarint(uint64(x))
-}
-
-// PutLen encodes length to buffer as uvarint.
-func (b *Buffer) PutLen(x int) {
-	b.PutUvarint(uint64(x))
-}
-
-// PutString encodes sting value to buffer.
-func (b *Buffer) PutString(s string) {
-	b.PutLen(len(s))
-	b.Buf = append(b.Buf, s...)
-}
-
-type ClientHello struct {
-	Name     string
-	Major    int
-	Minor    int
-	Revision int
-}
-
-func (c ClientHello) Encode(b *Buffer) {
-	b.PutString(c.Name)
-	b.PutInt(c.Major)
-	b.PutInt(c.Minor)
-	b.PutInt(c.Revision)
-}
-
-func writeTCP(conn *net.TCPConn, buf *Buffer) error {
+func writeTCP(conn *net.TCPConn, buf *proto.Buffer) error {
 	_, err := conn.Write(buf.Buf)
 	return err
 }
@@ -193,17 +129,15 @@ func TestRun(t *testing.T) {
 	require.NoError(t, conn.SetWriteDeadline(time.Now().Add(time.Second)))
 
 	// Perform handshake.
-	b := new(Buffer)
-	b.PutUvarint(uint64(proto.ClientHello))
-	(ClientHello{
-		Name:     "go-faster/ch",
-		Major:    1,
-		Minor:    1,
-		Revision: 54429,
+	b := new(proto.Buffer)
+	(proto.ClientHello{
+		Name:     proto.Name,
+		Major:    proto.Major,
+		Minor:    proto.Minor,
+		Revision: proto.Revision,
+		Database: "default",
+		User:     "default",
 	}).Encode(b)
-	b.PutString("default") // db
-	b.PutString("default") // user
-	b.PutString("")        // password
 
 	require.NoError(t, writeTCP(conn, b))
 
@@ -213,7 +147,7 @@ func TestRun(t *testing.T) {
 	// Read message type.
 	n, err := binary.ReadUvarint(r)
 	require.NoError(t, err)
-	if n != uint64(proto.ServerHello) {
+	if n != uint64(proto.ServerCodeHello) {
 		t.Fatalf("got unexpected message: %d", n)
 	}
 

@@ -1,0 +1,62 @@
+package proto
+
+import (
+	"encoding/binary"
+	"io"
+)
+
+// Buffer implements ClickHouse binary protocol.
+type Buffer struct {
+	Buf []byte
+}
+
+// Encoder implements encoding to Buffer.
+type Encoder interface {
+	Encode(b *Buffer)
+}
+
+// Encode value that implements Encoder.
+func (b *Buffer) Encode(e Encoder) {
+	e.Encode(b)
+}
+
+// Reset buffer to zero length.
+func (b *Buffer) Reset() {
+	b.Buf = b.Buf[:0]
+}
+
+// Read implements io.Reader.
+func (b *Buffer) Read(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+	if len(b.Buf) == 0 {
+		return 0, io.EOF
+	}
+	n = copy(p, b.Buf)
+	b.Buf = b.Buf[n:]
+	return n, nil
+}
+
+// PutUvarint encodes x to buffer as uvarint.
+func (b *Buffer) PutUvarint(x uint64) {
+	buf := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutUvarint(buf, x)
+	b.Buf = append(b.Buf, buf[:n]...)
+}
+
+// PutInt encodes integer as uvariant.
+func (b *Buffer) PutInt(x int) {
+	b.PutUvarint(uint64(x))
+}
+
+// PutLen encodes length to buffer as uvarint.
+func (b *Buffer) PutLen(x int) {
+	b.PutUvarint(uint64(x))
+}
+
+// PutString encodes sting value to buffer.
+func (b *Buffer) PutString(s string) {
+	b.PutLen(len(s))
+	b.Buf = append(b.Buf, s...)
+}
