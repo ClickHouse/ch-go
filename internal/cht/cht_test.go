@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-faster/ch/internal/proto"
 )
 
 func writeXML(t testing.TB, name string, v interface{}) {
@@ -192,7 +194,7 @@ func TestRun(t *testing.T) {
 
 	// Perform handshake.
 	b := new(Buffer)
-	b.PutUvarint(clientHello)
+	b.PutUvarint(uint64(proto.ClientHello))
 	(ClientHello{
 		Name:     "go-faster/ch",
 		Major:    1,
@@ -211,7 +213,7 @@ func TestRun(t *testing.T) {
 	// Read message type.
 	n, err := binary.ReadUvarint(r)
 	require.NoError(t, err)
-	if n != serverHello {
+	if n != uint64(proto.ServerHello) {
 		t.Fatalf("got unexpected message: %d", n)
 	}
 
