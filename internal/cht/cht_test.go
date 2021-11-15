@@ -6,10 +6,12 @@ import (
 	_ "embed"
 	"encoding/xml"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -98,12 +100,19 @@ func TestRun(t *testing.T) {
 	start := time.Now()
 	require.NoError(t, cmd.Start())
 
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.TCP)))
+	require.NoError(t, err)
+
 	// Pool ClickHouse until ready.
 	for {
 		res, err := http.Get(fmt.Sprintf("http://%s:%d", cfg.Host, cfg.HTTP))
 		if err == nil {
 			t.Log("Started in", time.Since(start).Round(time.Millisecond))
 			_ = res.Body.Close()
+
+			conn, err := net.DialTCP("tcp4", nil, tcpAddr)
+			require.NoError(t, err)
+			require.NoError(t, conn.Close())
 
 			require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
 			break
