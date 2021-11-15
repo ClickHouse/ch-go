@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -41,9 +42,13 @@ func TestRun(t *testing.T) {
 	// --pidfile=path                    Write the process ID of the application to
 	// given file.
 
+	binary, err := Bin()
+	require.NoError(t, err)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Setup data directory and config.
 	dir := t.TempDir()
 	cfgPath := filepath.Join(dir, "config.xml")
 	userCfgPath := filepath.Join(dir, "users.xml")
@@ -79,23 +84,35 @@ func TestRun(t *testing.T) {
 	}
 	require.NoError(t, os.WriteFile(userCfgPath, usersCfg, 0700))
 
-	cmd := exec.CommandContext(ctx, os.Getenv("CLICKHOUSE_BIN"), "server",
-		"--config-file", cfgPath,
-	)
+
+	// Setup command.
+	var args []string
+	if !strings.HasSuffix(binary, "server") {
+		// Binary bundle, adding subcommand.
+		// Like in static distributions.
+		args = append(args, "server")
+	}
+	args = append(args, "--config-file", cfgPath)
+	cmd := exec.CommandContext(ctx, binary, args...)
+
 	start := time.Now()
 	require.NoError(t, cmd.Start())
 
+	// Pool ClickHouse until ready.
 	for {
 		res, err := http.Get(fmt.Sprintf("http://%s:%d", cfg.Host, cfg.HTTP))
 		if err == nil {
-			t.Log("Started", time.Since(start).Round(time.Millisecond))
+			t.Log("Started in", time.Since(start).Round(time.Millisecond))
 			_ = res.Body.Close()
+
+			// Can be faster with SIGKILL, but should be handled in cmd.Wait.
 			require.NoError(t, cmd.Process.Signal(syscall.SIGTERM))
 			break
 		}
 	}
 
-	t.Log("Closing")
+	// Done.
+	t.Log("Waiting for graceful shutdown")
 	startClose := time.Now()
 	require.NoError(t, cmd.Wait())
 	t.Log("Closed in", time.Since(startClose).Round(time.Millisecond))

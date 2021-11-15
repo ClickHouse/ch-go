@@ -3,6 +3,10 @@ package cht
 import (
 	_ "embed"
 	"encoding/xml"
+	"os"
+	"os/exec"
+
+	"github.com/go-faster/errors"
 )
 
 type Logger struct {
@@ -34,8 +38,26 @@ type Config struct {
 	MMAPCacheSize int `xml:"mmap_cache_size"`
 }
 
+// EnvBin is environmental variable that sets paths to current
+// ClickHouse binary.
+const EnvBin = "CLICKHOUSE_BIN"
 
 //go:embed clickhouse.users.xml
 var usersCfg []byte
+
+// Bin returns path to current ClickHouse binary.
+func Bin() (string, error) {
+	v, ok := os.LookupEnv(EnvBin)
+	if !ok {
+		// Fallback to default binary name.
+		// Should be in $PATH.
+		v = "clickhouse-server"
+	}
+	p, err := exec.LookPath(v)
+	if err != nil {
+		return "", errors.Wrap(err, "lookup")
+	}
+	return p, nil
+}
 
 
