@@ -199,9 +199,9 @@ func TestRun(t *testing.T) {
 		Minor:    1,
 		Revision: 54429,
 	}).Encode(b)
-	b.PutString("default")
-	b.PutString("default")
-	b.PutString("")
+	b.PutString("default") // db
+	b.PutString("default") // user
+	b.PutString("")        // password
 
 	require.NoError(t, writeTCP(conn, b))
 
