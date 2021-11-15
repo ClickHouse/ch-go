@@ -1,4 +1,4 @@
-package db
+package cht
 
 import (
 	"bytes"
@@ -17,35 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type ClickHouseLogger struct {
-	Level   string `xml:"level"`
-	Console int    `xml:"console,omitempty"`
-}
-
-type ClickhouseUsersXML struct {
-	Path string `xml:"path"`
-}
-
-type ClickhouseUserDirectories struct {
-	UsersXML ClickhouseUsersXML `xml:"users_xml"`
-}
-
-type ClickHouseConfig struct {
-	XMLName xml.Name         `xml:"clickhouse"`
-	Logger  ClickHouseLogger `xml:"logger"`
-	HTTP    int              `xml:"http_port"`
-	TCP     int              `xml:"tcp_port"`
-	Host    string           `xml:"host"`
-
-	Path            string                    `xml:"path"`
-	TempPath        string                    `xml:"tmp_path"`
-	UserFilesPath   string                    `xml:"user_files_path"`
-	UserDirectories ClickhouseUserDirectories `xml:"user_directories"`
-
-	MarkCacheSize int `xml:"mark_cache_size"`
-	MMAPCacheSize int `xml:"mmap_cache_size"`
-}
-
 func writeXML(t testing.TB, name string, v interface{}) {
 	buf := new(bytes.Buffer)
 	e := xml.NewEncoder(buf)
@@ -54,10 +25,7 @@ func writeXML(t testing.TB, name string, v interface{}) {
 	require.NoError(t, os.WriteFile(name, buf.Bytes(), 0700))
 }
 
-//go:embed clickhouse.users.xml
-var clickHouseUserConfig []byte
-
-func TestClickHouse(t *testing.T) {
+func TestRun(t *testing.T) {
 	// clickhouse-server [OPTION] [-- [ARG]...]
 	// positional arguments can be used to rewrite config.xml properties, for
 	// example, --http_port=8010
@@ -79,8 +47,8 @@ func TestClickHouse(t *testing.T) {
 	dir := t.TempDir()
 	cfgPath := filepath.Join(dir, "config.xml")
 	userCfgPath := filepath.Join(dir, "users.xml")
-	cfg := ClickHouseConfig{
-		Logger: ClickHouseLogger{
+	cfg := Config{
+		Logger: Logger{
 			Level:   "trace",
 			Console: 1,
 		},
@@ -95,8 +63,8 @@ func TestClickHouse(t *testing.T) {
 		MarkCacheSize: 5368709120,
 		MMAPCacheSize: 1000,
 
-		UserDirectories: ClickhouseUserDirectories{
-			UsersXML: ClickhouseUsersXML{
+		UserDirectories: UserDir{
+			UsersXML: UsersXML{
 				Path: userCfgPath,
 			},
 		},
@@ -109,7 +77,7 @@ func TestClickHouse(t *testing.T) {
 	} {
 		require.NoError(t, os.MkdirAll(dir, 0777))
 	}
-	require.NoError(t, os.WriteFile(userCfgPath, clickHouseUserConfig, 0700))
+	require.NoError(t, os.WriteFile(userCfgPath, usersCfg, 0700))
 
 	cmd := exec.CommandContext(ctx, os.Getenv("CLICKHOUSE_BIN"), "server",
 		"--config-file", cfgPath,
