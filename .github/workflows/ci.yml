@@ -18,7 +18,7 @@ jobs:
       - name: Set up ClickHouse cache
         uses: actions/cache@v2.1.6
         with:
-          path: /opt/ch
+          path: /opt/ch/clickhouse
           key: ClickHouse-21.12.1.8691
 
       - name: Check ClickHouse
