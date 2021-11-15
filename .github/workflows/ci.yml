@@ -35,6 +35,9 @@ jobs:
         if: steps.ch_exists.outputs.files_exists != 'true'
         run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
 
+      - name: Run ClickHouse as Daemon
+        run: /opt/ch/clickhouse server --daemon
+
       - name: Install Go
         uses: actions/setup-go@v2.1.4
         with:
