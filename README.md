@@ -3,3 +3,8 @@
 Experiments with ClickHouse.
 
 Look, don't touch (for now).
+
+## Reference
+
+* [clickhouse-cpp](https://github.com/ClickHouse/clickhouse-cpp)
+* [clickhouse-go](https://github.com/ClickHouse/clickhouse-go)
