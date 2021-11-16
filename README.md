@@ -2,8 +2,6 @@
 
 WIP TCP ClickHouse client in Go.
 
-Look, don't touch (for now).
-
 ## Reference
 
 * [clickhouse-cpp](https://github.com/ClickHouse/clickhouse-cpp)
