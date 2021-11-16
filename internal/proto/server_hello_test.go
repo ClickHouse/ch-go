@@ -2,8 +2,26 @@ package proto
 
 import (
 	"bytes"
+	"encoding/hex"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
+
+func TestServerHello_Decode(t *testing.T) {
+	data, err := hex.DecodeString("11436c69636b486f75736520736572766572150bb2a903")
+	require.NoError(t, err)
+
+	r := NewReader(bytes.NewReader(data))
+	var v ServerHello
+	require.NoError(t, v.Decode(r))
+	require.Equal(t, ServerHello{
+		Name:     "ClickHouse server",
+		Major:    21,
+		Minor:    11,
+		Revision: 54450,
+	}, v)
+}
 
 func BenchmarkServerHello_Decode(b *testing.B) {
 	var raw Buffer
