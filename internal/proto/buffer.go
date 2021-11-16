@@ -5,9 +5,14 @@ import (
 	"io"
 )
 
-// Buffer implements ClickHouse binary protocol.
+// Buffer implements ClickHouse binary protocol encoding.
 type Buffer struct {
 	Buf []byte
+}
+
+// Ensure Buf length.
+func (b *Buffer) Ensure(n int) {
+	b.Buf = append(b.Buf[:0], make([]byte, n)...)
 }
 
 // Encoder implements encoding to Buffer.

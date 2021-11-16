@@ -1,14 +1,11 @@
 package cht
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	_ "embed"
-	"encoding/binary"
 	"encoding/xml"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -142,27 +139,19 @@ func TestRun(t *testing.T) {
 	require.NoError(t, writeTCP(conn, b))
 
 	require.NoError(t, conn.SetReadDeadline(time.Now().Add(time.Second)))
-	r := bufio.NewReader(conn)
+	r := proto.NewReader(conn)
 
 	// Read message type.
-	n, err := binary.ReadUvarint(r)
+	n, err := r.Uvarint()
 	require.NoError(t, err)
 	if n != uint64(proto.ServerCodeHello) {
 		t.Fatalf("got unexpected message: %d", n)
 	}
 
-	// Read string length.
-	n, err = binary.ReadUvarint(r)
-	require.NoError(t, err)
-
-	// Read server name. Should be "ClickHouse".
-	b.Reset()
-	b.Buf = append(b.Buf, make([]byte, n)...)
-	if _, err := io.ReadFull(r, b.Buf); err != nil {
-		t.Fatal(err)
-	}
-	require.Equal(t, "ClickHouse", string(b.Buf))
-	t.Log("Got ServerHello from", string(b.Buf))
+	var serverHello proto.ServerHello
+	require.NoError(t, serverHello.Decode(r))
+	require.Equal(t, "ClickHouse", serverHello.Name)
+	t.Log(serverHello)
 
 	require.NoError(t, conn.Close())
 	require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
