@@ -76,10 +76,12 @@ func (r *Reader) Int() (int, error) {
 	return int(n), nil
 }
 
+const defaultReaderSize = 1024 // 1kb
+
 // NewReader initializes new Reader from provided io.Reader.
 func NewReader(r io.Reader) *Reader {
 	return &Reader{
-		s: bufio.NewReader(r),
+		s: bufio.NewReaderSize(r, defaultReaderSize),
 		b: &Buffer{},
 	}
 }
