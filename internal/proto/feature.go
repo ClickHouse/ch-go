@@ -7,7 +7,7 @@ type Feature byte
 
 // Possible features.
 const (
-	FeatureServerTimezone Feature = iota
+	FeatureTimezone Feature = iota
 	FeatureQuotaKeyInClientInfo
 	FeatureDisplayName
 	FeatureVersionPatch
@@ -22,7 +22,7 @@ const (
 // Revision reports starting server revision since feature is supported.
 func (f Feature) Revision() int {
 	return map[Feature]int{
-		FeatureServerTimezone:              54058,
+		FeatureTimezone:                    54058,
 		FeatureDisplayName:                 54372,
 		FeatureQuotaKeyInClientInfo:        54060,
 		FeatureVersionPatch:                54401,

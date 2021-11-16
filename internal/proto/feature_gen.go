@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _FeatureName = "ServerTimezoneQuotaKeyInClientInfoDisplayNameVersionPatchServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetry"
+const _FeatureName = "TimezoneQuotaKeyInClientInfoDisplayNameVersionPatchServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetry"
 
-var _FeatureIndex = [...]uint8{0, 14, 34, 45, 57, 67, 89, 104, 131, 148, 161}
+var _FeatureIndex = [...]uint8{0, 8, 28, 39, 51, 61, 83, 98, 125, 142, 155}
 
-const _FeatureLowerName = "servertimezonequotakeyinclientinfodisplaynameversionpatchserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetry"
+const _FeatureLowerName = "timezonequotakeyinclientinfodisplaynameversionpatchserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetry"
 
 func (i Feature) String() string {
 	if i >= Feature(len(_FeatureIndex)-1) {
@@ -24,7 +24,7 @@ func (i Feature) String() string {
 // Re-run the stringer command to generate them again.
 func _FeatureNoOp() {
 	var x [1]struct{}
-	_ = x[FeatureServerTimezone-(0)]
+	_ = x[FeatureTimezone-(0)]
 	_ = x[FeatureQuotaKeyInClientInfo-(1)]
 	_ = x[FeatureDisplayName-(2)]
 	_ = x[FeatureVersionPatch-(3)]
@@ -36,42 +36,42 @@ func _FeatureNoOp() {
 	_ = x[FeatureOpenTelemetry-(9)]
 }
 
-var _FeatureValues = []Feature{FeatureServerTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry}
+var _FeatureValues = []Feature{FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry}
 
 var _FeatureNameToValueMap = map[string]Feature{
-	_FeatureName[0:14]:         FeatureServerTimezone,
-	_FeatureLowerName[0:14]:    FeatureServerTimezone,
-	_FeatureName[14:34]:        FeatureQuotaKeyInClientInfo,
-	_FeatureLowerName[14:34]:   FeatureQuotaKeyInClientInfo,
-	_FeatureName[34:45]:        FeatureDisplayName,
-	_FeatureLowerName[34:45]:   FeatureDisplayName,
-	_FeatureName[45:57]:        FeatureVersionPatch,
-	_FeatureLowerName[45:57]:   FeatureVersionPatch,
-	_FeatureName[57:67]:        FeatureServerLogs,
-	_FeatureLowerName[57:67]:   FeatureServerLogs,
-	_FeatureName[67:89]:        FeatureColumnDefaultsMetadata,
-	_FeatureLowerName[67:89]:   FeatureColumnDefaultsMetadata,
-	_FeatureName[89:104]:       FeatureClientWriteInfo,
-	_FeatureLowerName[89:104]:  FeatureClientWriteInfo,
-	_FeatureName[104:131]:      FeatureSettingsSerializedAsStrings,
-	_FeatureLowerName[104:131]: FeatureSettingsSerializedAsStrings,
-	_FeatureName[131:148]:      FeatureInterServerSecret,
-	_FeatureLowerName[131:148]: FeatureInterServerSecret,
-	_FeatureName[148:161]:      FeatureOpenTelemetry,
-	_FeatureLowerName[148:161]: FeatureOpenTelemetry,
+	_FeatureName[0:8]:          FeatureTimezone,
+	_FeatureLowerName[0:8]:     FeatureTimezone,
+	_FeatureName[8:28]:         FeatureQuotaKeyInClientInfo,
+	_FeatureLowerName[8:28]:    FeatureQuotaKeyInClientInfo,
+	_FeatureName[28:39]:        FeatureDisplayName,
+	_FeatureLowerName[28:39]:   FeatureDisplayName,
+	_FeatureName[39:51]:        FeatureVersionPatch,
+	_FeatureLowerName[39:51]:   FeatureVersionPatch,
+	_FeatureName[51:61]:        FeatureServerLogs,
+	_FeatureLowerName[51:61]:   FeatureServerLogs,
+	_FeatureName[61:83]:        FeatureColumnDefaultsMetadata,
+	_FeatureLowerName[61:83]:   FeatureColumnDefaultsMetadata,
+	_FeatureName[83:98]:        FeatureClientWriteInfo,
+	_FeatureLowerName[83:98]:   FeatureClientWriteInfo,
+	_FeatureName[98:125]:       FeatureSettingsSerializedAsStrings,
+	_FeatureLowerName[98:125]:  FeatureSettingsSerializedAsStrings,
+	_FeatureName[125:142]:      FeatureInterServerSecret,
+	_FeatureLowerName[125:142]: FeatureInterServerSecret,
+	_FeatureName[142:155]:      FeatureOpenTelemetry,
+	_FeatureLowerName[142:155]: FeatureOpenTelemetry,
 }
 
 var _FeatureNames = []string{
-	_FeatureName[0:14],
-	_FeatureName[14:34],
-	_FeatureName[34:45],
-	_FeatureName[45:57],
-	_FeatureName[57:67],
-	_FeatureName[67:89],
-	_FeatureName[89:104],
-	_FeatureName[104:131],
-	_FeatureName[131:148],
-	_FeatureName[148:161],
+	_FeatureName[0:8],
+	_FeatureName[8:28],
+	_FeatureName[28:39],
+	_FeatureName[39:51],
+	_FeatureName[51:61],
+	_FeatureName[61:83],
+	_FeatureName[83:98],
+	_FeatureName[98:125],
+	_FeatureName[125:142],
+	_FeatureName[142:155],
 }
 
 // FeatureString retrieves an enum value from the enum constants string name.

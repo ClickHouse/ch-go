@@ -77,7 +77,7 @@ func (s *ServerHello) Decode(r *Reader) error {
 
 	s.Major, s.Minor, s.Revision = major, minor, revision
 
-	if s.Has(FeatureServerTimezone) {
+	if s.Has(FeatureTimezone) {
 		v, err := r.Str()
 		if err != nil {
 			return errors.Wrap(err, "timezone")

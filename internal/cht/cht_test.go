@@ -153,6 +153,11 @@ func TestRun(t *testing.T) {
 	require.Equal(t, "ClickHouse", serverHello.Name)
 	t.Log(serverHello)
 	t.Log(serverHello.Features())
+	if serverHello.Has(proto.FeatureTimezone) {
+		tz, err := time.LoadLocation(serverHello.Timezone)
+		require.NoError(t, err)
+		t.Log("Loaded location", tz)
+	}
 
 	require.NoError(t, conn.Close())
 	require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
