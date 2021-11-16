@@ -19,20 +19,22 @@ const (
 	FeatureOpenTelemetry
 )
 
+var featureRevision = map[Feature]int{
+	FeatureTimezone:                    54058,
+	FeatureDisplayName:                 54372,
+	FeatureQuotaKeyInClientInfo:        54060,
+	FeatureVersionPatch:                54401,
+	FeatureServerLogs:                  54406,
+	FeatureColumnDefaultsMetadata:      54410,
+	FeatureClientWriteInfo:             54420,
+	FeatureSettingsSerializedAsStrings: 54429,
+	FeatureInterServerSecret:           54441,
+	FeatureOpenTelemetry:               54442,
+}
+
 // Revision reports starting server revision since feature is supported.
 func (f Feature) Revision() int {
-	return map[Feature]int{
-		FeatureTimezone:                    54058,
-		FeatureDisplayName:                 54372,
-		FeatureQuotaKeyInClientInfo:        54060,
-		FeatureVersionPatch:                54401,
-		FeatureServerLogs:                  54406,
-		FeatureColumnDefaultsMetadata:      54410,
-		FeatureClientWriteInfo:             54420,
-		FeatureSettingsSerializedAsStrings: 54429,
-		FeatureInterServerSecret:           54441,
-		FeatureOpenTelemetry:               54442,
-	}[f]
+	return featureRevision[f]
 }
 
 // In reports whether feature is implemented in provided revision.
