@@ -11,7 +11,7 @@ const (
 	ServerCodeException    ServerCode = 2  // runtime exception
 	ServerCodeProgress     ServerCode = 3  // query execution progress (bytes, lines)
 	ServerCodePong         ServerCode = 4  // ping response (ClientPing)
-	ServerCodeEOF          ServerCode = 5  // end of stream
+	ServerCodeEndOfStream  ServerCode = 5  // end of stream
 	ServerCodeProfile      ServerCode = 6  // profiling info
 	ServerCodeTotals       ServerCode = 7  // packet with total values (can be compressed)
 	ServerCodeExtremes     ServerCode = 8  // packet with minimums and maximums (can be compressed)

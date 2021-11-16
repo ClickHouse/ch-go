@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _ServerCodeName = "HelloDataExceptionProgressPongEOFProfileTotalsExtremesTablesStatusLog"
+const _ServerCodeName = "HelloDataExceptionProgressPongEndOfStreamProfileTotalsExtremesTablesStatusLog"
 
-var _ServerCodeIndex = [...]uint8{0, 5, 9, 18, 26, 30, 33, 40, 46, 54, 66, 69}
+var _ServerCodeIndex = [...]uint8{0, 5, 9, 18, 26, 30, 41, 48, 54, 62, 74, 77}
 
-const _ServerCodeLowerName = "hellodataexceptionprogresspongeofprofiletotalsextremestablesstatuslog"
+const _ServerCodeLowerName = "hellodataexceptionprogresspongendofstreamprofiletotalsextremestablesstatuslog"
 
 func (i ServerCode) String() string {
 	if i >= ServerCode(len(_ServerCodeIndex)-1) {
@@ -29,7 +29,7 @@ func _ServerCodeNoOp() {
 	_ = x[ServerCodeException-(2)]
 	_ = x[ServerCodeProgress-(3)]
 	_ = x[ServerCodePong-(4)]
-	_ = x[ServerCodeEOF-(5)]
+	_ = x[ServerCodeEndOfStream-(5)]
 	_ = x[ServerCodeProfile-(6)]
 	_ = x[ServerCodeTotals-(7)]
 	_ = x[ServerCodeExtremes-(8)]
@@ -37,7 +37,7 @@ func _ServerCodeNoOp() {
 	_ = x[ServerCodeLog-(10)]
 }
 
-var _ServerCodeValues = []ServerCode{ServerCodeHello, ServerCodeData, ServerCodeException, ServerCodeProgress, ServerCodePong, ServerCodeEOF, ServerCodeProfile, ServerCodeTotals, ServerCodeExtremes, ServerCodeTablesStatus, ServerCodeLog}
+var _ServerCodeValues = []ServerCode{ServerCodeHello, ServerCodeData, ServerCodeException, ServerCodeProgress, ServerCodePong, ServerCodeEndOfStream, ServerCodeProfile, ServerCodeTotals, ServerCodeExtremes, ServerCodeTablesStatus, ServerCodeLog}
 
 var _ServerCodeNameToValueMap = map[string]ServerCode{
 	_ServerCodeName[0:5]:        ServerCodeHello,
@@ -50,18 +50,18 @@ var _ServerCodeNameToValueMap = map[string]ServerCode{
 	_ServerCodeLowerName[18:26]: ServerCodeProgress,
 	_ServerCodeName[26:30]:      ServerCodePong,
 	_ServerCodeLowerName[26:30]: ServerCodePong,
-	_ServerCodeName[30:33]:      ServerCodeEOF,
-	_ServerCodeLowerName[30:33]: ServerCodeEOF,
-	_ServerCodeName[33:40]:      ServerCodeProfile,
-	_ServerCodeLowerName[33:40]: ServerCodeProfile,
-	_ServerCodeName[40:46]:      ServerCodeTotals,
-	_ServerCodeLowerName[40:46]: ServerCodeTotals,
-	_ServerCodeName[46:54]:      ServerCodeExtremes,
-	_ServerCodeLowerName[46:54]: ServerCodeExtremes,
-	_ServerCodeName[54:66]:      ServerCodeTablesStatus,
-	_ServerCodeLowerName[54:66]: ServerCodeTablesStatus,
-	_ServerCodeName[66:69]:      ServerCodeLog,
-	_ServerCodeLowerName[66:69]: ServerCodeLog,
+	_ServerCodeName[30:41]:      ServerCodeEndOfStream,
+	_ServerCodeLowerName[30:41]: ServerCodeEndOfStream,
+	_ServerCodeName[41:48]:      ServerCodeProfile,
+	_ServerCodeLowerName[41:48]: ServerCodeProfile,
+	_ServerCodeName[48:54]:      ServerCodeTotals,
+	_ServerCodeLowerName[48:54]: ServerCodeTotals,
+	_ServerCodeName[54:62]:      ServerCodeExtremes,
+	_ServerCodeLowerName[54:62]: ServerCodeExtremes,
+	_ServerCodeName[62:74]:      ServerCodeTablesStatus,
+	_ServerCodeLowerName[62:74]: ServerCodeTablesStatus,
+	_ServerCodeName[74:77]:      ServerCodeLog,
+	_ServerCodeLowerName[74:77]: ServerCodeLog,
 }
 
 var _ServerCodeNames = []string{
@@ -70,12 +70,12 @@ var _ServerCodeNames = []string{
 	_ServerCodeName[9:18],
 	_ServerCodeName[18:26],
 	_ServerCodeName[26:30],
-	_ServerCodeName[30:33],
-	_ServerCodeName[33:40],
-	_ServerCodeName[40:46],
-	_ServerCodeName[46:54],
-	_ServerCodeName[54:66],
-	_ServerCodeName[66:69],
+	_ServerCodeName[30:41],
+	_ServerCodeName[41:48],
+	_ServerCodeName[48:54],
+	_ServerCodeName[54:62],
+	_ServerCodeName[62:74],
+	_ServerCodeName[74:77],
 }
 
 // ServerCodeString retrieves an enum value from the enum constants string name.

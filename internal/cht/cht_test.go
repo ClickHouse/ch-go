@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-faster/ch/internal/proto"
+	"github.com/go-faster/ch"
 )
 
 func writeXML(t testing.TB, name string, v interface{}) {
@@ -28,11 +28,6 @@ func writeXML(t testing.TB, name string, v interface{}) {
 	e.Indent("", "  ")
 	require.NoError(t, e.Encode(v))
 	require.NoError(t, os.WriteFile(name, buf.Bytes(), 0700))
-}
-
-func writeTCP(conn *net.TCPConn, buf *proto.Buffer) error {
-	_, err := conn.Write(buf.Buf)
-	return err
 }
 
 func TestRun(t *testing.T) {
@@ -106,9 +101,6 @@ func TestRun(t *testing.T) {
 	start := time.Now()
 	require.NoError(t, cmd.Start())
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.TCP)))
-	require.NoError(t, err)
-
 	// Polling ClickHouse until ready.
 	for {
 		res, err := http.Get(fmt.Sprintf("http://%s:%d", cfg.Host, cfg.HTTP))
@@ -121,45 +113,10 @@ func TestRun(t *testing.T) {
 		break
 	}
 
-	conn, err := net.DialTCP("tcp4", nil, tcpAddr)
+	client, err := ch.Dial(ctx, net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.TCP)), ch.Options{})
 	require.NoError(t, err)
-	require.NoError(t, conn.SetWriteDeadline(time.Now().Add(time.Second)))
-
-	// Perform handshake.
-	b := new(proto.Buffer)
-	(proto.ClientHello{
-		Name:     proto.Name,
-		Major:    proto.Major,
-		Minor:    proto.Minor,
-		Revision: proto.Revision,
-		Database: "default",
-		User:     "default",
-	}).Encode(b)
-
-	require.NoError(t, writeTCP(conn, b))
-
-	require.NoError(t, conn.SetReadDeadline(time.Now().Add(time.Second)))
-	r := proto.NewReader(conn)
-
-	// Read message type.
-	n, err := r.Uvarint()
-	require.NoError(t, err)
-	if n != uint64(proto.ServerCodeHello) {
-		t.Fatalf("got unexpected message: %d", n)
-	}
-
-	var serverHello proto.ServerHello
-	require.NoError(t, serverHello.Decode(r))
-	require.Equal(t, "ClickHouse", serverHello.Name)
-	t.Log(serverHello)
-	t.Log(serverHello.Features())
-	if serverHello.Has(proto.FeatureTimezone) {
-		tz, err := time.LoadLocation(serverHello.Timezone)
-		require.NoError(t, err)
-		t.Log("Loaded location", tz)
-	}
-
-	require.NoError(t, conn.Close())
+	t.Log("Connected", client.ServerInfo(), client.Location())
+	require.NoError(t, client.Close())
 	require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
 
 	// Done.

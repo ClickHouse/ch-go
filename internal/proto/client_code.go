@@ -6,11 +6,12 @@ package proto
 type ClientCode byte
 
 const (
-	ClientCodeHello  ClientCode = 0 // client part of "handshake"
-	ClientCodeQuery  ClientCode = 1 // query start
-	ClientCodeData   ClientCode = 2 // data block (can be compressed)
-	ClientCodeCancel ClientCode = 3 // query cancel
-	ClientCodePing   ClientCode = 4 // ping request to server
+	ClientCodeHello           ClientCode = 0 // client part of "handshake"
+	ClientCodeQuery           ClientCode = 1 // query start
+	ClientCodeData            ClientCode = 2 // data block (can be compressed)
+	ClientCodeCancel          ClientCode = 3 // query cancel
+	ClientCodePing            ClientCode = 4 // ping request to server
+	ClientTablesStatusRequest ClientCode = 5 // tables status request
 )
 
 // Encode to buffer.

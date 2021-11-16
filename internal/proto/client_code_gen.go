@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _ClientCodeName = "HelloQueryDataCancelPing"
+const _ClientCodeName = "HelloQueryDataCancelPingClientTablesStatusRequest"
 
-var _ClientCodeIndex = [...]uint8{0, 5, 10, 14, 20, 24}
+var _ClientCodeIndex = [...]uint8{0, 5, 10, 14, 20, 24, 49}
 
-const _ClientCodeLowerName = "helloquerydatacancelping"
+const _ClientCodeLowerName = "helloquerydatacancelpingclienttablesstatusrequest"
 
 func (i ClientCode) String() string {
 	if i >= ClientCode(len(_ClientCodeIndex)-1) {
@@ -29,9 +29,10 @@ func _ClientCodeNoOp() {
 	_ = x[ClientCodeData-(2)]
 	_ = x[ClientCodeCancel-(3)]
 	_ = x[ClientCodePing-(4)]
+	_ = x[ClientTablesStatusRequest-(5)]
 }
 
-var _ClientCodeValues = []ClientCode{ClientCodeHello, ClientCodeQuery, ClientCodeData, ClientCodeCancel, ClientCodePing}
+var _ClientCodeValues = []ClientCode{ClientCodeHello, ClientCodeQuery, ClientCodeData, ClientCodeCancel, ClientCodePing, ClientTablesStatusRequest}
 
 var _ClientCodeNameToValueMap = map[string]ClientCode{
 	_ClientCodeName[0:5]:        ClientCodeHello,
@@ -44,6 +45,8 @@ var _ClientCodeNameToValueMap = map[string]ClientCode{
 	_ClientCodeLowerName[14:20]: ClientCodeCancel,
 	_ClientCodeName[20:24]:      ClientCodePing,
 	_ClientCodeLowerName[20:24]: ClientCodePing,
+	_ClientCodeName[24:49]:      ClientTablesStatusRequest,
+	_ClientCodeLowerName[24:49]: ClientTablesStatusRequest,
 }
 
 var _ClientCodeNames = []string{
@@ -52,6 +55,7 @@ var _ClientCodeNames = []string{
 	_ClientCodeName[10:14],
 	_ClientCodeName[14:20],
 	_ClientCodeName[20:24],
+	_ClientCodeName[24:49],
 }
 
 // ClientCodeString retrieves an enum value from the enum constants string name.
