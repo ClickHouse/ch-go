@@ -40,7 +40,7 @@ func (s ServerHello) String() string {
 	if s.DisplayName != "" {
 		_, _ = fmt.Fprintf(&b, " (%s", s.DisplayName)
 		if s.Timezone != "" {
-			b.WriteString(", tz:")
+			b.WriteString(", ")
 			b.WriteString(s.Timezone)
 		}
 		b.WriteRune(')')
