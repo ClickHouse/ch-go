@@ -152,6 +152,7 @@ func TestRun(t *testing.T) {
 	require.NoError(t, serverHello.Decode(r))
 	require.Equal(t, "ClickHouse", serverHello.Name)
 	t.Log(serverHello)
+	t.Log(serverHello.Features())
 
 	require.NoError(t, conn.Close())
 	require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
