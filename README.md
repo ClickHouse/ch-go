@@ -8,3 +8,4 @@ Look, don't touch (for now).
 
 * [clickhouse-cpp](https://github.com/ClickHouse/clickhouse-cpp)
 * [clickhouse-go](https://github.com/ClickHouse/clickhouse-go)
+* [python driver](https://github.com/mymarilyn/clickhouse-driver)
