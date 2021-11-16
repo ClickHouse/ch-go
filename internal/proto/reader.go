@@ -61,7 +61,7 @@ func (r *Reader) StrBytes() ([]byte, error) {
 func (r *Reader) Str() (string, error) {
 	s, err := r.StrBytes()
 	if err != nil {
-		return "", errors.Wrap(err, "raw")
+		return "", errors.Wrap(err, "bytes")
 	}
 
 	return string(s), err
