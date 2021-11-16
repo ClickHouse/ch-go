@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-faster/errors"
 )
@@ -34,7 +35,18 @@ func (s ServerHello) Has(f Feature) bool {
 }
 
 func (s ServerHello) String() string {
-	return fmt.Sprintf("%s %d.%d.%d", s.Name, s.Major, s.Minor, s.Revision)
+	var b strings.Builder
+	b.WriteString(s.Name)
+	if s.DisplayName != "" {
+		_, _ = fmt.Fprintf(&b, " (%s)", s.DisplayName)
+	}
+
+	_, _ = fmt.Fprintf(&b, " %d.%d", s.Major, s.Minor)
+	if s.Has(FeatureVersionPatch) {
+		_, _ = fmt.Fprintf(&b, ".%d", s.Patch)
+	}
+	_, _ = fmt.Fprintf(&b, " (%d)", s.Revision)
+	return b.String()
 }
 
 // Decode decodes ServerHello message from Reader.
