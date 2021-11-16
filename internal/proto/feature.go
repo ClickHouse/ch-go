@@ -19,7 +19,7 @@ const (
 	FeatureOpenTelemetry
 )
 
-var featureRevision = map[Feature]int{
+var _featureRevision = map[Feature]int{
 	FeatureTimezone:                    54058,
 	FeatureDisplayName:                 54372,
 	FeatureQuotaKeyInClientInfo:        54060,
@@ -34,7 +34,7 @@ var featureRevision = map[Feature]int{
 
 // Revision reports starting server revision since feature is supported.
 func (f Feature) Revision() int {
-	return featureRevision[f]
+	return _featureRevision[f]
 }
 
 // In reports whether feature is implemented in provided revision.
