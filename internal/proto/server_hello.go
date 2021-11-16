@@ -38,7 +38,12 @@ func (s ServerHello) String() string {
 	var b strings.Builder
 	b.WriteString(s.Name)
 	if s.DisplayName != "" {
-		_, _ = fmt.Fprintf(&b, " (%s)", s.DisplayName)
+		_, _ = fmt.Fprintf(&b, " (%s", s.DisplayName)
+		if s.Timezone != "" {
+			b.WriteString(", tz:")
+			b.WriteString(s.Timezone)
+		}
+		b.WriteRune(')')
 	}
 
 	_, _ = fmt.Fprintf(&b, " %d.%d", s.Major, s.Minor)
