@@ -43,21 +43,30 @@ func (b *Buffer) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// PutUvarint encodes x to buffer as uvarint.
-func (b *Buffer) PutUvarint(x uint64) {
+// PutUVarInt encodes x  as uvarint.
+func (b *Buffer) PutUVarInt(x uint64) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutUvarint(buf, x)
 	b.Buf = append(b.Buf, buf[:n]...)
 }
 
-// PutInt encodes integer as uvariant.
+// PutInt encodes integer as uvarint.
 func (b *Buffer) PutInt(x int) {
-	b.PutUvarint(uint64(x))
+	b.PutUVarInt(uint64(x))
+}
+
+func (b *Buffer) PutInt128(v [16]byte) {
+	b.Buf = append(b.Buf, v[:]...)
+}
+
+// PutByte encodes byte ad uvarint.
+func (b *Buffer) PutByte(x byte) {
+	b.PutUVarInt(uint64(x))
 }
 
 // PutLen encodes length to buffer as uvarint.
 func (b *Buffer) PutLen(x int) {
-	b.PutUvarint(uint64(x))
+	b.PutUVarInt(uint64(x))
 }
 
 // PutString encodes sting value to buffer.

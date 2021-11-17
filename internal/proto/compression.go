@@ -8,5 +8,5 @@ const (
 )
 
 func (c Compression) Encode(b *Buffer) {
-	b.PutUvarint(uint64(c))
+	b.PutUVarInt(uint64(c))
 }

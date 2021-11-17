@@ -2,4 +2,6 @@ package proto
 
 type Stage byte
 
-const StageComplete = 2
+func (s Stage) Encode(b *Buffer) { b.PutByte(byte(s)) }
+
+const StageComplete Stage = 2

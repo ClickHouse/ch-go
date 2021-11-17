@@ -20,6 +20,15 @@ type Client struct {
 	info   proto.ClientHello
 	server proto.ServerHello
 	tz     *time.Location
+
+	compression proto.Compression
+	settings    []Setting
+}
+
+// Setting to send to server.
+type Setting struct {
+	Key, Value string
+	Important  bool
 }
 
 func (c *Client) ServerInfo() proto.ServerHello { return c.server }
@@ -76,6 +85,7 @@ type Options struct {
 	Database string
 	User     string
 	Password string
+	Settings []Setting
 }
 
 func (o *Options) setDefaults() {
@@ -93,9 +103,10 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	opt.setDefaults()
 
 	c := &Client{
-		conn:   conn,
-		buf:    new(proto.Buffer),
-		reader: proto.NewReader(conn),
+		conn:     conn,
+		buf:      new(proto.Buffer),
+		reader:   proto.NewReader(conn),
+		settings: opt.Settings,
 
 		info: proto.ClientHello{
 			Name:     proto.Name,

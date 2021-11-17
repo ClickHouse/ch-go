@@ -15,9 +15,7 @@ const (
 )
 
 // Encode to buffer.
-func (c ClientCode) Encode(b *Buffer) {
-	b.PutUvarint(uint64(c))
-}
+func (c ClientCode) Encode(b *Buffer) { b.PutByte(byte(c)) }
 
 // Compressible reports whether message can be compressed.
 func (c ClientCode) Compressible() bool {
