@@ -34,8 +34,8 @@ type Config struct {
 	UserFilesPath   string  `xml:"user_files_path"`
 	UserDirectories UserDir `xml:"user_directories"`
 
-	MarkCacheSize int `xml:"mark_cache_size"`
-	MMAPCacheSize int `xml:"mmap_cache_size"`
+	MarkCacheSize int64 `xml:"mark_cache_size"`
+	MMAPCacheSize int64 `xml:"mmap_cache_size"`
 }
 
 // EnvBin is environmental variable that sets paths to current
