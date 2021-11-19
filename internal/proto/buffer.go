@@ -55,6 +55,7 @@ func (b *Buffer) PutInt(x int) {
 	b.PutUVarInt(uint64(x))
 }
 
+// PutInt128 puts 16-byte integer.
 func (b *Buffer) PutInt128(v [16]byte) {
 	b.Buf = append(b.Buf, v[:]...)
 }

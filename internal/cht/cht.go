@@ -1,3 +1,4 @@
+// Package cht implements ClickHouse testing utilities, primarily end to end.
 package cht
 
 import (
@@ -9,19 +10,23 @@ import (
 	"github.com/go-faster/errors"
 )
 
+// Logger settings.
 type Logger struct {
 	Level   string `xml:"level"`
 	Console int    `xml:"console,omitempty"`
 }
 
+// UsersXML config for ClickHouse.
 type UsersXML struct {
 	Path string `xml:"path"`
 }
 
+// UserDir for ClickHouse.
 type UserDir struct {
 	UsersXML UsersXML `xml:"users_xml"`
 }
 
+// Config for ClickHouse.
 type Config struct {
 	XMLName xml.Name `xml:"clickhouse"`
 	Logger  Logger   `xml:"logger"`

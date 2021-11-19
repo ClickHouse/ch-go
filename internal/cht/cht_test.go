@@ -28,7 +28,7 @@ func writeXML(t testing.TB, name string, v interface{}) {
 	e := xml.NewEncoder(buf)
 	e.Indent("", "  ")
 	require.NoError(t, e.Encode(v))
-	require.NoError(t, os.WriteFile(name, buf.Bytes(), 0700))
+	require.NoError(t, os.WriteFile(name, buf.Bytes(), 0o700))
 }
 
 func TestRun(t *testing.T) {
@@ -86,9 +86,9 @@ func TestRun(t *testing.T) {
 		cfg.TempPath,
 		cfg.UserFilesPath,
 	} {
-		require.NoError(t, os.MkdirAll(dir, 0777))
+		require.NoError(t, os.MkdirAll(dir, 0o777))
 	}
-	require.NoError(t, os.WriteFile(userCfgPath, usersCfg, 0700))
+	require.NoError(t, os.WriteFile(userCfgPath, usersCfg, 0o700))
 
 	// Setup command.
 	var args []string

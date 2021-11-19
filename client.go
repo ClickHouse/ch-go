@@ -1,3 +1,4 @@
+// Package ch implements ClickHouse client.
 package ch
 
 import (
@@ -31,8 +32,11 @@ type Setting struct {
 	Important  bool
 }
 
+// ServerInfo returns server information.
 func (c *Client) ServerInfo() proto.ServerHello { return c.server }
-func (c *Client) Location() *time.Location      { return c.tz }
+
+// Location returns current server timezone.
+func (c *Client) Location() *time.Location { return c.tz }
 
 // Close closes underlying connection and frees all resources,
 // rendering Client to unusable state.
@@ -81,6 +85,7 @@ func (c *Client) flush(ctx context.Context) error {
 	return nil
 }
 
+// Options for Client.
 type Options struct {
 	Database string
 	User     string

@@ -1,3 +1,4 @@
+// Package e2e implements end to end testing utilities.
 package e2e
 
 import (

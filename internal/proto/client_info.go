@@ -27,6 +27,7 @@ const (
 	ClientQuerySecondary ClientQueryKind = 2
 )
 
+// ClientInfo message.
 type ClientInfo struct {
 	Revision int
 	Major    int
@@ -49,6 +50,7 @@ type ClientInfo struct {
 	QuotaKey string
 }
 
+// EncodeAware encodes to buffer revision-aware.
 func (c ClientInfo) EncodeAware(b *Buffer, revision int) {
 	b.PutByte(byte(c.Query))
 

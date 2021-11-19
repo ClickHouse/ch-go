@@ -9,6 +9,7 @@ import (
 	"github.com/go-faster/ch/internal/proto"
 )
 
+// CancelQuery cancels query.
 func (c *Client) CancelQuery(ctx context.Context) error {
 	proto.ClientCodeCancel.Encode(c.buf)
 	if err := c.flush(ctx); err != nil {
@@ -18,6 +19,7 @@ func (c *Client) CancelQuery(ctx context.Context) error {
 	return nil
 }
 
+// SendQuery starts query.
 func (c *Client) SendQuery(ctx context.Context, query, queryID string) error {
 	proto.ClientCodeQuery.Encode(c.buf)
 	c.buf.PutString(queryID)

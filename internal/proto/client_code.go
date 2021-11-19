@@ -5,6 +5,7 @@ package proto
 // ClientCode is sent from client to server.
 type ClientCode byte
 
+// Possible client codes.
 const (
 	ClientCodeHello           ClientCode = 0 // client part of "handshake"
 	ClientCodeQuery           ClientCode = 1 // query start

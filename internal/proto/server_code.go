@@ -5,6 +5,7 @@ package proto
 // ServerCode is sent by server to client.
 type ServerCode byte
 
+// Possible server codes.
 const (
 	ServerCodeHello        ServerCode = 0  // Server part of "handshake"
 	ServerCodeData         ServerCode = 1  // data block (can be compressed)
