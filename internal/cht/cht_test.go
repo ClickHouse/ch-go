@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-faster/ch"
+	"github.com/go-faster/ch/internal/e2e"
 )
 
 func writeXML(t testing.TB, name string, v interface{}) {
@@ -45,6 +46,7 @@ func TestRun(t *testing.T) {
 	// --umask=mask                      Set the daemon's umask (octal, e.g. 027).
 	// --pidfile=path                    Write the process ID of the application to
 	// given file.
+	e2e.Skip(t)
 
 	binaryPath, err := Bin()
 	require.NoError(t, err)

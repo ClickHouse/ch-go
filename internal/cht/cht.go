@@ -26,11 +26,11 @@ type Config struct {
 	XMLName xml.Name `xml:"clickhouse"`
 	Logger  Logger   `xml:"logger"`
 	HTTP    int      `xml:"http_port"`
-	TCP     int              `xml:"tcp_port"`
-	Host    string           `xml:"host"`
+	TCP     int      `xml:"tcp_port"`
+	Host    string   `xml:"host"`
 
-	Path            string                    `xml:"path"`
-	TempPath        string                    `xml:"tmp_path"`
+	Path            string  `xml:"path"`
+	TempPath        string  `xml:"tmp_path"`
 	UserFilesPath   string  `xml:"user_files_path"`
 	UserDirectories UserDir `xml:"user_directories"`
 
@@ -40,7 +40,7 @@ type Config struct {
 
 // EnvBin is environmental variable that sets paths to current
 // ClickHouse binary.
-const EnvBin = "CLICKHOUSE_BIN"
+const EnvBin = "CH_BIN"
 
 //go:embed clickhouse.users.xml
 var usersCfg []byte
@@ -59,5 +59,3 @@ func Bin() (string, error) {
 	}
 	return p, nil
 }
-
-
