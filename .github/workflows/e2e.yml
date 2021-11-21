@@ -11,16 +11,10 @@ on:
 
 jobs:
   run:
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        arch:
-          - amd64
-        runner:
-          - ubuntu-latest
-        go:
-          - 1.17
         clickhouse:
           - 21.8.11.4-lts
           - 21.11.4.14-stable
@@ -59,7 +53,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2.1.4
         with:
-          go-version: ${{ matrix.go }}
+          go-version: 1.17
 
       - name: Get Go environment
         id: go-env
