@@ -11,7 +11,20 @@ on:
 
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        arch:
+          - amd64
+        runner:
+          - ubuntu-latest
+        go:
+          - 1.17
+        clickhouse:
+          - 21.8.11.4-lts
+          - 21.11.4.14-stable
+          - 21.12.1.8691-testing
     steps:
       - uses: actions/checkout@v2
 
@@ -19,7 +32,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: /opt/ch/clickhouse
-          key: ClickHouse-21.12.1.8691
+          key: ClickHouse-${{ matrix.clickhouse }}
 
       - name: Check ClickHouse
         id: "ch_exists"
@@ -27,9 +40,13 @@ jobs:
         with:
           files: /opt/ch/clickhouse
 
+      - name: Get ClickHouse asset version
+        id: asset
+        run: echo "::set-output name=version::$(echo '${{ matrix.clickhouse }}' | cut -f1 -d'-')"
+
       - name: Download ClickHouse
         if: steps.ch_exists.outputs.files_exists != 'true'
-        run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v21.12.1.8691-testing/clickhouse-common-static-21.12.1.8691.tgz"
+        run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v${{ matrix.clickhouse }}/clickhouse-common-static-${{ steps.asset.outputs.version }}.tgz"
 
       - name: Install ClickHouse
         if: steps.ch_exists.outputs.files_exists != 'true'
@@ -42,7 +59,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2.1.4
         with:
-          go-version: 1.17
+          go-version: ${{ matrix.go }}
 
       - name: Get Go environment
         id: go-env

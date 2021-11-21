@@ -10,7 +10,7 @@ jobs:
   run:
     runs-on: ${{ matrix.runner }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         flags: [""]
         arch:
