@@ -74,6 +74,10 @@ linters:
 issues:
   exclude-use-default: false
   exclude-rules:
+    # Document when API is stable
+    - text: "should have comment"
+      linters: [revive]
+
     # Disable linters that are annoying in tests.
     - path: _test\.go
       linters:

@@ -11,6 +11,7 @@ const (
 	FeatureQuotaKeyInClientInfo
 	FeatureDisplayName
 	FeatureVersionPatch
+	FeatureTempTables
 	FeatureServerLogs
 	FeatureColumnDefaultsMetadata
 	FeatureClientWriteInfo

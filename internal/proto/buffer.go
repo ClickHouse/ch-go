@@ -75,3 +75,25 @@ func (b *Buffer) PutString(s string) {
 	b.PutLen(len(s))
 	b.Buf = append(b.Buf, s...)
 }
+
+func (b *Buffer) PutUInt32(x uint32) {
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint32(buf, x)
+	b.Buf = append(b.Buf, buf...)
+}
+
+func (b *Buffer) PutInt32(x int32) {
+	b.PutUInt32(uint32(x))
+}
+
+func (b *Buffer) PutUInt8(x uint8) {
+	b.Buf = append(b.Buf, x)
+}
+
+func (b *Buffer) PutBool(v bool) {
+	if v {
+		b.PutUInt8(1)
+	} else {
+		b.PutUInt8(0)
+	}
+}
