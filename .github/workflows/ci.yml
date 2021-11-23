@@ -7,6 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
+  # See https://github.com/go-faster/x
+  # Includes test, coverage, golangci-lint, commit lint, generate checks
   ci:
     uses: go-faster/x/.github/workflows/ci.yml@main
 
