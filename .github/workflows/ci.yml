@@ -11,4 +11,3 @@ jobs:
   # Includes test, coverage, golangci-lint, commit lint, generate checks
   ci:
     uses: go-faster/x/.github/workflows/ci.yml@main
-
