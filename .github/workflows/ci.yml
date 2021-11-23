@@ -17,5 +17,3 @@ jobs:
     uses: go-faster/x/.github/workflows/coverage.yml@main
   lint:
     uses: go-faster/x/.github/workflows/lint.yml@main
-  release:
-    uses: go-faster/x/.github/workflows/release.yml@main
