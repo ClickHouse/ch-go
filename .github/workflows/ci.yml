@@ -1,4 +1,4 @@
-name: ci
+name: x
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  run:
+  ci:
     uses: go-faster/x/.github/workflows/ci.yml@main
   codeql:
     uses: go-faster/x/.github/workflows/codeql.yml@main
