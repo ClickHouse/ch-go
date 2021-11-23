@@ -9,11 +9,4 @@ on:
 jobs:
   ci:
     uses: go-faster/x/.github/workflows/ci.yml@main
-  codeql:
-    uses: go-faster/x/.github/workflows/codeql.yml@main
-  commit:
-    uses: go-faster/x/.github/workflows/commitlint.yml@main
-  cover:
-    uses: go-faster/x/.github/workflows/coverage.yml@main
-  lint:
-    uses: go-faster/x/.github/workflows/lint.yml@main
+
