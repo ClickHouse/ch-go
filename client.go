@@ -3,13 +3,13 @@ package ch
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"time"
 
 	"github.com/go-faster/errors"
 
-	"fmt"
 	"github.com/go-faster/ch/internal/proto"
 )
 

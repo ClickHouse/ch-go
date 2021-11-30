@@ -6,8 +6,9 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestInt32(t *testing.T) {
