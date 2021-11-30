@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/internal/e2e"
+	"github.com/go-faster/ch/internal/proto"
 )
 
 func writeXML(t testing.TB, name string, v interface{}) {
@@ -63,8 +64,8 @@ func TestRun(t *testing.T) {
 			Level:   "trace",
 			Console: 1,
 		},
-		HTTP: 3000,
-		TCP:  3100,
+		HTTP: 31200,
+		TCP:  31201,
 		Host: "127.0.0.1",
 
 		Path:          filepath.Join(dir, "data"),
@@ -118,6 +119,22 @@ func TestRun(t *testing.T) {
 	client, err := ch.Dial(ctx, net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.TCP)), ch.Options{})
 	require.NoError(t, err)
 	t.Log("Connected", client.ServerInfo(), client.Location())
+
+	// Sending query.
+	require.NoError(t, client.SendQuery(ctx, "CREATE TABLE test_table (id UInt64) ENGINE = MergeTree ORDER BY id", "1"))
+
+	p, err := client.Packet()
+	require.NoError(t, err)
+
+	switch p {
+	case proto.ServerCodeException: // expected
+		e, err := client.Exception()
+		require.NoError(t, err)
+		t.Log(e.Name)
+	default:
+		t.Fatal("unexpected server code")
+	}
+
 	require.NoError(t, client.Close())
 	require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
 

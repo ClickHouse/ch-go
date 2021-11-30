@@ -76,6 +76,34 @@ func (r *Reader) Int() (int, error) {
 	return int(n), nil
 }
 
+// Int32 decodes int32 value.
+func (r *Reader) Int32() (int32, error) {
+	r.b.Ensure(4)
+	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+		return 0, errors.Wrap(err, "read")
+	}
+	v := binary.BigEndian.Uint32(r.b.Buf)
+	return int32(v), nil
+}
+
+// UInt8 decodes uint8 value.
+func (r *Reader) UInt8() (uint8, error) {
+	r.b.Ensure(1)
+	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+		return 0, errors.Wrap(err, "read")
+	}
+	return r.b.Buf[0], nil
+}
+
+// Bool decodes bool as uint8.
+func (r *Reader) Bool() (bool, error) {
+	v, err := r.UInt8()
+	if err != nil {
+		return false, errors.Wrap(err, "uint8")
+	}
+	return v == 1, nil
+}
+
 const defaultReaderSize = 1024 // 1kb
 
 // NewReader initializes new Reader from provided io.Reader.

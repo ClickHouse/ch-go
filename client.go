@@ -53,7 +53,49 @@ func (c *Client) Close() error {
 	return nil
 }
 
-func (c *Client) packet() (proto.ServerCode, error) {
+// Exception is server-side error.
+type Exception struct {
+	Code    proto.Error
+	Name    string
+	Message string
+	Stack   string
+	Next    []Exception // non-nil only for top exception
+}
+
+// Exception reads exception from server.
+func (c *Client) Exception() (*Exception, error) {
+	var list []proto.Exception
+	for {
+		var ex proto.Exception
+		if err := ex.Decode(c.reader); err != nil {
+			return nil, errors.Wrap(err, "decode")
+		}
+
+		list = append(list, ex)
+		if !ex.Nested {
+			break
+		}
+	}
+	top := list[0]
+	e := &Exception{
+		Code:    top.Code,
+		Name:    top.Name,
+		Message: top.Message,
+		Stack:   top.Stack,
+	}
+	for _, next := range list[1:] {
+		e.Next = append(e.Next, Exception{
+			Code:    next.Code,
+			Name:    next.Name,
+			Message: next.Message,
+			Stack:   next.Stack,
+		})
+	}
+	return e, nil
+}
+
+// Packet reads server code.
+func (c *Client) Packet() (proto.ServerCode, error) {
 	n, err := c.reader.Uvarint()
 	if err != nil {
 		return 0, errors.Wrap(err, "uvarint")
@@ -61,7 +103,7 @@ func (c *Client) packet() (proto.ServerCode, error) {
 
 	code := proto.ServerCode(n)
 	if !code.IsAServerCode() {
-		return 0, errors.Errorf("bad server packet type %d", n)
+		return 0, errors.Errorf("bad server Packet type %d", n)
 	}
 
 	return code, nil
