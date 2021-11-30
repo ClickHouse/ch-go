@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-faster/errors"
 
+	"fmt"
 	"github.com/go-faster/ch/internal/proto"
 )
 
@@ -60,6 +61,10 @@ type Exception struct {
 	Message string
 	Stack   string
 	Next    []Exception // non-nil only for top exception
+}
+
+func (e Exception) String() string {
+	return fmt.Sprintf("%s %s", e.Code, e.Name)
 }
 
 // Exception reads exception from server.

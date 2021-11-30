@@ -130,7 +130,12 @@ func TestRun(t *testing.T) {
 	case proto.ServerCodeException: // expected
 		e, err := client.Exception()
 		require.NoError(t, err)
-		t.Log(e.Name)
+		require.ErrorIs(t, e.Code, proto.ErrPocoException)
+		t.Log(e)
+		t.Logf(" %s", e.Stack)
+		for _, v := range e.Next {
+			t.Logf(" %s", v.Stack)
+		}
 	default:
 		t.Fatal("unexpected server code")
 	}
