@@ -9,7 +9,7 @@ import (
 
 func TestClientHello_Encode(t *testing.T) {
 	var b Buffer
-	b.Encode(ClientHello{
+	v := ClientHello{
 		Name:            "ch",
 		Major:           1,
 		Minor:           1,
@@ -17,7 +17,8 @@ func TestClientHello_Encode(t *testing.T) {
 		Database:        "github",
 		User:            "neo",
 		Password:        "",
-	})
+	}
+	b.Encode(v)
 	const expHex = "000263680101a8c00206676974687562036e656f00"
 	exp, _ := hex.DecodeString(expHex)
 	require.Equal(t, exp, b.Buf)
@@ -25,6 +26,7 @@ func TestClientHello_Encode(t *testing.T) {
 	t.Run("Decode", func(t *testing.T) {
 		var dec ClientHello
 		requireDecode(t, b.Buf, int(ClientCodeHello), &dec)
+		require.Equal(t, v, dec)
 	})
 }
 
