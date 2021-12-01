@@ -133,7 +133,7 @@ func (c *Client) flush(ctx context.Context) error {
 }
 
 func (c *Client) encode(v proto.AwareEncoder) {
-	v.EncodeAware(c.buf, c.info.Revision)
+	v.EncodeAware(c.buf, c.info.ProtocolVersion)
 }
 
 // Options for Client.
@@ -165,10 +165,10 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		settings: opt.Settings,
 
 		info: proto.ClientHello{
-			Name:     proto.Name,
-			Major:    proto.Major,
-			Minor:    proto.Minor,
-			Revision: proto.Revision,
+			Name:            proto.Name,
+			Major:           proto.Major,
+			Minor:           proto.Minor,
+			ProtocolVersion: proto.Revision,
 
 			Database: opt.Database,
 			User:     opt.User,

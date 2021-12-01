@@ -28,7 +28,7 @@ func (c *Client) SendQuery(ctx context.Context, query, queryID string) error {
 		Stage:       proto.StageComplete,
 		Compression: c.compression,
 		Info: proto.ClientInfo{
-			ProtocolVersion: c.info.Revision,
+			ProtocolVersion: c.info.ProtocolVersion,
 			Major:           c.info.Major,
 			Minor:           c.info.Minor,
 			Patch:           0,
