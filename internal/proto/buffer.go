@@ -77,9 +77,19 @@ func (b *Buffer) PutString(s string) {
 }
 
 func (b *Buffer) PutUInt32(x uint32) {
-	buf := make([]byte, 8)
+	buf := make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, x)
 	b.Buf = append(b.Buf, buf...)
+}
+
+func (b *Buffer) PutUInt64(x uint64) {
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, x)
+	b.Buf = append(b.Buf, buf...)
+}
+
+func (b *Buffer) PutInt64(x int64) {
+	b.PutUInt64(uint64(x))
 }
 
 func (b *Buffer) PutInt32(x int32) {

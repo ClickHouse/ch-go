@@ -1,8 +1,6 @@
 package proto
 
 import (
-	"time"
-
 	"github.com/go-faster/errors"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -44,7 +42,7 @@ type ClientInfo struct {
 	InitialUser    string
 	InitialQueryID string
 	InitialAddress string
-	InitialTime    time.Time
+	InitialTime    int64
 
 	OSUser         string
 	ClientHostname string
@@ -63,6 +61,9 @@ func (c ClientInfo) EncodeAware(b *Buffer, revision int) {
 	b.PutString(c.InitialUser)
 	b.PutString(c.InitialQueryID)
 	b.PutString(c.InitialAddress)
+	if FeatureQueryStartTime.In(revision) {
+		b.PutInt64(c.InitialTime)
+	}
 
 	b.PutByte(byte(c.Interface))
 
@@ -77,7 +78,10 @@ func (c ClientInfo) EncodeAware(b *Buffer, revision int) {
 	if FeatureQuotaKeyInClientInfo.In(revision) {
 		b.PutString(c.QuotaKey)
 	}
-	if FeatureVersionPatch.In(revision) {
+	if FeatureDistributedDepth.In(revision) {
+		b.PutInt(c.DistributedDepth)
+	}
+	if FeatureVersionPatch.In(revision) && c.Interface == InterfaceTCP {
 		b.PutInt(c.Patch)
 	}
 	if FeatureOpenTelemetry.In(revision) {
@@ -139,9 +143,7 @@ func (c *ClientInfo) DecodeAware(r *Reader, revision int) error {
 		if err != nil {
 			return errors.Wrap(err, "query start time")
 		}
-
-		// TODO(ernado): handle time
-		_ = v
+		c.InitialTime = v
 	}
 
 	{
