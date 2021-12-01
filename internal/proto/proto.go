@@ -5,6 +5,6 @@ package proto
 const (
 	Minor    = 1
 	Major    = 1
-	Revision = 54429
+	Revision = 54442
 	Name     = "go-faster/ch"
 )
