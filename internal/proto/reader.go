@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"io"
+	"unicode/utf8"
 
 	"github.com/go-faster/errors"
 )
@@ -63,6 +64,9 @@ func (r *Reader) Str() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "bytes")
 	}
+	if !utf8.Valid(s) {
+		return "", errors.New("invalid utf8")
+	}
 
 	return string(s), err
 }
@@ -84,6 +88,16 @@ func (r *Reader) Int32() (int32, error) {
 	}
 	v := binary.LittleEndian.Uint32(r.b.Buf)
 	return int32(v), nil
+}
+
+// Int64 decodes int64 value.
+func (r *Reader) Int64() (int64, error) {
+	r.b.Ensure(8)
+	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+		return 0, errors.Wrap(err, "read")
+	}
+	v := binary.LittleEndian.Uint64(r.b.Buf)
+	return int64(v), nil
 }
 
 // UInt8 decodes uint8 value.

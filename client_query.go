@@ -35,7 +35,7 @@ func (c *Client) SendQuery(ctx context.Context, query, queryID string) error {
 
 			InitialUser:    "",
 			InitialQueryID: "",
-			InitialAddress: "",
+			InitialAddress: c.conn.LocalAddr().String(),
 			OSUser:         "",
 			ClientHostname: "",
 			ClientName:     c.info.Name,

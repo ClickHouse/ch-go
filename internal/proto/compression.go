@@ -1,5 +1,7 @@
 package proto
 
+//go:generate go run github.com/dmarkham/enumer -type Compression -trimprefix Compression -output compression_gen.go
+
 // Compression status.
 type Compression byte
 

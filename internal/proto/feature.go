@@ -18,6 +18,7 @@ const (
 	FeatureSettingsSerializedAsStrings Feature = 54429
 	FeatureInterServerSecret           Feature = 54441
 	FeatureOpenTelemetry               Feature = 54442
+	FeatureQueryStartTime              Feature = 54449
 )
 
 // Revision reports starting server revision since feature is supported.
