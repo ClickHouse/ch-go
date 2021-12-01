@@ -20,6 +20,11 @@ type Encoder interface {
 	Encode(b *Buffer)
 }
 
+// AwareEncoder implements encoding to Buffer that depends on revision.
+type AwareEncoder interface {
+	EncodeAware(b *Buffer, revision int)
+}
+
 // Encode value that implements Encoder.
 func (b *Buffer) Encode(e Encoder) {
 	e.Encode(b)

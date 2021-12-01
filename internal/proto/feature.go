@@ -9,6 +9,7 @@ type Feature int
 
 // Possible features.
 const (
+	FeatureBlockInfo                   Feature = 51903
 	FeatureTimezone                    Feature = 54058
 	FeatureQuotaKeyInClientInfo        Feature = 54060
 	FeatureDisplayName                 Feature = 54372

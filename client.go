@@ -132,6 +132,10 @@ func (c *Client) flush(ctx context.Context) error {
 	return nil
 }
 
+func (c *Client) encode(v proto.AwareEncoder) {
+	v.EncodeAware(c.buf, c.info.Revision)
+}
+
 // Options for Client.
 type Options struct {
 	Database string

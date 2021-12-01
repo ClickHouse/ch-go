@@ -7,26 +7,27 @@ import (
 	"strings"
 )
 
-const _FeatureName = "TempTablesTimezoneQuotaKeyInClientInfoDisplayNameVersionPatchServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetryXForwardedForInClientInfoRefererInClientInfoDistributedDepthQueryStartTimeProfileEvents"
-const _FeatureLowerName = "temptablestimezonequotakeyinclientinfodisplaynameversionpatchserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetryxforwardedforinclientinforefererinclientinfodistributeddepthquerystarttimeprofileevents"
+const _FeatureName = "TempTablesBlockInfoTimezoneQuotaKeyInClientInfoDisplayNameVersionPatchServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetryXForwardedForInClientInfoRefererInClientInfoDistributedDepthQueryStartTimeProfileEvents"
+const _FeatureLowerName = "temptablesblockinfotimezonequotakeyinclientinfodisplaynameversionpatchserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetryxforwardedforinclientinforefererinclientinfodistributeddepthquerystarttimeprofileevents"
 
 var _FeatureMap = map[Feature]string{
 	50264: _FeatureName[0:10],
-	54058: _FeatureName[10:18],
-	54060: _FeatureName[18:38],
-	54372: _FeatureName[38:49],
-	54401: _FeatureName[49:61],
-	54406: _FeatureName[61:71],
-	54410: _FeatureName[71:93],
-	54420: _FeatureName[93:108],
-	54429: _FeatureName[108:135],
-	54441: _FeatureName[135:152],
-	54442: _FeatureName[152:165],
-	54443: _FeatureName[165:190],
-	54447: _FeatureName[190:209],
-	54448: _FeatureName[209:225],
-	54449: _FeatureName[225:239],
-	54450: _FeatureName[239:252],
+	51903: _FeatureName[10:19],
+	54058: _FeatureName[19:27],
+	54060: _FeatureName[27:47],
+	54372: _FeatureName[47:58],
+	54401: _FeatureName[58:70],
+	54406: _FeatureName[70:80],
+	54410: _FeatureName[80:102],
+	54420: _FeatureName[102:117],
+	54429: _FeatureName[117:144],
+	54441: _FeatureName[144:161],
+	54442: _FeatureName[161:174],
+	54443: _FeatureName[174:199],
+	54447: _FeatureName[199:218],
+	54448: _FeatureName[218:234],
+	54449: _FeatureName[234:248],
+	54450: _FeatureName[248:261],
 }
 
 func (i Feature) String() string {
@@ -41,6 +42,7 @@ func (i Feature) String() string {
 func _FeatureNoOp() {
 	var x [1]struct{}
 	_ = x[FeatureTempTables-(50264)]
+	_ = x[FeatureBlockInfo-(51903)]
 	_ = x[FeatureTimezone-(54058)]
 	_ = x[FeatureQuotaKeyInClientInfo-(54060)]
 	_ = x[FeatureDisplayName-(54372)]
@@ -58,60 +60,63 @@ func _FeatureNoOp() {
 	_ = x[FeatureProfileEvents-(54450)]
 }
 
-var _FeatureValues = []Feature{FeatureTempTables, FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry, FeatureXForwardedForInClientInfo, FeatureRefererInClientInfo, FeatureDistributedDepth, FeatureQueryStartTime, FeatureProfileEvents}
+var _FeatureValues = []Feature{FeatureTempTables, FeatureBlockInfo, FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry, FeatureXForwardedForInClientInfo, FeatureRefererInClientInfo, FeatureDistributedDepth, FeatureQueryStartTime, FeatureProfileEvents}
 
 var _FeatureNameToValueMap = map[string]Feature{
 	_FeatureName[0:10]:         FeatureTempTables,
 	_FeatureLowerName[0:10]:    FeatureTempTables,
-	_FeatureName[10:18]:        FeatureTimezone,
-	_FeatureLowerName[10:18]:   FeatureTimezone,
-	_FeatureName[18:38]:        FeatureQuotaKeyInClientInfo,
-	_FeatureLowerName[18:38]:   FeatureQuotaKeyInClientInfo,
-	_FeatureName[38:49]:        FeatureDisplayName,
-	_FeatureLowerName[38:49]:   FeatureDisplayName,
-	_FeatureName[49:61]:        FeatureVersionPatch,
-	_FeatureLowerName[49:61]:   FeatureVersionPatch,
-	_FeatureName[61:71]:        FeatureServerLogs,
-	_FeatureLowerName[61:71]:   FeatureServerLogs,
-	_FeatureName[71:93]:        FeatureColumnDefaultsMetadata,
-	_FeatureLowerName[71:93]:   FeatureColumnDefaultsMetadata,
-	_FeatureName[93:108]:       FeatureClientWriteInfo,
-	_FeatureLowerName[93:108]:  FeatureClientWriteInfo,
-	_FeatureName[108:135]:      FeatureSettingsSerializedAsStrings,
-	_FeatureLowerName[108:135]: FeatureSettingsSerializedAsStrings,
-	_FeatureName[135:152]:      FeatureInterServerSecret,
-	_FeatureLowerName[135:152]: FeatureInterServerSecret,
-	_FeatureName[152:165]:      FeatureOpenTelemetry,
-	_FeatureLowerName[152:165]: FeatureOpenTelemetry,
-	_FeatureName[165:190]:      FeatureXForwardedForInClientInfo,
-	_FeatureLowerName[165:190]: FeatureXForwardedForInClientInfo,
-	_FeatureName[190:209]:      FeatureRefererInClientInfo,
-	_FeatureLowerName[190:209]: FeatureRefererInClientInfo,
-	_FeatureName[209:225]:      FeatureDistributedDepth,
-	_FeatureLowerName[209:225]: FeatureDistributedDepth,
-	_FeatureName[225:239]:      FeatureQueryStartTime,
-	_FeatureLowerName[225:239]: FeatureQueryStartTime,
-	_FeatureName[239:252]:      FeatureProfileEvents,
-	_FeatureLowerName[239:252]: FeatureProfileEvents,
+	_FeatureName[10:19]:        FeatureBlockInfo,
+	_FeatureLowerName[10:19]:   FeatureBlockInfo,
+	_FeatureName[19:27]:        FeatureTimezone,
+	_FeatureLowerName[19:27]:   FeatureTimezone,
+	_FeatureName[27:47]:        FeatureQuotaKeyInClientInfo,
+	_FeatureLowerName[27:47]:   FeatureQuotaKeyInClientInfo,
+	_FeatureName[47:58]:        FeatureDisplayName,
+	_FeatureLowerName[47:58]:   FeatureDisplayName,
+	_FeatureName[58:70]:        FeatureVersionPatch,
+	_FeatureLowerName[58:70]:   FeatureVersionPatch,
+	_FeatureName[70:80]:        FeatureServerLogs,
+	_FeatureLowerName[70:80]:   FeatureServerLogs,
+	_FeatureName[80:102]:       FeatureColumnDefaultsMetadata,
+	_FeatureLowerName[80:102]:  FeatureColumnDefaultsMetadata,
+	_FeatureName[102:117]:      FeatureClientWriteInfo,
+	_FeatureLowerName[102:117]: FeatureClientWriteInfo,
+	_FeatureName[117:144]:      FeatureSettingsSerializedAsStrings,
+	_FeatureLowerName[117:144]: FeatureSettingsSerializedAsStrings,
+	_FeatureName[144:161]:      FeatureInterServerSecret,
+	_FeatureLowerName[144:161]: FeatureInterServerSecret,
+	_FeatureName[161:174]:      FeatureOpenTelemetry,
+	_FeatureLowerName[161:174]: FeatureOpenTelemetry,
+	_FeatureName[174:199]:      FeatureXForwardedForInClientInfo,
+	_FeatureLowerName[174:199]: FeatureXForwardedForInClientInfo,
+	_FeatureName[199:218]:      FeatureRefererInClientInfo,
+	_FeatureLowerName[199:218]: FeatureRefererInClientInfo,
+	_FeatureName[218:234]:      FeatureDistributedDepth,
+	_FeatureLowerName[218:234]: FeatureDistributedDepth,
+	_FeatureName[234:248]:      FeatureQueryStartTime,
+	_FeatureLowerName[234:248]: FeatureQueryStartTime,
+	_FeatureName[248:261]:      FeatureProfileEvents,
+	_FeatureLowerName[248:261]: FeatureProfileEvents,
 }
 
 var _FeatureNames = []string{
 	_FeatureName[0:10],
-	_FeatureName[10:18],
-	_FeatureName[18:38],
-	_FeatureName[38:49],
-	_FeatureName[49:61],
-	_FeatureName[61:71],
-	_FeatureName[71:93],
-	_FeatureName[93:108],
-	_FeatureName[108:135],
-	_FeatureName[135:152],
-	_FeatureName[152:165],
-	_FeatureName[165:190],
-	_FeatureName[190:209],
-	_FeatureName[209:225],
-	_FeatureName[225:239],
-	_FeatureName[239:252],
+	_FeatureName[10:19],
+	_FeatureName[19:27],
+	_FeatureName[27:47],
+	_FeatureName[47:58],
+	_FeatureName[58:70],
+	_FeatureName[70:80],
+	_FeatureName[80:102],
+	_FeatureName[102:117],
+	_FeatureName[117:144],
+	_FeatureName[144:161],
+	_FeatureName[161:174],
+	_FeatureName[174:199],
+	_FeatureName[199:218],
+	_FeatureName[218:234],
+	_FeatureName[234:248],
+	_FeatureName[248:261],
 }
 
 // FeatureString retrieves an enum value from the enum constants string name.

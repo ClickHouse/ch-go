@@ -127,17 +127,10 @@ func TestRun(t *testing.T) {
 	require.NoError(t, err)
 
 	switch p {
-	case proto.ServerCodeException: // expected
-		e, err := client.Exception()
-		require.NoError(t, err)
-		require.ErrorIs(t, e.Code, proto.ErrSyntaxError)
-		t.Log(e)
-		t.Logf(" %s", e.Stack)
-		for _, v := range e.Next {
-			t.Logf(" %s", v.Stack)
-		}
+	case proto.ServerCodeEndOfStream: // expected
+		t.Log("Query sent")
 	default:
-		t.Fatal("unexpected server code")
+		t.Fatal("unexpected server code", p)
 	}
 
 	require.NoError(t, client.Close())
