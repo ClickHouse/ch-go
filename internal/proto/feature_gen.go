@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-const _FeatureName = "TempTablesTimezoneQuotaKeyInClientInfoDisplayNameVersionPatchServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetryQueryStartTime"
-const _FeatureLowerName = "temptablestimezonequotakeyinclientinfodisplaynameversionpatchserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetryquerystarttime"
+const _FeatureName = "TempTablesTimezoneQuotaKeyInClientInfoDisplayNameVersionPatchServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetryXForwardedForInClientInfoRefererInClientInfoDistributedDepthQueryStartTimeProfileEvents"
+const _FeatureLowerName = "temptablestimezonequotakeyinclientinfodisplaynameversionpatchserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetryxforwardedforinclientinforefererinclientinfodistributeddepthquerystarttimeprofileevents"
 
 var _FeatureMap = map[Feature]string{
 	50264: _FeatureName[0:10],
@@ -22,7 +22,11 @@ var _FeatureMap = map[Feature]string{
 	54429: _FeatureName[108:135],
 	54441: _FeatureName[135:152],
 	54442: _FeatureName[152:165],
-	54449: _FeatureName[165:179],
+	54443: _FeatureName[165:190],
+	54447: _FeatureName[190:209],
+	54448: _FeatureName[209:225],
+	54449: _FeatureName[225:239],
+	54450: _FeatureName[239:252],
 }
 
 func (i Feature) String() string {
@@ -47,10 +51,14 @@ func _FeatureNoOp() {
 	_ = x[FeatureSettingsSerializedAsStrings-(54429)]
 	_ = x[FeatureInterServerSecret-(54441)]
 	_ = x[FeatureOpenTelemetry-(54442)]
+	_ = x[FeatureXForwardedForInClientInfo-(54443)]
+	_ = x[FeatureRefererInClientInfo-(54447)]
+	_ = x[FeatureDistributedDepth-(54448)]
 	_ = x[FeatureQueryStartTime-(54449)]
+	_ = x[FeatureProfileEvents-(54450)]
 }
 
-var _FeatureValues = []Feature{FeatureTempTables, FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry, FeatureQueryStartTime}
+var _FeatureValues = []Feature{FeatureTempTables, FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry, FeatureXForwardedForInClientInfo, FeatureRefererInClientInfo, FeatureDistributedDepth, FeatureQueryStartTime, FeatureProfileEvents}
 
 var _FeatureNameToValueMap = map[string]Feature{
 	_FeatureName[0:10]:         FeatureTempTables,
@@ -75,8 +83,16 @@ var _FeatureNameToValueMap = map[string]Feature{
 	_FeatureLowerName[135:152]: FeatureInterServerSecret,
 	_FeatureName[152:165]:      FeatureOpenTelemetry,
 	_FeatureLowerName[152:165]: FeatureOpenTelemetry,
-	_FeatureName[165:179]:      FeatureQueryStartTime,
-	_FeatureLowerName[165:179]: FeatureQueryStartTime,
+	_FeatureName[165:190]:      FeatureXForwardedForInClientInfo,
+	_FeatureLowerName[165:190]: FeatureXForwardedForInClientInfo,
+	_FeatureName[190:209]:      FeatureRefererInClientInfo,
+	_FeatureLowerName[190:209]: FeatureRefererInClientInfo,
+	_FeatureName[209:225]:      FeatureDistributedDepth,
+	_FeatureLowerName[209:225]: FeatureDistributedDepth,
+	_FeatureName[225:239]:      FeatureQueryStartTime,
+	_FeatureLowerName[225:239]: FeatureQueryStartTime,
+	_FeatureName[239:252]:      FeatureProfileEvents,
+	_FeatureLowerName[239:252]: FeatureProfileEvents,
 }
 
 var _FeatureNames = []string{
@@ -91,7 +107,11 @@ var _FeatureNames = []string{
 	_FeatureName[108:135],
 	_FeatureName[135:152],
 	_FeatureName[152:165],
-	_FeatureName[165:179],
+	_FeatureName[165:190],
+	_FeatureName[190:209],
+	_FeatureName[209:225],
+	_FeatureName[225:239],
+	_FeatureName[239:252],
 }
 
 // FeatureString retrieves an enum value from the enum constants string name.

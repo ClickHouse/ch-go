@@ -7,15 +7,15 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-//go:generate go run github.com/dmarkham/enumer -type ClientInterface -trimprefix ClientInterface -output client_info_interface.go
+//go:generate go run github.com/dmarkham/enumer -type Interface -trimprefix Interface -output client_info_interface.go
 
-// ClientInterface is interface of client.
-type ClientInterface byte
+// Interface is interface of client.
+type Interface byte
 
 // Possible interfaces.
 const (
-	ClientInterfaceTCP  ClientInterface = 1
-	ClientInterfaceHTTP ClientInterface = 2
+	InterfaceTCP  Interface = 1
+	InterfaceHTTP Interface = 2
 )
 
 //go:generate go run github.com/dmarkham/enumer -type ClientQueryKind -trimprefix ClientQueryKind -output client_info_query.go
@@ -32,12 +32,13 @@ const (
 
 // ClientInfo message.
 type ClientInfo struct {
-	Revision int
-	Major    int
-	Minor    int
-	Patch    int
+	ProtocolVersion int
 
-	Interface ClientInterface
+	Major int
+	Minor int
+	Patch int
+
+	Interface Interface
 	Query     ClientQueryKind
 
 	InitialUser    string
@@ -51,7 +52,8 @@ type ClientInfo struct {
 
 	Span trace.SpanContext
 
-	QuotaKey string
+	QuotaKey         string
+	DistributedDepth int
 }
 
 // EncodeAware encodes to buffer revision-aware.
@@ -70,7 +72,7 @@ func (c ClientInfo) EncodeAware(b *Buffer, revision int) {
 
 	b.PutInt(c.Major)
 	b.PutInt(c.Minor)
-	b.PutInt(c.Revision)
+	b.PutInt(c.ProtocolVersion)
 
 	if FeatureQuotaKeyInClientInfo.In(revision) {
 		b.PutString(c.QuotaKey)
@@ -145,11 +147,16 @@ func (c *ClientInfo) DecodeAware(r *Reader, revision int) error {
 	{
 		v, err := r.UInt8()
 		if err != nil {
-			return errors.Wrap(err, "query kind")
+			return errors.Wrap(err, "interface")
 		}
-		c.Interface = ClientInterface(v)
-		if !c.Interface.IsAClientInterface() {
+		c.Interface = Interface(v)
+		if !c.Interface.IsAInterface() {
 			return errors.Errorf("unknown interface %d", v)
+		}
+
+		// TODO(ernado): support HTTP
+		if c.Interface != InterfaceTCP {
+			return errors.New("only tcp interface is supported")
 		}
 	}
 
@@ -192,9 +199,9 @@ func (c *ClientInfo) DecodeAware(r *Reader, revision int) error {
 	{
 		v, err := r.Int()
 		if err != nil {
-			return errors.Wrap(err, "revision")
+			return errors.Wrap(err, "protocol version")
 		}
-		c.Revision = v
+		c.ProtocolVersion = v
 	}
 
 	if FeatureQuotaKeyInClientInfo.In(revision) {
@@ -204,7 +211,14 @@ func (c *ClientInfo) DecodeAware(r *Reader, revision int) error {
 		}
 		c.QuotaKey = v
 	}
-	if FeatureVersionPatch.In(revision) {
+	if FeatureDistributedDepth.In(revision) {
+		v, err := r.Int()
+		if err != nil {
+			return errors.Wrap(err, "distributed depth")
+		}
+		c.DistributedDepth = v
+	}
+	if FeatureVersionPatch.In(revision) && c.Interface == InterfaceTCP {
 		v, err := r.Int()
 		if err != nil {
 			return errors.Wrap(err, "patch version")

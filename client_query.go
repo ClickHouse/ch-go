@@ -26,12 +26,12 @@ func (c *Client) SendQuery(ctx context.Context, query, queryID string) error {
 
 	if c.server.Has(proto.FeatureClientWriteInfo) {
 		info := proto.ClientInfo{
-			Revision:  c.info.Revision,
-			Major:     c.info.Major,
-			Minor:     c.info.Minor,
-			Patch:     0,
-			Interface: proto.ClientInterfaceTCP,
-			Query:     proto.ClientQueryInitial,
+			ProtocolVersion: c.info.Revision,
+			Major:           c.info.Major,
+			Minor:           c.info.Minor,
+			Patch:           0,
+			Interface:       proto.InterfaceTCP,
+			Query:           proto.ClientQueryInitial,
 
 			InitialUser:    "",
 			InitialQueryID: "",

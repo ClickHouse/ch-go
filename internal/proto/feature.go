@@ -5,6 +5,8 @@ package proto
 // Feature represents server side feature.
 type Feature int
 
+// src/Core/ProtocolDefines.h
+
 // Possible features.
 const (
 	FeatureTimezone                    Feature = 54058
@@ -18,7 +20,11 @@ const (
 	FeatureSettingsSerializedAsStrings Feature = 54429
 	FeatureInterServerSecret           Feature = 54441
 	FeatureOpenTelemetry               Feature = 54442
+	FeatureXForwardedForInClientInfo   Feature = 54443
+	FeatureRefererInClientInfo         Feature = 54447
+	FeatureDistributedDepth            Feature = 54448
 	FeatureQueryStartTime              Feature = 54449
+	FeatureProfileEvents               Feature = 54450
 )
 
 // Revision reports starting server revision since feature is supported.

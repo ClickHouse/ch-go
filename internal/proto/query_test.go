@@ -20,6 +20,7 @@ func TestQuery_DecodeAware(t *testing.T) {
 	require.Equal(t, ClientCodeQuery, ClientCode(v))
 
 	require.NoError(t, q.DecodeAware(r, int(FeatureQueryStartTime)))
+	require.Equal(t, q.Body, "CREATE DATABASE test;")
 
 	t.Logf("%+v", q)
 }
