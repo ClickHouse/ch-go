@@ -7,75 +7,126 @@ import (
 	"strings"
 )
 
-const _FeatureName = "TimezoneQuotaKeyInClientInfoDisplayNameVersionPatchTempTablesServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetry"
+const (
+	_FeatureName_0      = "TempTables"
+	_FeatureLowerName_0 = "temptables"
+	_FeatureName_1      = "Timezone"
+	_FeatureLowerName_1 = "timezone"
+	_FeatureName_2      = "QuotaKeyInClientInfo"
+	_FeatureLowerName_2 = "quotakeyinclientinfo"
+	_FeatureName_3      = "DisplayName"
+	_FeatureLowerName_3 = "displayname"
+	_FeatureName_4      = "VersionPatch"
+	_FeatureLowerName_4 = "versionpatch"
+	_FeatureName_5      = "ServerLogs"
+	_FeatureLowerName_5 = "serverlogs"
+	_FeatureName_6      = "ColumnDefaultsMetadata"
+	_FeatureLowerName_6 = "columndefaultsmetadata"
+	_FeatureName_7      = "ClientWriteInfo"
+	_FeatureLowerName_7 = "clientwriteinfo"
+	_FeatureName_8      = "SettingsSerializedAsStrings"
+	_FeatureLowerName_8 = "settingsserializedasstrings"
+	_FeatureName_9      = "InterServerSecretOpenTelemetry"
+	_FeatureLowerName_9 = "interserversecretopentelemetry"
+)
 
-var _FeatureIndex = [...]uint8{0, 8, 28, 39, 51, 61, 71, 93, 108, 135, 152, 165}
-
-const _FeatureLowerName = "timezonequotakeyinclientinfodisplaynameversionpatchtemptablesserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetry"
+var (
+	_FeatureIndex_0 = [...]uint8{0, 10}
+	_FeatureIndex_1 = [...]uint8{0, 8}
+	_FeatureIndex_2 = [...]uint8{0, 20}
+	_FeatureIndex_3 = [...]uint8{0, 11}
+	_FeatureIndex_4 = [...]uint8{0, 12}
+	_FeatureIndex_5 = [...]uint8{0, 10}
+	_FeatureIndex_6 = [...]uint8{0, 22}
+	_FeatureIndex_7 = [...]uint8{0, 15}
+	_FeatureIndex_8 = [...]uint8{0, 27}
+	_FeatureIndex_9 = [...]uint8{0, 17, 30}
+)
 
 func (i Feature) String() string {
-	if i >= Feature(len(_FeatureIndex)-1) {
+	switch {
+	case i == 50264:
+		return _FeatureName_0
+	case i == 54058:
+		return _FeatureName_1
+	case i == 54060:
+		return _FeatureName_2
+	case i == 54372:
+		return _FeatureName_3
+	case i == 54401:
+		return _FeatureName_4
+	case i == 54406:
+		return _FeatureName_5
+	case i == 54410:
+		return _FeatureName_6
+	case i == 54420:
+		return _FeatureName_7
+	case i == 54429:
+		return _FeatureName_8
+	case 54441 <= i && i <= 54442:
+		i -= 54441
+		return _FeatureName_9[_FeatureIndex_9[i]:_FeatureIndex_9[i+1]]
+	default:
 		return fmt.Sprintf("Feature(%d)", i)
 	}
-	return _FeatureName[_FeatureIndex[i]:_FeatureIndex[i+1]]
 }
 
 // An "invalid array index" compiler error signifies that the constant values have changed.
 // Re-run the stringer command to generate them again.
 func _FeatureNoOp() {
 	var x [1]struct{}
-	_ = x[FeatureTimezone-(0)]
-	_ = x[FeatureQuotaKeyInClientInfo-(1)]
-	_ = x[FeatureDisplayName-(2)]
-	_ = x[FeatureVersionPatch-(3)]
-	_ = x[FeatureTempTables-(4)]
-	_ = x[FeatureServerLogs-(5)]
-	_ = x[FeatureColumnDefaultsMetadata-(6)]
-	_ = x[FeatureClientWriteInfo-(7)]
-	_ = x[FeatureSettingsSerializedAsStrings-(8)]
-	_ = x[FeatureInterServerSecret-(9)]
-	_ = x[FeatureOpenTelemetry-(10)]
+	_ = x[FeatureTempTables-(50264)]
+	_ = x[FeatureTimezone-(54058)]
+	_ = x[FeatureQuotaKeyInClientInfo-(54060)]
+	_ = x[FeatureDisplayName-(54372)]
+	_ = x[FeatureVersionPatch-(54401)]
+	_ = x[FeatureServerLogs-(54406)]
+	_ = x[FeatureColumnDefaultsMetadata-(54410)]
+	_ = x[FeatureClientWriteInfo-(54420)]
+	_ = x[FeatureSettingsSerializedAsStrings-(54429)]
+	_ = x[FeatureInterServerSecret-(54441)]
+	_ = x[FeatureOpenTelemetry-(54442)]
 }
 
-var _FeatureValues = []Feature{FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureTempTables, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry}
+var _FeatureValues = []Feature{FeatureTempTables, FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry}
 
 var _FeatureNameToValueMap = map[string]Feature{
-	_FeatureName[0:8]:          FeatureTimezone,
-	_FeatureLowerName[0:8]:     FeatureTimezone,
-	_FeatureName[8:28]:         FeatureQuotaKeyInClientInfo,
-	_FeatureLowerName[8:28]:    FeatureQuotaKeyInClientInfo,
-	_FeatureName[28:39]:        FeatureDisplayName,
-	_FeatureLowerName[28:39]:   FeatureDisplayName,
-	_FeatureName[39:51]:        FeatureVersionPatch,
-	_FeatureLowerName[39:51]:   FeatureVersionPatch,
-	_FeatureName[51:61]:        FeatureTempTables,
-	_FeatureLowerName[51:61]:   FeatureTempTables,
-	_FeatureName[61:71]:        FeatureServerLogs,
-	_FeatureLowerName[61:71]:   FeatureServerLogs,
-	_FeatureName[71:93]:        FeatureColumnDefaultsMetadata,
-	_FeatureLowerName[71:93]:   FeatureColumnDefaultsMetadata,
-	_FeatureName[93:108]:       FeatureClientWriteInfo,
-	_FeatureLowerName[93:108]:  FeatureClientWriteInfo,
-	_FeatureName[108:135]:      FeatureSettingsSerializedAsStrings,
-	_FeatureLowerName[108:135]: FeatureSettingsSerializedAsStrings,
-	_FeatureName[135:152]:      FeatureInterServerSecret,
-	_FeatureLowerName[135:152]: FeatureInterServerSecret,
-	_FeatureName[152:165]:      FeatureOpenTelemetry,
-	_FeatureLowerName[152:165]: FeatureOpenTelemetry,
+	_FeatureName_0[0:10]:       FeatureTempTables,
+	_FeatureLowerName_0[0:10]:  FeatureTempTables,
+	_FeatureName_1[0:8]:        FeatureTimezone,
+	_FeatureLowerName_1[0:8]:   FeatureTimezone,
+	_FeatureName_2[0:20]:       FeatureQuotaKeyInClientInfo,
+	_FeatureLowerName_2[0:20]:  FeatureQuotaKeyInClientInfo,
+	_FeatureName_3[0:11]:       FeatureDisplayName,
+	_FeatureLowerName_3[0:11]:  FeatureDisplayName,
+	_FeatureName_4[0:12]:       FeatureVersionPatch,
+	_FeatureLowerName_4[0:12]:  FeatureVersionPatch,
+	_FeatureName_5[0:10]:       FeatureServerLogs,
+	_FeatureLowerName_5[0:10]:  FeatureServerLogs,
+	_FeatureName_6[0:22]:       FeatureColumnDefaultsMetadata,
+	_FeatureLowerName_6[0:22]:  FeatureColumnDefaultsMetadata,
+	_FeatureName_7[0:15]:       FeatureClientWriteInfo,
+	_FeatureLowerName_7[0:15]:  FeatureClientWriteInfo,
+	_FeatureName_8[0:27]:       FeatureSettingsSerializedAsStrings,
+	_FeatureLowerName_8[0:27]:  FeatureSettingsSerializedAsStrings,
+	_FeatureName_9[0:17]:       FeatureInterServerSecret,
+	_FeatureLowerName_9[0:17]:  FeatureInterServerSecret,
+	_FeatureName_9[17:30]:      FeatureOpenTelemetry,
+	_FeatureLowerName_9[17:30]: FeatureOpenTelemetry,
 }
 
 var _FeatureNames = []string{
-	_FeatureName[0:8],
-	_FeatureName[8:28],
-	_FeatureName[28:39],
-	_FeatureName[39:51],
-	_FeatureName[51:61],
-	_FeatureName[61:71],
-	_FeatureName[71:93],
-	_FeatureName[93:108],
-	_FeatureName[108:135],
-	_FeatureName[135:152],
-	_FeatureName[152:165],
+	_FeatureName_0[0:10],
+	_FeatureName_1[0:8],
+	_FeatureName_2[0:20],
+	_FeatureName_3[0:11],
+	_FeatureName_4[0:12],
+	_FeatureName_5[0:10],
+	_FeatureName_6[0:22],
+	_FeatureName_7[0:15],
+	_FeatureName_8[0:27],
+	_FeatureName_9[0:17],
+	_FeatureName_9[17:30],
 }
 
 // FeatureString retrieves an enum value from the enum constants string name.
