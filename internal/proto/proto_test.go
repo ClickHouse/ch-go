@@ -30,3 +30,13 @@ func TestInt32(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, v, i)
 }
+
+func requireDecode(t testing.TB, buf []byte, code int, v Decoder) {
+	t.Helper()
+
+	r := NewReader(bytes.NewReader(buf))
+	gotCode, err := r.Int()
+	require.NoError(t, err)
+	require.Equal(t, code, gotCode, "code mismatch")
+	require.NoError(t, v.Decode(r))
+}

@@ -1,5 +1,7 @@
 package proto
 
+import "github.com/go-faster/errors"
+
 // ClientHello represents ClientCodeHello message.
 type ClientHello struct {
 	Name string
@@ -27,4 +29,57 @@ func (c ClientHello) Encode(b *Buffer) {
 	b.PutString(c.Database)
 	b.PutString(c.User)
 	b.PutString(c.Password)
+}
+
+func (c *ClientHello) Decode(r *Reader) error {
+	{
+		v, err := r.Str()
+		if err != nil {
+			return errors.Wrap(err, "name")
+		}
+		c.Name = v
+	}
+	{
+		v, err := r.Int()
+		if err != nil {
+			return errors.Wrap(err, "major")
+		}
+		c.Major = v
+	}
+	{
+		v, err := r.Int()
+		if err != nil {
+			return errors.Wrap(err, "minor")
+		}
+		c.Minor = v
+	}
+	{
+		v, err := r.Int()
+		if err != nil {
+			return errors.Wrap(err, "protocol version")
+		}
+		c.ProtocolVersion = v
+	}
+	{
+		v, err := r.Str()
+		if err != nil {
+			return errors.Wrap(err, "database")
+		}
+		c.Database = v
+	}
+	{
+		v, err := r.Str()
+		if err != nil {
+			return errors.Wrap(err, "user")
+		}
+		c.User = v
+	}
+	{
+		v, err := r.Str()
+		if err != nil {
+			return errors.Wrap(err, "password")
+		}
+		c.Password = v
+	}
+	return nil
 }

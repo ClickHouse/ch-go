@@ -21,6 +21,11 @@ func TestClientHello_Encode(t *testing.T) {
 	const expHex = "000263680101a8c00206676974687562036e656f00"
 	exp, _ := hex.DecodeString(expHex)
 	require.Equal(t, exp, b.Buf)
+
+	t.Run("Decode", func(t *testing.T) {
+		var dec ClientHello
+		requireDecode(t, b.Buf, int(ClientCodeHello), &dec)
+	})
 }
 
 func BenchmarkClientHello_Encode(b *testing.B) {

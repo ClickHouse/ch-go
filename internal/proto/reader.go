@@ -9,6 +9,16 @@ import (
 	"github.com/go-faster/errors"
 )
 
+// Decoder implements decoding from Reader.
+type Decoder interface {
+	Decode(r *Reader) error
+}
+
+// AwareDecoder implements encoding to Buffer that depends on revision.
+type AwareDecoder interface {
+	DecodeAware(r *Reader, revision int) error
+}
+
 // Reader implements ClickHouse protocol decoding from buffered reader.
 type Reader struct {
 	s *bufio.Reader
