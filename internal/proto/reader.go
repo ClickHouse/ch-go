@@ -34,6 +34,8 @@ func (r *Reader) Uvarint() (uint64, error) {
 	return n, nil
 }
 
+const maxStrSize = 10 * 1024 * 1024 // 10 MB
+
 // StrRaw decodes string to internal buffer and returns it directly.
 //
 // Do not retain returned slice.
@@ -41,6 +43,14 @@ func (r *Reader) StrRaw() ([]byte, error) {
 	n, err := r.Int()
 	if err != nil {
 		return nil, errors.Wrap(err, "read length")
+	}
+
+	if n < 0 {
+		return nil, errors.Errorf("size %d is invalid", n)
+	}
+	if n > maxStrSize {
+		// Protecting from possible OOM.
+		return nil, errors.Errorf("size %d too big (%d is maximum)", n, maxStrSize)
 	}
 
 	r.b.Ensure(n)
