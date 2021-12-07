@@ -14,7 +14,7 @@ func TestServerHello_Decode(t *testing.T) {
 
 	r := NewReader(bytes.NewReader(data))
 	var v ServerHello
-	require.NoError(t, v.Decode(r))
+	require.NoError(t, v.DecodeAware(r, Revision))
 	require.Equal(t, ServerHello{
 		Name:        "ClickHouse server",
 		Major:       21,
@@ -50,7 +50,7 @@ func BenchmarkServerHello_Decode(b *testing.B) {
 			buf.Reset(raw.Buf)
 			r.s.Reset(buf)
 
-			if err := serverHello.Decode(r); err != nil {
+			if err := serverHello.DecodeAware(r, Revision); err != nil {
 				b.Fatal(err)
 			}
 		}

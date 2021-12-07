@@ -103,6 +103,36 @@ func (c *Client) decode(v proto.AwareDecoder) error {
 	return v.DecodeAware(c.reader, c.info.ProtocolVersion)
 }
 
+func (c *Client) Hello() (*proto.ServerHello, error) {
+	var p proto.ServerHello
+
+	if err := c.decode(&p); err != nil {
+		return nil, errors.Wrap(err, "decode")
+	}
+
+	return &p, nil
+}
+
+func (c *Client) Progress() (*proto.Progress, error) {
+	var p proto.Progress
+
+	if err := c.decode(&p); err != nil {
+		return nil, errors.Wrap(err, "decode")
+	}
+
+	return &p, nil
+}
+
+func (c *Client) Profile() (*proto.Profile, error) {
+	var p proto.Profile
+
+	if err := c.decode(&p); err != nil {
+		return nil, errors.Wrap(err, "decode")
+	}
+
+	return &p, nil
+}
+
 func (c *Client) Block() (*proto.Block, error) {
 	var data proto.ServerData
 

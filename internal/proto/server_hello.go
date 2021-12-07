@@ -54,8 +54,8 @@ func (s ServerHello) String() string {
 	return b.String()
 }
 
-// Decode decodes ServerHello message from Reader.
-func (s *ServerHello) Decode(r *Reader) error {
+// DecodeAware decodes ServerHello message from Reader.
+func (s *ServerHello) DecodeAware(r *Reader, _ int) error {
 	name, err := r.Str()
 	if err != nil {
 		return errors.Wrap(err, "str")

@@ -50,7 +50,7 @@ func (c *Client) handshake(ctx context.Context) error {
 		if code != expected {
 			return errors.Errorf("got %s instead of %s", code, expected)
 		}
-		if err := c.server.Decode(c.reader); err != nil {
+		if err := c.decode(&c.server); err != nil {
 			return errors.Wrap(err, "decode server info")
 		}
 
