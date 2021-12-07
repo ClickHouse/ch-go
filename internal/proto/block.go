@@ -51,7 +51,7 @@ func (i *BlockInfo) Decode(r *Reader) error {
 		case blockInfoBucketNum:
 			v, err := r.Int32()
 			if err != nil {
-				return errors.Wrap(err, "overflows")
+				return errors.Wrap(err, "bucket number")
 			}
 			i.BucketNum = int(v)
 		case endField:
