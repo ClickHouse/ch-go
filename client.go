@@ -115,7 +115,7 @@ func (c *Client) Block() (*proto.Block, error) {
 
 // Packet reads server code.
 func (c *Client) Packet() (proto.ServerCode, error) {
-	n, err := c.reader.Uvarint()
+	n, err := c.reader.UVarInt()
 	if err != nil {
 		return 0, errors.Wrap(err, "uvarint")
 	}

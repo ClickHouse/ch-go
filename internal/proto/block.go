@@ -37,7 +37,7 @@ func (i BlockInfo) Encode(b *Buffer) {
 
 func (i *BlockInfo) Decode(r *Reader) error {
 	for {
-		f, err := r.Uvarint()
+		f, err := r.UVarInt()
 		if err != nil {
 			return errors.Wrap(err, "field id")
 		}

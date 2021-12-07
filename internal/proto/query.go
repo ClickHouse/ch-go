@@ -86,7 +86,7 @@ func (q *Query) DecodeAware(r *Reader, revision int) error {
 	}
 
 	{
-		v, err := r.Uvarint()
+		v, err := r.UVarInt()
 		if err != nil {
 			return errors.Wrap(err, "stage")
 		}
@@ -96,7 +96,7 @@ func (q *Query) DecodeAware(r *Reader, revision int) error {
 		}
 	}
 	{
-		v, err := r.Uvarint()
+		v, err := r.UVarInt()
 		if err != nil {
 			return errors.Wrap(err, "stage")
 		}

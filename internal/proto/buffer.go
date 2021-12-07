@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
 )
@@ -8,6 +9,11 @@ import (
 // Buffer implements ClickHouse binary protocol encoding.
 type Buffer struct {
 	Buf []byte
+}
+
+// Reader returns new *Reader from *Buffer.
+func (b *Buffer) Reader() *Reader {
+	return NewReader(bytes.NewReader(b.Buf))
 }
 
 // Ensure Buf length.
@@ -65,9 +71,9 @@ func (b *Buffer) PutInt128(v [16]byte) {
 	b.Buf = append(b.Buf, v[:]...)
 }
 
-// PutByte encodes byte ad uvarint.
+// PutByte encodes byte as uint8.
 func (b *Buffer) PutByte(x byte) {
-	b.PutUVarInt(uint64(x))
+	b.PutUInt8(x)
 }
 
 // PutLen encodes length to buffer as uvarint.
@@ -83,13 +89,13 @@ func (b *Buffer) PutString(s string) {
 
 func (b *Buffer) PutUInt32(x uint32) {
 	buf := make([]byte, 4)
-	binary.BigEndian.PutUint32(buf, x)
+	bin.PutUint32(buf, x)
 	b.Buf = append(b.Buf, buf...)
 }
 
 func (b *Buffer) PutUInt64(x uint64) {
 	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, x)
+	bin.PutUint64(buf, x)
 	b.Buf = append(b.Buf, buf...)
 }
 
@@ -107,8 +113,8 @@ func (b *Buffer) PutUInt8(x uint8) {
 
 func (b *Buffer) PutBool(v bool) {
 	if v {
-		b.PutUInt8(1)
+		b.PutUInt8(boolTrue)
 	} else {
-		b.PutUInt8(0)
+		b.PutUInt8(boolFalse)
 	}
 }

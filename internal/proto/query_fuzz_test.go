@@ -18,7 +18,7 @@ func FuzzQuery_DecodeAware(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		var v Query
 		r := NewReader(bytes.NewReader(data))
-		_, _ = r.Uvarint() // skip code
+		_, _ = r.UVarInt() // skip code
 
 		if err := v.DecodeAware(r, queryProtoVersion); err != nil {
 			t.Skip()
@@ -28,7 +28,7 @@ func FuzzQuery_DecodeAware(f *testing.F) {
 		v.EncodeAware(b, queryProtoVersion)
 
 		br := NewReader(bytes.NewReader(b.Buf))
-		_, _ = br.Uvarint() // skip code
+		_, _ = br.UVarInt() // skip code
 
 		var dec Query
 		if err := dec.DecodeAware(br, queryProtoVersion); err != nil {

@@ -3,6 +3,7 @@ package proto
 import (
 	"bufio"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"unicode/utf8"
 
@@ -25,6 +26,11 @@ type Reader struct {
 	b *Buffer
 }
 
+// Decode value.
+func (r *Reader) Decode(v Decoder) error {
+	return v.Decode(r)
+}
+
 // ReadRaw reads raw n bytes.
 func (r *Reader) ReadRaw(n int) ([]byte, error) {
 	b := make([]byte, n)
@@ -36,8 +42,8 @@ func (r *Reader) ReadRaw(n int) ([]byte, error) {
 	return b, nil
 }
 
-// Uvarint reads uint64 from internal reader.
-func (r *Reader) Uvarint() (uint64, error) {
+// UVarInt reads uint64 from internal reader.
+func (r *Reader) UVarInt() (uint64, error) {
 	n, err := binary.ReadUvarint(r.s)
 	if err != nil {
 		return 0, errors.Wrap(err, "read")
@@ -104,7 +110,7 @@ func (r *Reader) Str() (string, error) {
 
 // Int decodes uvarint as int.
 func (r *Reader) Int() (int, error) {
-	n, err := r.Uvarint()
+	n, err := r.UVarInt()
 	if err != nil {
 		return 0, errors.Wrap(err, "uvarint")
 	}
@@ -117,7 +123,8 @@ func (r *Reader) Int32() (int32, error) {
 	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
-	v := binary.LittleEndian.Uint32(r.b.Buf)
+	fmt.Printf("read: %+v\n", r.b.Buf)
+	v := bin.Uint32(r.b.Buf)
 	return int32(v), nil
 }
 
@@ -127,7 +134,7 @@ func (r *Reader) Int64() (int64, error) {
 	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
-	v := binary.LittleEndian.Uint64(r.b.Buf)
+	v := bin.Uint64(r.b.Buf)
 	return int64(v), nil
 }
 
@@ -146,7 +153,14 @@ func (r *Reader) Bool() (bool, error) {
 	if err != nil {
 		return false, errors.Wrap(err, "uint8")
 	}
-	return v == 1, nil
+	switch v {
+	case boolTrue:
+		return true, nil
+	case boolFalse:
+		return false, nil
+	default:
+		return false, errors.Errorf("unexpected value %d for boolean", v)
+	}
 }
 
 const defaultReaderSize = 1024 // 1kb

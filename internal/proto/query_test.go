@@ -54,7 +54,7 @@ func TestQuery_DecodeAware(t *testing.T) {
 	var q Query
 
 	r := NewReader(bytes.NewReader(data))
-	v, err := r.Uvarint()
+	v, err := r.UVarInt()
 	require.NoError(t, err)
 	require.Equal(t, ClientCodeQuery, ClientCode(v))
 
@@ -79,7 +79,7 @@ func TestQuery_EncodeAware(t *testing.T) {
 	}
 
 	r := NewReader(bytes.NewReader(buf.Buf))
-	v, err := r.Uvarint()
+	v, err := r.UVarInt()
 	require.NoError(t, err)
 	require.Equal(t, ClientCodeQuery, ClientCode(v))
 
