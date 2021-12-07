@@ -133,6 +133,22 @@ func TestRun(t *testing.T) {
 		t.Fatal("unexpected server code", p)
 	}
 
+	// Select
+	require.NoError(t, client.SendQuery(ctx, "SELECT 1 AS one", "2"))
+
+	p, err = client.Packet()
+	require.NoError(t, err)
+
+	switch p {
+	case proto.ServerCodeData: // expected
+		t.Log("Data received")
+		b, err := client.Block()
+		require.NoError(t, err)
+		t.Log(b, b.Info)
+	default:
+		t.Fatal("unexpected server code", p)
+	}
+
 	require.NoError(t, client.Close())
 	require.NoError(t, cmd.Process.Signal(syscall.SIGKILL))
 

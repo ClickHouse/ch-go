@@ -25,6 +25,17 @@ type Reader struct {
 	b *Buffer
 }
 
+// ReadRaw reads raw n bytes.
+func (r *Reader) ReadRaw(n int) ([]byte, error) {
+	b := make([]byte, n)
+
+	if _, err := io.ReadFull(r.s, b); err != nil {
+		return nil, errors.Wrap(err, "read full")
+	}
+
+	return b, nil
+}
+
 // Uvarint reads uint64 from internal reader.
 func (r *Reader) Uvarint() (uint64, error) {
 	n, err := binary.ReadUvarint(r.s)
