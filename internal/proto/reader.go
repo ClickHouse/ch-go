@@ -3,7 +3,6 @@ package proto
 import (
 	"bufio"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"unicode/utf8"
 
@@ -123,7 +122,6 @@ func (r *Reader) Int32() (int32, error) {
 	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
-	fmt.Printf("read: %+v\n", r.b.Buf)
 	v := bin.Uint32(r.b.Buf)
 	return int32(v), nil
 }
