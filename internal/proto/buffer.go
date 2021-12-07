@@ -54,7 +54,12 @@ func (b *Buffer) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// PutUVarInt encodes x  as uvarint.
+// PutRaw writes v as raw bytes to buffer.
+func (b *Buffer) PutRaw(v []byte) {
+	b.Buf = append(b.Buf, v...)
+}
+
+// PutUVarInt encodes x as uvarint.
 func (b *Buffer) PutUVarInt(x uint64) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	n := binary.PutUvarint(buf, x)

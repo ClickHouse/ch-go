@@ -99,18 +99,18 @@ func (c *Client) Exception() (*Exception, error) {
 	return e, nil
 }
 
-func (c *Client) Block() (*proto.Block, error) {
-	if _, err := c.reader.StrRaw(); err != nil {
-		// TODO(ernado): investigate
-		return nil, errors.Wrap(err, "temp table")
-	}
+func (c *Client) decode(v proto.AwareDecoder) error {
+	return v.DecodeAware(c.reader, c.info.ProtocolVersion)
+}
 
-	var b proto.Block
-	if err := b.DecodeAware(c.reader, c.info.ProtocolVersion); err != nil {
+func (c *Client) Block() (*proto.Block, error) {
+	var data proto.ServerData
+
+	if err := c.decode(&data); err != nil {
 		return nil, errors.Wrap(err, "decode")
 	}
 
-	return &b, nil
+	return &data.Block, nil
 }
 
 // Packet reads server code.

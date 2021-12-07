@@ -136,17 +136,38 @@ func TestRun(t *testing.T) {
 	// Select
 	require.NoError(t, client.SendQuery(ctx, "SELECT 1 AS one", "2"))
 
-	p, err = client.Packet()
-	require.NoError(t, err)
-
-	switch p {
-	case proto.ServerCodeData: // expected
-		t.Log("Data received")
-		b, err := client.Block()
+Fetch:
+	for {
+		p, err = client.Packet()
 		require.NoError(t, err)
-		t.Log(b, b.Info)
-	default:
-		t.Fatal("unexpected server code", p)
+
+		switch p {
+		case proto.ServerCodeData:
+			t.Log("Data received")
+			b, err := client.Block()
+			require.NoError(t, err)
+
+			t.Log(b, b.Info)
+
+			require.Equal(t, 1, b.Columns)
+			require.Len(t, b.Data, 1)
+
+			c := b.Data[0]
+			require.Equal(t, "one", c.Name)
+			require.Equal(t, proto.ColumnTypeUInt8, c.Type)
+
+			if b.Rows > 0 {
+				br := proto.NewReader(bytes.NewReader(c.Data))
+				v, err := br.UInt8()
+
+				require.NoError(t, err)
+				require.Equal(t, byte(1), v)
+				t.Log("Fetched", c.Name, "=", v)
+				break Fetch
+			}
+		default:
+			t.Fatal("unexpected server code", p)
+		}
 	}
 
 	require.NoError(t, client.Close())
