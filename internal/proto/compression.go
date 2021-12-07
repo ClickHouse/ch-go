@@ -5,7 +5,7 @@ package proto
 // Compression status.
 type Compression byte
 
-// Compression satuses.
+// Compression statuses.
 const (
 	CompressionDisabled Compression = 0
 	CompressionEnabled  Compression = 1
