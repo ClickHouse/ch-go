@@ -5,9 +5,9 @@ import (
 	"context"
 	_ "embed"
 	"encoding/xml"
-	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -106,7 +106,11 @@ func TestRun(t *testing.T) {
 
 	// Polling ClickHouse until ready.
 	for {
-		res, err := http.Get(fmt.Sprintf("http://%s:%d", cfg.Host, cfg.HTTP))
+		u := &url.URL{
+			Scheme: "http",
+			Host:   net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.HTTP)),
+		}
+		res, err := http.Get(u.String())
 		if err != nil {
 			continue
 		}
