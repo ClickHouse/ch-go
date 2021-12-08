@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
 
 	"github.com/go-faster/ch/internal/cht"
 )
@@ -15,7 +16,9 @@ func Conn(t testing.TB) *Client {
 	ctx := context.Background()
 	server := cht.Connect(t)
 
-	client, err := Dial(ctx, server.TCP, Options{})
+	client, err := Dial(ctx, server.TCP, Options{
+		Logger: zaptest.NewLogger(t),
+	})
 	require.NoError(t, err)
 
 	t.Log("Connected", client.serverInfo(), client.Location())

@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/go-faster/errors"
+	"go.uber.org/zap"
 
 	"github.com/go-faster/ch/internal/proto"
 )
@@ -16,6 +18,7 @@ import (
 // Client implements ClickHouse binary protocol client on top of
 // single TCP connection.
 type Client struct {
+	lg     *zap.Logger
 	conn   net.Conn
 	buf    *proto.Buffer
 	reader *proto.Reader
@@ -63,8 +66,45 @@ type Exception struct {
 	Next    []Exception // non-nil only for top exception
 }
 
-func (e Exception) Error() string {
-	return fmt.Sprintf("%s %s", e.Code, e.Name)
+func (e *Exception) IsCode(codes ...proto.Error) bool {
+	if e == nil || len(codes) == 0 {
+		return false
+	}
+	for _, c := range codes {
+		if e.Code == c {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *Exception) Error() string {
+	msg := strings.TrimPrefix(e.Message, e.Name+":")
+	msg = strings.TrimSpace(msg)
+	return fmt.Sprintf("%s: %s: %s", e.Code, e.Name, msg)
+}
+
+// AsException finds first *Exception in err chain.
+func AsException(err error) (*Exception, bool) {
+	var e *Exception
+	if !errors.As(err, &e) {
+		return nil, false
+	}
+	return e, true
+}
+
+// IsErr reports whether err is error with provided exception codes.
+func IsErr(err error, codes ...proto.Error) bool {
+	if e, ok := AsException(err); ok {
+		return e.IsCode(codes...)
+	}
+	return false
+}
+
+// IsException reports whether err is Exception.
+func IsException(err error) bool {
+	_, ok := AsException(err)
+	return ok
 }
 
 // Exception reads exception from server.
@@ -124,13 +164,35 @@ func (c *Client) profile() (*proto.Profile, error) {
 }
 
 // packet reads server code.
-func (c *Client) packet() (proto.ServerCode, error) {
+func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
+	const defaultTimeout = time.Second * 3
+
+	deadline := time.Now().Add(defaultTimeout)
+	if d, ok := ctx.Deadline(); ok {
+		deadline = d
+	}
+	if !deadline.IsZero() {
+		if err := c.conn.SetReadDeadline(deadline); err != nil {
+			return 0, errors.Wrap(err, "set read deadline")
+		}
+		defer func() {
+			// Reset deadline.
+			_ = c.conn.SetReadDeadline(time.Time{})
+		}()
+	}
+
 	n, err := c.reader.UVarInt()
 	if err != nil {
 		return 0, errors.Wrap(err, "uvarint")
 	}
 
 	code := proto.ServerCode(n)
+	if ce := c.lg.Check(zap.DebugLevel, "Packet"); ce != nil {
+		ce.Write(
+			zap.Uint64("packet_code_raw", n),
+			zap.Stringer("packet_code", code),
+		)
+	}
 	if !code.IsAServerCode() {
 		return 0, errors.Errorf("bad server packet type %d", n)
 	}
@@ -152,6 +214,10 @@ func (c *Client) flush(ctx context.Context) error {
 		return errors.Wrap(io.ErrShortWrite, "wrote less than expected")
 	}
 
+	if ce := c.lg.Check(zap.DebugLevel, "Flush"); ce != nil {
+		ce.Write(zap.Int("bytes", n))
+	}
+
 	c.buf.Reset()
 	return nil
 }
@@ -162,6 +228,7 @@ func (c *Client) encode(v proto.AwareEncoder) {
 
 // Options for Client.
 type Options struct {
+	Logger   *zap.Logger
 	Database string
 	User     string
 	Password string
@@ -175,6 +242,9 @@ func (o *Options) setDefaults() {
 	if o.User == "" {
 		o.User = "default"
 	}
+	if o.Logger == nil {
+		o.Logger = zap.NewNop()
+	}
 }
 
 // Connect performs handshake with ClickHouse server and initializes
@@ -187,6 +257,7 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		buf:      new(proto.Buffer),
 		reader:   proto.NewReader(conn),
 		settings: opt.Settings,
+		lg:       opt.Logger,
 
 		info: proto.ClientHello{
 			Name:            proto.Name,

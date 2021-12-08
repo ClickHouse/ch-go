@@ -42,7 +42,7 @@ func (c *Client) handshake(ctx context.Context) error {
 			return errors.Wrap(err, "flush")
 		}
 
-		code, err := c.packet()
+		code, err := c.packet(ctx)
 		if err != nil {
 			return errors.Wrap(err, "packet")
 		}

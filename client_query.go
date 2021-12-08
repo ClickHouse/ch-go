@@ -6,6 +6,7 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 
 	"github.com/go-faster/ch/internal/proto"
 )
@@ -22,6 +23,12 @@ func (c *Client) cancelQuery(ctx context.Context) error {
 
 // sendQuery starts query.
 func (c *Client) sendQuery(ctx context.Context, query, queryID string) {
+	if ce := c.lg.Check(zap.DebugLevel, "sendQuery"); ce != nil {
+		ce.Write(
+			zap.String("query", query),
+			zap.String("query_id", queryID),
+		)
+	}
 	c.encode(proto.Query{
 		ID:          queryID,
 		Body:        query,
@@ -47,6 +54,9 @@ func (c *Client) sendQuery(ctx context.Context, query, queryID string) {
 			QuotaKey: "",
 		},
 	})
+
+	// External tables end.
+	c.encode(proto.ClientData{})
 }
 
 // Query to ClickHouse.
@@ -88,10 +98,10 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 				return errors.Wrap(err, "flush")
 			}
 		}
-	}
 
-	// End of data.
-	c.encode(proto.ClientData{})
+		// End of data.
+		c.encode(proto.ClientData{})
+	}
 
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
@@ -105,7 +115,7 @@ Fetch:
 			_ = c.cancelQuery(context.Background())
 			return errors.Wrap(ctx.Err(), "canceled")
 		}
-		code, err := c.packet()
+		code, err := c.packet(ctx)
 		if err != nil {
 			return errors.Wrap(err, "packet")
 		}
@@ -117,14 +127,12 @@ Fetch:
 				if err != nil {
 					return errors.Wrap(err, "temp table")
 				}
-				_ = v
+				if v != "" {
+					return errors.Errorf("unexpected temp table %q", v)
+				}
 			}
 			if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
 				return errors.Wrap(err, "decode block")
-			}
-			if len(q.Input) > 0 {
-				// End of insert.
-				return nil
 			}
 		case proto.ServerCodeException:
 			e, err := c.exception()
@@ -137,18 +145,33 @@ Fetch:
 			if err != nil {
 				return errors.Wrap(err, "progress")
 			}
-			_ = p
+			if ce := c.lg.Check(zap.DebugLevel, "Progress"); ce != nil {
+				ce.Write(
+					zap.Uint64("rows", p.Rows),
+					zap.Uint64("total_rows", p.TotalRows),
+					zap.Uint64("bytes", p.Bytes),
+					zap.Uint64("wrote_bytes", p.WroteBytes),
+					zap.Uint64("wrote_rows", p.WroteRows),
+				)
+			}
 		case proto.ServerCodeProfile:
 			p, err := c.profile()
 			if err != nil {
 				return errors.Wrap(err, "profile")
 			}
-			_ = p
+			if ce := c.lg.Check(zap.DebugLevel, "Profile"); ce != nil {
+				ce.Write(
+					zap.Uint64("rows", p.Rows),
+					zap.Uint64("bytes", p.Bytes),
+					zap.Uint64("blocks", p.Blocks),
+				)
+			}
 		case proto.ServerCodeTableColumns:
 			var info proto.TableColumns
 			if err := c.decode(&info); err != nil {
 				return errors.Wrap(err, "table columns")
 			}
+			// Ignoring for now.
 		case proto.ServerCodeEndOfStream:
 			break Fetch
 		default:
