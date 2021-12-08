@@ -26,7 +26,7 @@ func TestConnect(t *testing.T) {
 	t.Run("CreateTable", func(t *testing.T) {
 		// Create table, no data fetch.
 		createTable := ch.Query{
-			Query: "CREATE TABLE test_table (id UInt64) ENGINE = MergeTree ORDER BY id",
+			Body: "CREATE TABLE test_table (id UInt64) ENGINE = MergeTree ORDER BY id",
 		}
 		require.NoError(t, client.Query(ctx, createTable))
 	})
@@ -34,7 +34,7 @@ func TestConnect(t *testing.T) {
 		// Select single row.
 		var data proto.ColumnUInt8
 		selectOne := ch.Query{
-			Query: "SELECT 1 AS one",
+			Body: "SELECT 1 AS one",
 			Result: []proto.ResultColumn{
 				{
 					Name: "one",

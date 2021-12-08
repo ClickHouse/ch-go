@@ -87,6 +87,7 @@ type Result interface {
 	Type() ColumnType
 	Rows() int
 	DecodeColumn(r *Reader, rows int) error
+	Reset()
 }
 
 type Block struct {
@@ -179,6 +180,7 @@ func (b *Block) DecodeBlock(r *Reader, revision int, target []ResultColumn) erro
 				i, columnName, columnType, t.Data.Type(),
 			)
 		}
+		t.Data.Reset()
 		if err := t.Data.DecodeColumn(r, b.Rows); err != nil {
 			return errors.Wrap(err, columnName)
 		}

@@ -2,6 +2,7 @@ package ch
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,13 +19,13 @@ func TestClient_Query(t *testing.T) {
 
 		// Create table, no data fetch.
 		createTable := Query{
-			Query: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
+			Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
 		}
 		require.NoError(t, conn.Query(ctx, createTable), "create table")
 
 		data := proto.ColumnUInt8{1, 2, 3, 4}
 		insertQuery := Query{
-			Query: "INSERT INTO test_table VALUES",
+			Body: "INSERT INTO test_table VALUES",
 			Input: []proto.InputColumn{
 				{Name: "id", Data: &data},
 			},
@@ -33,7 +34,7 @@ func TestClient_Query(t *testing.T) {
 
 		var gotData proto.ColumnUInt8
 		selectData := Query{
-			Query: "SELECT * FROM test_table",
+			Body: "SELECT * FROM test_table",
 			Result: []proto.ResultColumn{
 				{Name: "id", Data: &gotData},
 			},
@@ -47,7 +48,7 @@ func TestClient_Query(t *testing.T) {
 		// Select single row.
 		var data proto.ColumnUInt8
 		selectOne := Query{
-			Query: "SELECT 1 AS one",
+			Body: "SELECT 1 AS one",
 			Result: []proto.ResultColumn{
 				{
 					Name: "one",
@@ -58,5 +59,28 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, Conn(t).Query(ctx, selectOne))
 		require.Len(t, data, 1)
 		require.Equal(t, byte(1), data[0])
+	})
+	t.Run("SelectRandom", func(t *testing.T) {
+		t.Parallel()
+		const numbers = 15_249_611
+		var (
+			data  proto.ColumnUInt32
+			total int
+		)
+		selectOne := Query{
+			Body: fmt.Sprintf("SELECT rand() as v FROM numbers(%d)", numbers),
+			OnData: func(ctx context.Context) error {
+				total += len(data)
+				return nil
+			},
+			Result: []proto.ResultColumn{
+				{
+					Name: "v",
+					Data: &data,
+				},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectOne))
+		require.Equal(t, numbers, total)
 	})
 }

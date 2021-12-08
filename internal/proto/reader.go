@@ -118,7 +118,7 @@ func (r *Reader) Int() (int, error) {
 
 // Int32 decodes int32 value.
 func (r *Reader) Int32() (int32, error) {
-	r.b.Ensure(4)
+	r.b.Ensure(32 / 8)
 	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
@@ -128,7 +128,7 @@ func (r *Reader) Int32() (int32, error) {
 
 // Int64 decodes int64 value.
 func (r *Reader) Int64() (int64, error) {
-	r.b.Ensure(8)
+	r.b.Ensure(64 / 8)
 	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
@@ -143,6 +143,16 @@ func (r *Reader) UInt8() (uint8, error) {
 		return 0, errors.Wrap(err, "read")
 	}
 	return r.b.Buf[0], nil
+}
+
+// UInt32 decodes uint32 value.
+func (r *Reader) UInt32() (uint32, error) {
+	r.b.Ensure(32 / 8)
+	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+		return 0, errors.Wrap(err, "read")
+	}
+	v := bin.Uint32(r.b.Buf)
+	return v, nil
 }
 
 // Bool decodes bool as uint8.

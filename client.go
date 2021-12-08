@@ -143,24 +143,24 @@ func (c *Client) decode(v proto.AwareDecoder) error {
 	return v.DecodeAware(c.reader, c.info.ProtocolVersion)
 }
 
-func (c *Client) progress() (*proto.Progress, error) {
+func (c *Client) progress() (proto.Progress, error) {
 	var p proto.Progress
 
 	if err := c.decode(&p); err != nil {
-		return nil, errors.Wrap(err, "decode")
+		return proto.Progress{}, errors.Wrap(err, "decode")
 	}
 
-	return &p, nil
+	return p, nil
 }
 
-func (c *Client) profile() (*proto.Profile, error) {
+func (c *Client) profile() (proto.Profile, error) {
 	var p proto.Profile
 
 	if err := c.decode(&p); err != nil {
-		return nil, errors.Wrap(err, "decode")
+		return proto.Profile{}, errors.Wrap(err, "decode")
 	}
 
-	return &p, nil
+	return p, nil
 }
 
 // packet reads server code.

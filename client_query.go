@@ -61,10 +61,19 @@ func (c *Client) sendQuery(ctx context.Context, query, queryID string) {
 
 // Query to ClickHouse.
 type Query struct {
-	Query   string
-	QueryID string               // optional
-	Input   []proto.InputColumn  // optional
-	Result  []proto.ResultColumn // optional
+	// Body of query, like "SELECT 1".
+	Body string
+	// QueryID is ID of query, defaults to new UUIDv4.
+	QueryID string
+
+	// Input columns for INSERT operations.
+	Input []proto.InputColumn
+	// Result columns for SELECT operations.
+	Result []proto.ResultColumn
+
+	OnData     func(ctx context.Context) error
+	OnProgress func(ctx context.Context, p proto.Progress) error
+	OnProfile  func(ctx context.Context, p proto.Profile) error
 }
 
 // Query performs Query on ClickHouse server.
@@ -73,7 +82,7 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 		q.QueryID = uuid.New().String()
 	}
 
-	c.sendQuery(ctx, q.Query, q.QueryID)
+	c.sendQuery(ctx, q.Body, q.QueryID)
 
 	if len(q.Input) > 0 {
 		rows := q.Input[0].Data.Rows()
@@ -133,6 +142,14 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 			if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
 				return errors.Wrap(err, "decode block")
 			}
+			if f := q.OnData; f != nil {
+				if err := f(ctx); err != nil {
+					return errors.Wrap(err, "data")
+				}
+			}
+			for _, col := range q.Result {
+				col.Data.Reset()
+			}
 		case proto.ServerCodeException:
 			e, err := c.exception()
 			if err != nil {
@@ -153,6 +170,11 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 					zap.Uint64("wrote_rows", p.WroteRows),
 				)
 			}
+			if f := q.OnProgress; f != nil {
+				if err := f(ctx, p); err != nil {
+					return errors.Wrap(err, "progress")
+				}
+			}
 		case proto.ServerCodeProfile:
 			p, err := c.profile()
 			if err != nil {
@@ -164,6 +186,11 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 					zap.Uint64("bytes", p.Bytes),
 					zap.Uint64("blocks", p.Blocks),
 				)
+			}
+			if f := q.OnProfile; f != nil {
+				if err := f(ctx, p); err != nil {
+					return errors.Wrap(err, "profile")
+				}
 			}
 		case proto.ServerCodeTableColumns:
 			// Ignoring for now.
