@@ -142,13 +142,10 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 			if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
 				return errors.Wrap(err, "decode block")
 			}
-			if f := q.OnData; f != nil {
+			if f := q.OnData; f != nil && !block.End() {
 				if err := f(ctx); err != nil {
 					return errors.Wrap(err, "data")
 				}
-			}
-			for _, col := range q.Result {
-				col.Data.Reset()
 			}
 		case proto.ServerCodeException:
 			e, err := c.exception()
