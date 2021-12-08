@@ -96,8 +96,8 @@ type Block struct {
 	Rows    int
 }
 
-func (b Block) EncodeAware(buf *Buffer, revision int) {
-	if FeatureBlockInfo.In(revision) {
+func (b Block) EncodeAware(buf *Buffer, version int) {
+	if FeatureBlockInfo.In(version) {
 		b.Info.Encode(buf)
 	}
 
@@ -114,8 +114,8 @@ func (b *Block) End() bool {
 	return b.Columns == 0 && b.Rows == 0
 }
 
-func (b *Block) DecodeBlock(r *Reader, revision int, target []ResultColumn) error {
-	if FeatureBlockInfo.In(revision) {
+func (b *Block) DecodeBlock(r *Reader, version int, target []ResultColumn) error {
+	if FeatureBlockInfo.In(version) {
 		if err := b.Info.Decode(r); err != nil {
 			return errors.Wrap(err, "info")
 		}

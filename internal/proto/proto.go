@@ -5,10 +5,10 @@ import "encoding/binary"
 
 // Defaults for ClientHello.
 const (
-	Minor    = 1
-	Major    = 1
-	Revision = 54429
-	Name     = "go-faster/ch"
+	Minor   = 1
+	Major   = 1
+	Version = 54429
+	Name    = "go-faster/ch"
 )
 
 // ClickHouse uses Little Endian.

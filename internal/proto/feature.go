@@ -28,12 +28,12 @@ const (
 	FeatureProfileEvents               Feature = 54450
 )
 
-// Revision reports starting server revision since feature is supported.
-func (f Feature) Revision() int {
+// Version reports protocol version when Feature was introduced.
+func (f Feature) Version() int {
 	return int(f)
 }
 
-// In reports whether feature is implemented in provided revision.
-func (f Feature) In(revision int) bool {
-	return revision >= f.Revision()
+// In reports whether feature is implemented in provided protocol version.
+func (f Feature) In(v int) bool {
+	return v >= f.Version()
 }

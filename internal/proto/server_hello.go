@@ -55,7 +55,7 @@ func (s ServerHello) String() string {
 }
 
 // DecodeAware decodes ServerHello message from Reader.
-func (s *ServerHello) DecodeAware(r *Reader, _ int) error {
+func (s *ServerHello) DecodeAware(r *Reader, v int) error {
 	name, err := r.Str()
 	if err != nil {
 		return errors.Wrap(err, "str")
@@ -77,21 +77,21 @@ func (s *ServerHello) DecodeAware(r *Reader, _ int) error {
 
 	s.Major, s.Minor, s.Revision = major, minor, revision
 
-	if s.Has(FeatureTimezone) {
+	if FeatureTimezone.In(v) {
 		v, err := r.Str()
 		if err != nil {
 			return errors.Wrap(err, "timezone")
 		}
 		s.Timezone = v
 	}
-	if s.Has(FeatureDisplayName) {
+	if FeatureDisplayName.In(v) {
 		v, err := r.Str()
 		if err != nil {
 			return errors.Wrap(err, "display name")
 		}
 		s.DisplayName = v
 	}
-	if s.Has(FeatureVersionPatch) {
+	if FeatureVersionPatch.In(v) {
 		path, err := r.Int()
 		if err != nil {
 			return errors.Wrap(err, "patch")

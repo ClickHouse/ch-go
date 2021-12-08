@@ -51,7 +51,7 @@ func (s *Setting) Decode(r *Reader) error {
 	return nil
 }
 
-func (q *Query) DecodeAware(r *Reader, revision int) error {
+func (q *Query) DecodeAware(r *Reader, version int) error {
 	{
 		v, err := r.Str()
 		if err != nil {
@@ -59,13 +59,13 @@ func (q *Query) DecodeAware(r *Reader, revision int) error {
 		}
 		q.ID = v
 	}
-	if FeatureClientWriteInfo.In(revision) {
-		if err := q.Info.DecodeAware(r, revision); err != nil {
+	if FeatureClientWriteInfo.In(version) {
+		if err := q.Info.DecodeAware(r, version); err != nil {
 			return errors.Wrap(err, "client info")
 		}
 	}
-	if !FeatureSettingsSerializedAsStrings.In(revision) {
-		return errors.New("unsupported revision")
+	if !FeatureSettingsSerializedAsStrings.In(version) {
+		return errors.New("unsupported version")
 	}
 	for {
 		var s Setting
@@ -77,7 +77,7 @@ func (q *Query) DecodeAware(r *Reader, revision int) error {
 		}
 		q.Settings = append(q.Settings, s)
 	}
-	if FeatureInterServerSecret.In(revision) {
+	if FeatureInterServerSecret.In(version) {
 		v, err := r.Str()
 		if err != nil {
 			return errors.Wrap(err, "inter-server secret")
@@ -117,20 +117,20 @@ func (q *Query) DecodeAware(r *Reader, revision int) error {
 	return nil
 }
 
-func (q Query) EncodeAware(b *Buffer, revision int) {
+func (q Query) EncodeAware(b *Buffer, version int) {
 	ClientCodeQuery.Encode(b)
 	b.PutString(q.ID)
-	if FeatureClientWriteInfo.In(revision) {
-		q.Info.EncodeAware(b, revision)
+	if FeatureClientWriteInfo.In(version) {
+		q.Info.EncodeAware(b, version)
 	}
-	if FeatureSettingsSerializedAsStrings.In(revision) {
+	if FeatureSettingsSerializedAsStrings.In(version) {
 		for _, s := range q.Settings {
 			s.Encode(b)
 		}
 	}
 	b.PutString("")
 
-	if FeatureInterServerSecret.In(revision) {
+	if FeatureInterServerSecret.In(version) {
 		b.PutString(q.Secret)
 	}
 

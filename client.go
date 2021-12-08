@@ -260,10 +260,11 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		lg:       opt.Logger,
 
 		info: proto.ClientHello{
-			Name:            proto.Name,
-			Major:           proto.Major,
-			Minor:           proto.Minor,
-			ProtocolVersion: proto.Revision,
+			Name:  proto.Name,
+			Major: proto.Major,
+			Minor: proto.Minor,
+
+			ProtocolVersion: proto.Version,
 
 			Database: opt.Database,
 			User:     opt.User,

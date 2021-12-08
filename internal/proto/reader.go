@@ -14,9 +14,9 @@ type Decoder interface {
 	Decode(r *Reader) error
 }
 
-// AwareDecoder implements encoding to Buffer that depends on revision.
+// AwareDecoder implements encoding to Buffer that depends on version.
 type AwareDecoder interface {
-	DecodeAware(r *Reader, revision int) error
+	DecodeAware(r *Reader, version int) error
 }
 
 // Reader implements ClickHouse protocol decoding from buffered reader.

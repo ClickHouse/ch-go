@@ -5,10 +5,10 @@ type ClientData struct {
 	Block     Block
 }
 
-func (c ClientData) EncodeAware(b *Buffer, revision int) {
+func (c ClientData) EncodeAware(b *Buffer, version int) {
 	ClientCodeData.Encode(b)
-	if FeatureTempTables.In(revision) {
+	if FeatureTempTables.In(version) {
 		b.PutString(c.TableName)
 	}
-	c.Block.EncodeAware(b, revision)
+	c.Block.EncodeAware(b, version)
 }

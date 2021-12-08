@@ -54,14 +54,14 @@ type ClientInfo struct {
 	DistributedDepth int
 }
 
-// EncodeAware encodes to buffer revision-aware.
-func (c ClientInfo) EncodeAware(b *Buffer, revision int) {
+// EncodeAware encodes to buffer version-aware.
+func (c ClientInfo) EncodeAware(b *Buffer, version int) {
 	b.PutByte(byte(c.Query))
 
 	b.PutString(c.InitialUser)
 	b.PutString(c.InitialQueryID)
 	b.PutString(c.InitialAddress)
-	if FeatureQueryStartTime.In(revision) {
+	if FeatureQueryStartTime.In(version) {
 		b.PutInt64(c.InitialTime)
 	}
 
@@ -75,16 +75,16 @@ func (c ClientInfo) EncodeAware(b *Buffer, revision int) {
 	b.PutInt(c.Minor)
 	b.PutInt(c.ProtocolVersion)
 
-	if FeatureQuotaKeyInClientInfo.In(revision) {
+	if FeatureQuotaKeyInClientInfo.In(version) {
 		b.PutString(c.QuotaKey)
 	}
-	if FeatureDistributedDepth.In(revision) {
+	if FeatureDistributedDepth.In(version) {
 		b.PutInt(c.DistributedDepth)
 	}
-	if FeatureVersionPatch.In(revision) && c.Interface == InterfaceTCP {
+	if FeatureVersionPatch.In(version) && c.Interface == InterfaceTCP {
 		b.PutInt(c.Patch)
 	}
-	if FeatureOpenTelemetry.In(revision) {
+	if FeatureOpenTelemetry.In(version) {
 		if c.Span.IsValid() {
 			b.PutByte(1)
 			{
@@ -104,7 +104,7 @@ func (c ClientInfo) EncodeAware(b *Buffer, revision int) {
 	}
 }
 
-func (c *ClientInfo) DecodeAware(r *Reader, revision int) error {
+func (c *ClientInfo) DecodeAware(r *Reader, version int) error {
 	{
 		v, err := r.UInt8()
 		if err != nil {
@@ -137,7 +137,7 @@ func (c *ClientInfo) DecodeAware(r *Reader, revision int) error {
 		c.InitialAddress = v
 	}
 
-	if FeatureQueryStartTime.In(revision) {
+	if FeatureQueryStartTime.In(version) {
 		// Microseconds.
 		v, err := r.Int64()
 		if err != nil {
@@ -206,28 +206,28 @@ func (c *ClientInfo) DecodeAware(r *Reader, revision int) error {
 		c.ProtocolVersion = v
 	}
 
-	if FeatureQuotaKeyInClientInfo.In(revision) {
+	if FeatureQuotaKeyInClientInfo.In(version) {
 		v, err := r.Str()
 		if err != nil {
 			return errors.Wrap(err, "quota key")
 		}
 		c.QuotaKey = v
 	}
-	if FeatureDistributedDepth.In(revision) {
+	if FeatureDistributedDepth.In(version) {
 		v, err := r.Int()
 		if err != nil {
 			return errors.Wrap(err, "distributed depth")
 		}
 		c.DistributedDepth = v
 	}
-	if FeatureVersionPatch.In(revision) && c.Interface == InterfaceTCP {
+	if FeatureVersionPatch.In(version) && c.Interface == InterfaceTCP {
 		v, err := r.Int()
 		if err != nil {
 			return errors.Wrap(err, "patch version")
 		}
 		c.Patch = v
 	}
-	if FeatureOpenTelemetry.In(revision) {
+	if FeatureOpenTelemetry.In(version) {
 		v, err := r.Bool()
 		if err != nil {
 			return errors.Wrap(err, "open telemetry start")

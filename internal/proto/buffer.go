@@ -26,9 +26,9 @@ type Encoder interface {
 	Encode(b *Buffer)
 }
 
-// AwareEncoder implements encoding to Buffer that depends on revision.
+// AwareEncoder implements encoding to Buffer that depends on version.
 type AwareEncoder interface {
-	EncodeAware(b *Buffer, revision int)
+	EncodeAware(b *Buffer, version int)
 }
 
 // Encode value that implements Encoder.

@@ -13,7 +13,7 @@ type Progress struct {
 	WroteBytes uint64
 }
 
-func (p *Progress) DecodeAware(r *Reader, revision int) error {
+func (p *Progress) DecodeAware(r *Reader, version int) error {
 	{
 		v, err := r.UVarInt()
 		if err != nil {
@@ -28,14 +28,14 @@ func (p *Progress) DecodeAware(r *Reader, revision int) error {
 		}
 		p.Bytes = v
 	}
-	if FeatureClientWriteInfo.In(revision) {
+	if FeatureClientWriteInfo.In(version) {
 		v, err := r.UVarInt()
 		if err != nil {
 			return errors.Wrap(err, "total rows")
 		}
 		p.TotalRows = v
 	}
-	if FeatureClientWriteInfo.In(revision) {
+	if FeatureClientWriteInfo.In(version) {
 		{
 			v, err := r.UVarInt()
 			if err != nil {
