@@ -8,6 +8,7 @@ import (
 	"runtime/pprof"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/go-faster/errors"
 
 	"github.com/go-faster/ch"
@@ -46,11 +47,15 @@ func run(ctx context.Context) error {
 
 	start := time.Now()
 
-	var rows uint64
+	var (
+		rows       uint64
+		totalBytes uint64
+	)
 	if err := c.Query(ctx, ch.Query{
 		Body: "SELECT v FROM test_values",
 		OnProgress: func(ctx context.Context, p proto.Progress) error {
 			rows += p.Rows
+			totalBytes += p.Bytes
 			return nil
 		},
 		Result: []proto.ResultColumn{
@@ -60,7 +65,11 @@ func run(ctx context.Context) error {
 		return errors.Wrap(err, "query")
 	}
 
-	fmt.Println(time.Since(start).Round(time.Millisecond), rows)
+	duration := time.Since(start)
+	fmt.Println(duration.Round(time.Millisecond), rows, "rows",
+		humanize.Bytes(totalBytes),
+		humanize.Bytes(uint64(float64(totalBytes)/duration.Seconds()))+"/s",
+	)
 
 	return nil
 }
