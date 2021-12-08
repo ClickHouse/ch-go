@@ -42,9 +42,9 @@ func (c *Client) handshake(ctx context.Context) error {
 			return errors.Wrap(err, "flush")
 		}
 
-		code, err := c.Packet()
+		code, err := c.packet()
 		if err != nil {
-			return errors.Wrap(err, "Packet")
+			return errors.Wrap(err, "packet")
 		}
 		expected := proto.ServerCodeHello
 		if code != expected {

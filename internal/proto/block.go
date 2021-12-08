@@ -2,7 +2,6 @@ package proto
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/go-faster/errors"
 )
@@ -63,39 +62,22 @@ func (i *BlockInfo) Decode(r *Reader) error {
 	}
 }
 
-type RawColumn struct {
+type Column struct {
 	Name string
-	Type ColumnType
-	Data []byte
+	Data ColumnData
 }
 
-func (c RawColumn) Encode(b *Buffer) {
-	b.PutString(c.Name)
-	b.PutString(string(c.Type))
-	b.PutRaw(c.Data)
+type ColumnData interface {
+	Type() ColumnType
+	Rows() int
+	EncodeColumn(b *Buffer)
+	DecodeColumn(r *Reader, rows int) error
 }
 
 type Block struct {
 	Info    BlockInfo
 	Columns int
 	Rows    int
-	Data    []RawColumn
-}
-
-func (b Block) String() string {
-	var s strings.Builder
-	s.WriteString(fmt.Sprintf("[%d]", b.Rows))
-	s.WriteRune('(')
-	for i, column := range b.Data {
-		if i != 0 {
-			s.WriteString(", ")
-		}
-		s.WriteString(column.Name)
-		s.WriteString(": ")
-		s.WriteString(string(column.Type))
-	}
-	s.WriteRune(')')
-	return s.String()
 }
 
 func (b Block) EncodeAware(buf *Buffer, revision int) {
@@ -105,12 +87,6 @@ func (b Block) EncodeAware(buf *Buffer, revision int) {
 
 	buf.PutInt(b.Columns)
 	buf.PutInt(b.Rows)
-
-	for _, c := range b.Data {
-		buf.PutString(c.Name)
-		buf.PutString(string(c.Type))
-		buf.PutRaw(c.Data)
-	}
 }
 
 const (
@@ -118,7 +94,11 @@ const (
 	maxRowsInBlock    = 1_000_000
 )
 
-func (b *Block) DecodeAware(r *Reader, revision int) error {
+func (b *Block) End() bool {
+	return b.Columns == 0 && b.Rows == 0
+}
+
+func (b *Block) DecodeBlock(r *Reader, revision int, target []Column) error {
 	if FeatureBlockInfo.In(revision) {
 		if err := b.Info.Decode(r); err != nil {
 			return errors.Wrap(err, "info")
@@ -146,6 +126,14 @@ func (b *Block) DecodeAware(r *Reader, revision int) error {
 		b.Rows = v
 	}
 
+	if b.End() {
+		// End of data, special case.
+		return nil
+	}
+
+	if b.Columns != len(target) {
+		return errors.Errorf("%d (columns) != %d (target)", b.Columns, len(target))
+	}
 	for i := 0; i < b.Columns; i++ {
 		columnName, err := r.Str()
 		if err != nil {
@@ -155,33 +143,19 @@ func (b *Block) DecodeAware(r *Reader, revision int) error {
 		if err != nil {
 			return errors.Wrapf(err, "column [%d] type", i)
 		}
-
-		// Read fixed size.
-		var columnSize int
-		switch ColumnType(columnType) {
-		case ColumnTypeInt64, ColumnTypeUInt64:
-			columnSize = 64 / 8
-		case ColumnTypeInt32, ColumnTypeUInt32:
-			columnSize = 32 / 8
-		case ColumnTypeInt16, ColumnTypeUInt16:
-			columnSize = 16 / 8
-		case ColumnTypeInt8, ColumnTypeUInt8:
-			columnSize = 1
-		default:
-			return errors.Errorf("unknown type %q", columnType)
+		t := target[0]
+		// Checking column name and type.
+		if t.Name != columnName {
+			return errors.Errorf("[%d]: unexpected column %q (%q expected)", columnName, t.Name)
 		}
-
-		full := columnSize * b.Rows
-		data, err := r.ReadRaw(full)
-		if err != nil {
-			return errors.Wrap(err, "raw column")
+		if t.Data.Type() != ColumnType(columnType) {
+			return errors.Errorf("[%d]: %s: unexpected type %q instead of %q",
+				i, columnName, columnType, t.Data.Type(),
+			)
 		}
-
-		b.Data = append(b.Data, RawColumn{
-			Name: columnName,
-			Type: ColumnType(columnType),
-			Data: data,
-		})
+		if err := t.Data.DecodeColumn(r, b.Rows); err != nil {
+			return errors.Wrap(err, columnName)
+		}
 	}
 
 	return nil

@@ -68,7 +68,7 @@ func (e Exception) String() string {
 }
 
 // Exception reads exception from server.
-func (c *Client) Exception() (*Exception, error) {
+func (c *Client) exception() (*Exception, error) {
 	var list []proto.Exception
 	for {
 		var ex proto.Exception
@@ -103,7 +103,7 @@ func (c *Client) decode(v proto.AwareDecoder) error {
 	return v.DecodeAware(c.reader, c.info.ProtocolVersion)
 }
 
-func (c *Client) Hello() (*proto.ServerHello, error) {
+func (c *Client) hello() (*proto.ServerHello, error) {
 	var p proto.ServerHello
 
 	if err := c.decode(&p); err != nil {
@@ -113,7 +113,7 @@ func (c *Client) Hello() (*proto.ServerHello, error) {
 	return &p, nil
 }
 
-func (c *Client) Progress() (*proto.Progress, error) {
+func (c *Client) progress() (*proto.Progress, error) {
 	var p proto.Progress
 
 	if err := c.decode(&p); err != nil {
@@ -123,7 +123,7 @@ func (c *Client) Progress() (*proto.Progress, error) {
 	return &p, nil
 }
 
-func (c *Client) Profile() (*proto.Profile, error) {
+func (c *Client) profile() (*proto.Profile, error) {
 	var p proto.Profile
 
 	if err := c.decode(&p); err != nil {
@@ -133,18 +133,8 @@ func (c *Client) Profile() (*proto.Profile, error) {
 	return &p, nil
 }
 
-func (c *Client) Block() (*proto.Block, error) {
-	var data proto.ServerData
-
-	if err := c.decode(&data); err != nil {
-		return nil, errors.Wrap(err, "decode")
-	}
-
-	return &data.Block, nil
-}
-
-// Packet reads server code.
-func (c *Client) Packet() (proto.ServerCode, error) {
+// packet reads server code.
+func (c *Client) packet() (proto.ServerCode, error) {
 	n, err := c.reader.UVarInt()
 	if err != nil {
 		return 0, errors.Wrap(err, "uvarint")
@@ -152,7 +142,7 @@ func (c *Client) Packet() (proto.ServerCode, error) {
 
 	code := proto.ServerCode(n)
 	if !code.IsAServerCode() {
-		return 0, errors.Errorf("bad server Packet type %d", n)
+		return 0, errors.Errorf("bad server packet type %d", n)
 	}
 
 	return code, nil
