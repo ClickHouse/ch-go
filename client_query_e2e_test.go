@@ -1,4 +1,4 @@
-package cht_test
+package ch
 
 import (
 	"context"
@@ -6,34 +6,25 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-faster/ch"
-	"github.com/go-faster/ch/internal/cht"
 	"github.com/go-faster/ch/internal/proto"
 )
 
-func TestConnect(t *testing.T) {
+func TestClient_Query(t *testing.T) {
 	ctx := context.Background()
-	server := cht.Connect(t)
-
-	client, err := ch.Dial(ctx, server.TCP, ch.Options{})
-	require.NoError(t, err)
-
-	t.Log("Connected", client.Location())
-	t.Cleanup(func() {
-		require.NoError(t, client.Close())
-	})
-
+	t.Parallel()
 	t.Run("CreateTable", func(t *testing.T) {
+		t.Parallel()
 		// Create table, no data fetch.
-		createTable := ch.Query{
+		createTable := Query{
 			Query: "CREATE TABLE test_table (id UInt64) ENGINE = MergeTree ORDER BY id",
 		}
-		require.NoError(t, client.Query(ctx, createTable))
+		require.NoError(t, Conn(t).Query(ctx, createTable))
 	})
 	t.Run("SelectOne", func(t *testing.T) {
+		t.Parallel()
 		// Select single row.
 		var data proto.ColumnUInt8
-		selectOne := ch.Query{
+		selectOne := Query{
 			Query: "SELECT 1 AS one",
 			Columns: []proto.Column{
 				{
@@ -42,7 +33,7 @@ func TestConnect(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, client.Query(ctx, selectOne))
+		require.NoError(t, Conn(t).Query(ctx, selectOne))
 		require.Len(t, data, 1)
 		require.Equal(t, byte(1), data[0])
 	})

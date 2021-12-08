@@ -9,7 +9,7 @@ func (c ColumnUInt8) Rows() int {
 }
 
 func (c ColumnUInt8) EncodeColumn(b *Buffer) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

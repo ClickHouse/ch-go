@@ -89,11 +89,12 @@ func writeXML(t testing.TB, name string, v interface{}) {
 }
 
 func Connect(t testing.TB) *Server {
-	e2e.Skip(t)
-
 	binaryPath, err := Bin()
-	require.NoError(t, err)
+	if err != nil {
+		e2e.Skip(t)
+	}
 
+	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Setup data directory and config.

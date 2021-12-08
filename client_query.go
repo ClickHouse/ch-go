@@ -80,7 +80,7 @@ Fetch:
 	for {
 		if ctx.Err() != nil {
 			_ = c.cancelQuery(context.Background())
-			return errors.Wrap(ctx.Err(), "cancelled")
+			return errors.Wrap(ctx.Err(), "canceled")
 		}
 
 		code, err := c.packet()
@@ -100,6 +100,12 @@ Fetch:
 			if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Columns); err != nil {
 				return errors.Wrap(err, "decode block")
 			}
+		case proto.ServerCodeException:
+			e, err := c.exception()
+			if err != nil {
+				return errors.Wrap(err, "decode exception")
+			}
+			return e
 		case proto.ServerCodeProgress:
 			p, err := c.progress()
 			if err != nil {

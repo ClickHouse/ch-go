@@ -146,7 +146,7 @@ func (b *Block) DecodeBlock(r *Reader, revision int, target []Column) error {
 		t := target[0]
 		// Checking column name and type.
 		if t.Name != columnName {
-			return errors.Errorf("[%d]: unexpected column %q (%q expected)", columnName, t.Name)
+			return errors.Errorf("[%d]: unexpected column %q (%q expected)", i, columnName, t.Name)
 		}
 		if t.Data.Type() != ColumnType(columnType) {
 			return errors.Errorf("[%d]: %s: unexpected type %q instead of %q",

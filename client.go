@@ -33,8 +33,8 @@ type Setting struct {
 	Important  bool
 }
 
-// ServerInfo returns server information.
-func (c *Client) ServerInfo() proto.ServerHello { return c.server }
+// serverInfo returns server information.
+func (c *Client) serverInfo() proto.ServerHello { return c.server }
 
 // Location returns current server timezone.
 func (c *Client) Location() *time.Location { return c.tz }
@@ -63,7 +63,7 @@ type Exception struct {
 	Next    []Exception // non-nil only for top exception
 }
 
-func (e Exception) String() string {
+func (e Exception) Error() string {
 	return fmt.Sprintf("%s %s", e.Code, e.Name)
 }
 
@@ -101,16 +101,6 @@ func (c *Client) exception() (*Exception, error) {
 
 func (c *Client) decode(v proto.AwareDecoder) error {
 	return v.DecodeAware(c.reader, c.info.ProtocolVersion)
-}
-
-func (c *Client) hello() (*proto.ServerHello, error) {
-	var p proto.ServerHello
-
-	if err := c.decode(&p); err != nil {
-		return nil, errors.Wrap(err, "decode")
-	}
-
-	return &p, nil
 }
 
 func (c *Client) progress() (*proto.Progress, error) {
