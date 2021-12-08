@@ -32,13 +32,13 @@ func (r *Reader) Decode(v Decoder) error {
 
 // ReadRaw reads raw n bytes.
 func (r *Reader) ReadRaw(n int) ([]byte, error) {
-	b := make([]byte, n)
+	r.b.Ensure(n)
 
-	if _, err := io.ReadFull(r.s, b); err != nil {
+	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
 		return nil, errors.Wrap(err, "read full")
 	}
 
-	return b, nil
+	return r.b.Buf, nil
 }
 
 // UVarInt reads uint64 from internal reader.

@@ -15,13 +15,11 @@ func (c ColumnUInt8) EncodeColumn(b *Buffer) {
 }
 
 func (c *ColumnUInt8) DecodeColumn(r *Reader, rows int) error {
-	for i := 0; i < rows; i++ {
-		v, err := r.UInt8()
-		if err != nil {
-			return errors.Wrapf(err, "[%d]: read", i)
-		}
-		*c = append(*c, v)
+	data, err := r.ReadRaw(rows)
+	if err != nil {
+		return errors.Wrap(err, "read")
 	}
+	*c = append(*c, data...)
 	return nil
 }
 
@@ -38,12 +36,17 @@ func (c ColumnUInt32) EncodeColumn(b *Buffer) {
 }
 
 func (c *ColumnUInt32) DecodeColumn(r *Reader, rows int) error {
-	for i := 0; i < rows; i++ {
-		v, err := r.UInt32()
-		if err != nil {
-			return errors.Wrapf(err, "[%d]: read", i)
-		}
-		*c = append(*c, v)
+	const size = 32 / 8
+	data, err := r.ReadRaw(rows * size)
+	if err != nil {
+		return errors.Wrap(err, "read")
 	}
+
+	v := *c
+	for i := 0; i < len(data); i += size {
+		v = append(v, bin.Uint32(data[i:i+size]))
+	}
+	*c = v
+
 	return nil
 }

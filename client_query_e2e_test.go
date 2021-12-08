@@ -60,14 +60,14 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 1)
 		require.Equal(t, byte(1), data[0])
 	})
-	t.Run("SelectRandom", func(t *testing.T) {
+	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611
 		var (
 			data  proto.ColumnUInt32
 			total int
 		)
-		selectOne := Query{
+		selectRand := Query{
 			Body: fmt.Sprintf("SELECT rand() as v FROM numbers(%d)", numbers),
 			OnData: func(ctx context.Context) error {
 				total += len(data)
@@ -80,7 +80,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectOne))
+		require.NoError(t, Conn(t).Query(ctx, selectRand))
 		require.Equal(t, numbers, total)
 	})
 }
