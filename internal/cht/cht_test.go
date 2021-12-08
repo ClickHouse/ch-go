@@ -12,7 +12,7 @@ import (
 	"github.com/go-faster/ch/internal/proto"
 )
 
-func TestRun(t *testing.T) {
+func TestConnect(t *testing.T) {
 	ctx := context.Background()
 	server := cht.Connect(t)
 
