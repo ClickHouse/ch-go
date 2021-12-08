@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/dmarkham/enumer v1.5.3
 	github.com/go-faster/errors v0.5.0
+	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/otel/trace v1.2.0
 	go.uber.org/multierr v1.7.0
@@ -13,7 +14,6 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pascaldekloe/name v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
