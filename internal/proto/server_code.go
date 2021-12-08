@@ -18,6 +18,7 @@ const (
 	ServerCodeExtremes     ServerCode = 8  // packet with minimums and maximums (can be compressed)
 	ServerCodeTablesStatus ServerCode = 9  // response to TablesStatus
 	ServerCodeLog          ServerCode = 10 // query execution system log
+	ServerCodeTableColumns ServerCode = 11 // columns description
 )
 
 // Encode to buffer.

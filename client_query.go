@@ -21,7 +21,7 @@ func (c *Client) cancelQuery(ctx context.Context) error {
 }
 
 // sendQuery starts query.
-func (c *Client) sendQuery(ctx context.Context, query, queryID string) error {
+func (c *Client) sendQuery(ctx context.Context, query, queryID string) {
 	c.encode(proto.Query{
 		ID:          queryID,
 		Body:        query,
@@ -47,22 +47,14 @@ func (c *Client) sendQuery(ctx context.Context, query, queryID string) error {
 			QuotaKey: "",
 		},
 	})
-
-	// Blank data as EOF.
-	c.encode(proto.ClientData{})
-
-	if err := c.flush(ctx); err != nil {
-		return errors.Wrap(err, "flush")
-	}
-
-	return nil
 }
 
 // Query to ClickHouse.
 type Query struct {
 	Query   string
-	QueryID string         // optional
-	Columns []proto.Column // optional
+	QueryID string               // optional
+	Input   []proto.InputColumn  // optional
+	Result  []proto.ResultColumn // optional
 }
 
 // Query performs Query on ClickHouse server.
@@ -70,8 +62,39 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
 	}
-	if err := c.sendQuery(ctx, q.Query, q.QueryID); err != nil {
-		return errors.Wrap(err, "send")
+
+	c.sendQuery(ctx, q.Query, q.QueryID)
+
+	if len(q.Input) > 0 {
+		rows := q.Input[0].Data.Rows()
+		c.encode(proto.ClientData{
+			Block: proto.Block{
+				Info: proto.BlockInfo{
+					BucketNum: -1,
+				},
+				Columns: len(q.Input),
+				Rows:    rows,
+			},
+		})
+		for _, col := range q.Input {
+			if r := col.Data.Rows(); r != rows {
+				return errors.Errorf("%q has %d rows, expected %d", col.Name, r, rows)
+			}
+
+			col.EncodeStart(c.buf)
+			col.Data.EncodeColumn(c.buf)
+
+			if err := c.flush(ctx); err != nil {
+				return errors.Wrap(err, "flush")
+			}
+		}
+	}
+
+	// End of data.
+	c.encode(proto.ClientData{})
+
+	if err := c.flush(ctx); err != nil {
+		return errors.Wrap(err, "flush")
 	}
 
 	var block proto.Block
@@ -82,7 +105,6 @@ Fetch:
 			_ = c.cancelQuery(context.Background())
 			return errors.Wrap(ctx.Err(), "canceled")
 		}
-
 		code, err := c.packet()
 		if err != nil {
 			return errors.Wrap(err, "packet")
@@ -97,8 +119,12 @@ Fetch:
 				}
 				_ = v
 			}
-			if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Columns); err != nil {
+			if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
 				return errors.Wrap(err, "decode block")
+			}
+			if len(q.Input) > 0 {
+				// End of insert.
+				return nil
 			}
 		case proto.ServerCodeException:
 			e, err := c.exception()
@@ -118,6 +144,11 @@ Fetch:
 				return errors.Wrap(err, "profile")
 			}
 			_ = p
+		case proto.ServerCodeTableColumns:
+			var info proto.TableColumns
+			if err := c.decode(&info); err != nil {
+				return errors.Wrap(err, "table columns")
+			}
 		case proto.ServerCodeEndOfStream:
 			break Fetch
 		default:

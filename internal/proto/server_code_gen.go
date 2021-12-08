@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _ServerCodeName = "HelloDataExceptionProgressPongEndOfStreamProfileTotalsExtremesTablesStatusLog"
+const _ServerCodeName = "HelloDataExceptionProgressPongEndOfStreamProfileTotalsExtremesTablesStatusLogTableColumns"
 
-var _ServerCodeIndex = [...]uint8{0, 5, 9, 18, 26, 30, 41, 48, 54, 62, 74, 77}
+var _ServerCodeIndex = [...]uint8{0, 5, 9, 18, 26, 30, 41, 48, 54, 62, 74, 77, 89}
 
-const _ServerCodeLowerName = "hellodataexceptionprogresspongendofstreamprofiletotalsextremestablesstatuslog"
+const _ServerCodeLowerName = "hellodataexceptionprogresspongendofstreamprofiletotalsextremestablesstatuslogtablecolumns"
 
 func (i ServerCode) String() string {
 	if i >= ServerCode(len(_ServerCodeIndex)-1) {
@@ -35,9 +35,10 @@ func _ServerCodeNoOp() {
 	_ = x[ServerCodeExtremes-(8)]
 	_ = x[ServerCodeTablesStatus-(9)]
 	_ = x[ServerCodeLog-(10)]
+	_ = x[ServerCodeTableColumns-(11)]
 }
 
-var _ServerCodeValues = []ServerCode{ServerCodeHello, ServerCodeData, ServerCodeException, ServerCodeProgress, ServerCodePong, ServerCodeEndOfStream, ServerCodeProfile, ServerCodeTotals, ServerCodeExtremes, ServerCodeTablesStatus, ServerCodeLog}
+var _ServerCodeValues = []ServerCode{ServerCodeHello, ServerCodeData, ServerCodeException, ServerCodeProgress, ServerCodePong, ServerCodeEndOfStream, ServerCodeProfile, ServerCodeTotals, ServerCodeExtremes, ServerCodeTablesStatus, ServerCodeLog, ServerCodeTableColumns}
 
 var _ServerCodeNameToValueMap = map[string]ServerCode{
 	_ServerCodeName[0:5]:        ServerCodeHello,
@@ -62,6 +63,8 @@ var _ServerCodeNameToValueMap = map[string]ServerCode{
 	_ServerCodeLowerName[62:74]: ServerCodeTablesStatus,
 	_ServerCodeName[74:77]:      ServerCodeLog,
 	_ServerCodeLowerName[74:77]: ServerCodeLog,
+	_ServerCodeName[77:89]:      ServerCodeTableColumns,
+	_ServerCodeLowerName[77:89]: ServerCodeTableColumns,
 }
 
 var _ServerCodeNames = []string{
@@ -76,6 +79,7 @@ var _ServerCodeNames = []string{
 	_ServerCodeName[54:62],
 	_ServerCodeName[62:74],
 	_ServerCodeName[74:77],
+	_ServerCodeName[77:89],
 }
 
 // ServerCodeString retrieves an enum value from the enum constants string name.

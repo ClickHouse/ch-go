@@ -14,11 +14,29 @@ func TestClient_Query(t *testing.T) {
 	t.Parallel()
 	t.Run("CreateTable", func(t *testing.T) {
 		t.Parallel()
+		conn := Conn(t)
+
 		// Create table, no data fetch.
 		createTable := Query{
-			Query: "CREATE TABLE test_table (id UInt64) ENGINE = MergeTree ORDER BY id",
+			Query: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
 		}
-		require.NoError(t, Conn(t).Query(ctx, createTable))
+		require.NoError(t, conn.Query(ctx, createTable))
+
+		t.Run("Insert", func(t *testing.T) {
+			data := proto.ColumnUInt8{
+				1, 2, 3, 4,
+			}
+			insertData := Query{
+				Query: "INSERT INTO test_table VALUES",
+				Input: []proto.InputColumn{
+					{
+						Name: "id",
+						Data: &data,
+					},
+				},
+			}
+			require.NoError(t, conn.Query(ctx, insertData))
+		})
 	})
 	t.Run("SelectOne", func(t *testing.T) {
 		t.Parallel()
@@ -26,7 +44,7 @@ func TestClient_Query(t *testing.T) {
 		var data proto.ColumnUInt8
 		selectOne := Query{
 			Query: "SELECT 1 AS one",
-			Columns: []proto.Column{
+			Result: []proto.ResultColumn{
 				{
 					Name: "one",
 					Data: &data,

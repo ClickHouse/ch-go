@@ -35,7 +35,7 @@ func TestConnect(t *testing.T) {
 		var data proto.ColumnUInt8
 		selectOne := ch.Query{
 			Query: "SELECT 1 AS one",
-			Columns: []proto.Column{
+			Result: []proto.ResultColumn{
 				{
 					Name: "one",
 					Data: &data,

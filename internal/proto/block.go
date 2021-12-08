@@ -62,15 +62,30 @@ func (i *BlockInfo) Decode(r *Reader) error {
 	}
 }
 
-type Column struct {
+type InputColumn struct {
 	Name string
-	Data ColumnData
+	Data Input
 }
 
-type ColumnData interface {
+type ResultColumn struct {
+	Name string
+	Data Result
+}
+
+func (c InputColumn) EncodeStart(buf *Buffer) {
+	buf.PutString(c.Name)
+	buf.PutString(string(c.Data.Type()))
+}
+
+type Input interface {
 	Type() ColumnType
 	Rows() int
 	EncodeColumn(b *Buffer)
+}
+
+type Result interface {
+	Type() ColumnType
+	Rows() int
 	DecodeColumn(r *Reader, rows int) error
 }
 
@@ -98,7 +113,7 @@ func (b *Block) End() bool {
 	return b.Columns == 0 && b.Rows == 0
 }
 
-func (b *Block) DecodeBlock(r *Reader, revision int, target []Column) error {
+func (b *Block) DecodeBlock(r *Reader, revision int, target []ResultColumn) error {
 	if FeatureBlockInfo.In(revision) {
 		if err := b.Info.Decode(r); err != nil {
 			return errors.Wrap(err, "info")
@@ -131,7 +146,13 @@ func (b *Block) DecodeBlock(r *Reader, revision int, target []Column) error {
 		return nil
 	}
 
-	if b.Columns != len(target) {
+	var (
+		noTarget        = len(target) == 0
+		noRows          = b.Rows == 0
+		columnsMismatch = b.Columns != len(target)
+		allowMismatch   = noTarget && noRows
+	)
+	if columnsMismatch && !allowMismatch {
 		return errors.Errorf("%d (columns) != %d (target)", b.Columns, len(target))
 	}
 	for i := 0; i < b.Columns; i++ {
@@ -143,6 +164,11 @@ func (b *Block) DecodeBlock(r *Reader, revision int, target []Column) error {
 		if err != nil {
 			return errors.Wrapf(err, "column [%d] type", i)
 		}
+		if noTarget {
+			// Just reading types and names.
+			continue
+		}
+
 		t := target[0]
 		// Checking column name and type.
 		if t.Name != columnName {

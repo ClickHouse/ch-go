@@ -9,8 +9,9 @@ func (c ColumnUInt8) Rows() int {
 }
 
 func (c ColumnUInt8) EncodeColumn(b *Buffer) {
-	// TODO implement me
-	panic("implement me")
+	for _, v := range c {
+		b.PutUInt8(v)
+	}
 }
 
 func (c *ColumnUInt8) DecodeColumn(r *Reader, rows int) error {
