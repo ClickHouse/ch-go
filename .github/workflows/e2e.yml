@@ -17,6 +17,8 @@ jobs:
       matrix:
         clickhouse:
           - 21.8.11.4-lts
+          - 21.9.6.24-stable
+          - 21.10.4.26-stable
           - 21.11.4.14-stable
           - 21.12.1.8691-testing
     steps:
