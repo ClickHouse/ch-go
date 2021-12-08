@@ -109,7 +109,6 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 
 	var block proto.Block
 
-Fetch:
 	for {
 		if ctx.Err() != nil {
 			_ = c.cancelQuery(context.Background())
@@ -167,17 +166,15 @@ Fetch:
 				)
 			}
 		case proto.ServerCodeTableColumns:
+			// Ignoring for now.
 			var info proto.TableColumns
 			if err := c.decode(&info); err != nil {
 				return errors.Wrap(err, "table columns")
 			}
-			// Ignoring for now.
 		case proto.ServerCodeEndOfStream:
-			break Fetch
+			return nil
 		default:
 			return errors.Errorf("unexpected code %s", code)
 		}
 	}
-
-	return nil
 }
