@@ -91,6 +91,11 @@ issues:
         - scopelint
         - lll
 
+    # Disable linters that are not needed for testing infra.
+    - path: internal/cht
+      linters:
+        - gosec
+
     - path: _test\.go
       text: "Combine"
       linters:
