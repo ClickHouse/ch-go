@@ -72,7 +72,7 @@ func (b *Buffer) PutInt(x int) {
 }
 
 // PutInt128 puts 16-byte integer.
-func (b *Buffer) PutInt128(v [16]byte) {
+func (b *Buffer) PutInt128(v [128 / 8]byte) {
 	b.Buf = append(b.Buf, v[:]...)
 }
 
@@ -93,13 +93,13 @@ func (b *Buffer) PutString(s string) {
 }
 
 func (b *Buffer) PutUInt32(x uint32) {
-	buf := make([]byte, 4)
+	buf := make([]byte, 32/8)
 	bin.PutUint32(buf, x)
 	b.Buf = append(b.Buf, buf...)
 }
 
 func (b *Buffer) PutUInt64(x uint64) {
-	buf := make([]byte, 8)
+	buf := make([]byte, 64/8)
 	bin.PutUint64(buf, x)
 	b.Buf = append(b.Buf, buf...)
 }
