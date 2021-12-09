@@ -13,4 +13,5 @@ const (
 	ColumnTypeUInt64  ColumnType = "UInt64"
 	ColumnTypeFloat32 ColumnType = "Float32"
 	ColumnTypeFloat64 ColumnType = "Float64"
+	ColumnTypeString  ColumnType = "String"
 )

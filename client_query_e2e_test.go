@@ -60,6 +60,23 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 1)
 		require.Equal(t, byte(1), data[0])
 	})
+	t.Run("SelectStr", func(t *testing.T) {
+		t.Parallel()
+		// Select single string row.
+		var data proto.ColStr
+		selectStr := Query{
+			Body: "SELECT 'foo' AS s",
+			Result: []proto.ResultColumn{
+				{
+					Name: "s",
+					Data: &data,
+				},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectStr))
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, "foo", data.First())
+	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611

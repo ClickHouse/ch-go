@@ -30,14 +30,24 @@ func (r *Reader) Decode(v Decoder) error {
 	return v.Decode(r)
 }
 
-// ReadRaw reads raw n bytes.
-func (r *Reader) ReadRaw(n int) ([]byte, error) {
-	r.b.Ensure(n)
-
-	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+func (r *Reader) ReadFull(buf []byte) error {
+	if _, err := io.ReadFull(r.s, buf); err != nil {
 		if err == io.EOF {
 			err = io.ErrUnexpectedEOF
 		}
+		return errors.Wrap(err, "read")
+	}
+	return nil
+}
+
+func (r *Reader) readFull(n int) error {
+	r.b.Ensure(n)
+	return r.ReadFull(r.b.Buf)
+}
+
+// ReadRaw reads raw n bytes.
+func (r *Reader) ReadRaw(n int) ([]byte, error) {
+	if err := r.readFull(n); err != nil {
 		return nil, errors.Wrap(err, "read full")
 	}
 
@@ -47,6 +57,9 @@ func (r *Reader) ReadRaw(n int) ([]byte, error) {
 // UVarInt reads uint64 from internal reader.
 func (r *Reader) UVarInt() (uint64, error) {
 	n, err := binary.ReadUvarint(r.s)
+	if err == io.EOF {
+		err = io.ErrUnexpectedEOF
+	}
 	if err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
@@ -55,23 +68,31 @@ func (r *Reader) UVarInt() (uint64, error) {
 
 const maxStrSize = 10 * 1024 * 1024 // 10 MB
 
+func (r *Reader) StrLen() (int, error) {
+	n, err := r.Int()
+	if err != nil {
+		return 0, errors.Wrap(err, "read length")
+	}
+
+	if n < 0 {
+		return 0, errors.Errorf("size %d is invalid", n)
+	}
+	if n > maxStrSize {
+		// Protecting from possible OOM.
+		return 0, errors.Errorf("size %d too big (%d is maximum)", n, maxStrSize)
+	}
+
+	return n, nil
+}
+
 // StrRaw decodes string to internal buffer and returns it directly.
 //
 // Do not retain returned slice.
 func (r *Reader) StrRaw() ([]byte, error) {
-	n, err := r.Int()
+	n, err := r.StrLen()
 	if err != nil {
 		return nil, errors.Wrap(err, "read length")
 	}
-
-	if n < 0 {
-		return nil, errors.Errorf("size %d is invalid", n)
-	}
-	if n > maxStrSize {
-		// Protecting from possible OOM.
-		return nil, errors.Errorf("size %d too big (%d is maximum)", n, maxStrSize)
-	}
-
 	r.b.Ensure(n)
 	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
 		return nil, errors.Wrap(err, "read str")
@@ -121,8 +142,7 @@ func (r *Reader) Int() (int, error) {
 
 // Int32 decodes int32 value.
 func (r *Reader) Int32() (int32, error) {
-	r.b.Ensure(32 / 8)
-	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+	if err := r.readFull(32 / 8); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
 	v := bin.Uint32(r.b.Buf)
@@ -131,8 +151,7 @@ func (r *Reader) Int32() (int32, error) {
 
 // Int64 decodes int64 value.
 func (r *Reader) Int64() (int64, error) {
-	r.b.Ensure(64 / 8)
-	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+	if err := r.readFull(64 / 8); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
 	v := bin.Uint64(r.b.Buf)
@@ -141,8 +160,7 @@ func (r *Reader) Int64() (int64, error) {
 
 // UInt8 decodes uint8 value.
 func (r *Reader) UInt8() (uint8, error) {
-	r.b.Ensure(1)
-	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+	if err := r.readFull(1); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
 	return r.b.Buf[0], nil
@@ -150,8 +168,7 @@ func (r *Reader) UInt8() (uint8, error) {
 
 // UInt32 decodes uint32 value.
 func (r *Reader) UInt32() (uint32, error) {
-	r.b.Ensure(32 / 8)
-	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+	if err := r.readFull(32 / 8); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
 	v := bin.Uint32(r.b.Buf)
