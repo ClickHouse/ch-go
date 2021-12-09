@@ -1,6 +1,6 @@
 package proto
 
-//go:generate go run github.com/dmarkham/enumer -type ServerCode -trimprefix ServerCode -output server_code_gen.go
+//go:generate go run github.com/dmarkham/enumer -type ServerCode -trimprefix ServerCode -output server_code_enum.go
 
 // ServerCode is sent by server to client.
 type ServerCode byte

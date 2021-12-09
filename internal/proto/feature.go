@@ -1,6 +1,6 @@
 package proto
 
-//go:generate go run github.com/dmarkham/enumer -type Feature -trimprefix Feature -output feature_gen.go
+//go:generate go run github.com/dmarkham/enumer -type Feature -trimprefix Feature -output feature_enum.go
 
 // Feature represents server side feature.
 type Feature int

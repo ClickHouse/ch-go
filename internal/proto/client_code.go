@@ -1,6 +1,6 @@
 package proto
 
-//go:generate go run github.com/dmarkham/enumer -type ClientCode -trimprefix ClientCode -output client_code_gen.go
+//go:generate go run github.com/dmarkham/enumer -type ClientCode -trimprefix ClientCode -output client_code_enum.go
 
 // ClientCode is sent from client to server.
 type ClientCode byte
