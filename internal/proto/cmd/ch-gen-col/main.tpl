@@ -78,8 +78,9 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   *c = append(*c, data...)
   {{- else if .SingleByte }}
   v := *c
+  v = append(v, make([]{{ .ElemType }}, rows)...)
   for i := range data {
-    v = append(v, {{ .ElemType }}(data[i]))
+    v[i] = {{ .ElemType }}(data[i])
   }
   *c = v
   {{- else }}

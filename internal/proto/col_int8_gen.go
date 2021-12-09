@@ -45,8 +45,9 @@ func (c *ColInt8) DecodeColumn(r *Reader, rows int) error {
 		return errors.Wrap(err, "read")
 	}
 	v := *c
+	v = append(v, make([]int8, rows)...)
 	for i := range data {
-		v = append(v, int8(data[i]))
+		v[i] = int8(data[i])
 	}
 	*c = v
 	return nil
