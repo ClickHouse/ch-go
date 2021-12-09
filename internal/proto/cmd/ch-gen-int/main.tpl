@@ -5,7 +5,6 @@ package proto
 
 import "github.com/go-faster/errors"
 
-
 // {{ .Type }} represents {{ .Name }} column.
 type {{ .Type }} []{{ .ElemType }}
 
