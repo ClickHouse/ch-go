@@ -4,25 +4,38 @@ package proto
 
 import "github.com/go-faster/errors"
 
+// ColumnInt32 represents Int32 column.
 type ColumnInt32 []int32
 
-func (ColumnInt32) Type() ColumnType { return ColumnTypeInt32 }
-func (c ColumnInt32) Rows() int      { return len(c) }
-func (c *ColumnInt32) Reset()        { *c = (*c)[:0] }
+// Type returns ColumnType of Int32.
+func (ColumnInt32) Type() ColumnType {
+	return ColumnTypeInt32
+}
 
+// Rows returns count of rows in column.
+func (c ColumnInt32) Rows() int {
+	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColumnInt32) Reset() {
+	*c = (*c)[:0]
+}
+
+// EncodeColumn encodes Int32 rows to *Buffer.
 func (c ColumnInt32) EncodeColumn(b *Buffer) {
 	for _, v := range c {
 		b.PutInt32(v)
 	}
 }
 
+// DecodeColumn decodes Int32 rows from *Reader.
 func (c *ColumnInt32) DecodeColumn(r *Reader, rows int) error {
 	const size = 32 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {
 		return errors.Wrap(err, "read")
 	}
-
 	v := *c
 	for i := 0; i < len(data); i += size {
 		v = append(v,
@@ -30,6 +43,5 @@ func (c *ColumnInt32) DecodeColumn(r *Reader, rows int) error {
 		)
 	}
 	*c = v
-
 	return nil
 }

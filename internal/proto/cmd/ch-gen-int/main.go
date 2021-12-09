@@ -18,6 +18,10 @@ type Variant struct {
 	Bits   int
 }
 
+func (v Variant) SingleByte() bool {
+	return v.Bits == 8
+}
+
 func (v Variant) Byte() bool {
 	return v.Bits/8 == 1 && !v.Signed
 }

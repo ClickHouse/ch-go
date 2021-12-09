@@ -4,25 +4,38 @@ package proto
 
 import "github.com/go-faster/errors"
 
+// ColumnInt16 represents Int16 column.
 type ColumnInt16 []int16
 
-func (ColumnInt16) Type() ColumnType { return ColumnTypeInt16 }
-func (c ColumnInt16) Rows() int      { return len(c) }
-func (c *ColumnInt16) Reset()        { *c = (*c)[:0] }
+// Type returns ColumnType of Int16.
+func (ColumnInt16) Type() ColumnType {
+	return ColumnTypeInt16
+}
 
+// Rows returns count of rows in column.
+func (c ColumnInt16) Rows() int {
+	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColumnInt16) Reset() {
+	*c = (*c)[:0]
+}
+
+// EncodeColumn encodes Int16 rows to *Buffer.
 func (c ColumnInt16) EncodeColumn(b *Buffer) {
 	for _, v := range c {
 		b.PutInt16(v)
 	}
 }
 
+// DecodeColumn decodes Int16 rows from *Reader.
 func (c *ColumnInt16) DecodeColumn(r *Reader, rows int) error {
 	const size = 16 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {
 		return errors.Wrap(err, "read")
 	}
-
 	v := *c
 	for i := 0; i < len(data); i += size {
 		v = append(v,
@@ -30,6 +43,5 @@ func (c *ColumnInt16) DecodeColumn(r *Reader, rows int) error {
 		)
 	}
 	*c = v
-
 	return nil
 }

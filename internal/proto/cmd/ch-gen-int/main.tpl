@@ -5,32 +5,52 @@ package proto
 
 import "github.com/go-faster/errors"
 
+
+// {{ .Type }} represents {{ .Name }} column.
 type {{ .Type }} []{{ .ElemType }}
 
-func ({{ .Type }}) Type() ColumnType { return {{ .ColumnType }} }
-func (c {{ .Type }}) Rows() int      { return len(c) }
-func (c *{{ .Type }}) Reset()        { *c = (*c)[:0] }
+// Type returns ColumnType of {{ .Name }}.
+func ({{ .Type }}) Type() ColumnType {
+  return {{ .ColumnType }}
+}
 
+// Rows returns count of rows in column.
+func (c {{ .Type }}) Rows() int {
+  return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *{{ .Type }}) Reset() {
+  *c = (*c)[:0]
+}
+
+// EncodeColumn encodes {{ .Name }} rows to *Buffer.
 func (c {{ .Type }}) EncodeColumn(b *Buffer) {
   for _, v := range c {
     b.Put{{ .Name }}(v)
   }
 }
 
+
+// DecodeColumn decodes {{ .Name }} rows from *Reader.
 func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
+  {{- if .SingleByte }}
+  data, err := r.ReadRaw(rows)
+  {{- else }}
   const size = {{ .Bits }} / 8
   data, err := r.ReadRaw(rows * size)
+  {{- end }}
   if err != nil {
     return errors.Wrap(err, "read")
   }
-  {{ if .Byte }}
+  {{- if .Byte }}
   *c = append(*c, data...)
-  {{ else }}
+  {{- else }}
   v := *c
-  for i := 0; i < len(data); i += size {
+  for i := 0; i < len(data); i += {{ if .SingleByte }}1{{ else }}size{{ end }} {
     v = append(v,
     {{- if .Signed }}
-      {{- if eq .Bits 8 }}
+      {{- if .SingleByte }}
        {{ .ElemType }}(data[i]),
       {{- else }}
         {{ .ElemType }}(bin.{{ .BinFunc }}(data[i:i+size])),
@@ -41,6 +61,6 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
     )
   }
   *c = v
-  {{ end }}
+  {{- end }}
   return nil
 }

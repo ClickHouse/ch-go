@@ -4,25 +4,38 @@ package proto
 
 import "github.com/go-faster/errors"
 
+// ColumnUInt32 represents UInt32 column.
 type ColumnUInt32 []uint32
 
-func (ColumnUInt32) Type() ColumnType { return ColumnTypeUInt32 }
-func (c ColumnUInt32) Rows() int      { return len(c) }
-func (c *ColumnUInt32) Reset()        { *c = (*c)[:0] }
+// Type returns ColumnType of UInt32.
+func (ColumnUInt32) Type() ColumnType {
+	return ColumnTypeUInt32
+}
 
+// Rows returns count of rows in column.
+func (c ColumnUInt32) Rows() int {
+	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColumnUInt32) Reset() {
+	*c = (*c)[:0]
+}
+
+// EncodeColumn encodes UInt32 rows to *Buffer.
 func (c ColumnUInt32) EncodeColumn(b *Buffer) {
 	for _, v := range c {
 		b.PutUInt32(v)
 	}
 }
 
+// DecodeColumn decodes UInt32 rows from *Reader.
 func (c *ColumnUInt32) DecodeColumn(r *Reader, rows int) error {
 	const size = 32 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {
 		return errors.Wrap(err, "read")
 	}
-
 	v := *c
 	for i := 0; i < len(data); i += size {
 		v = append(v,
@@ -30,6 +43,5 @@ func (c *ColumnUInt32) DecodeColumn(r *Reader, rows int) error {
 		)
 	}
 	*c = v
-
 	return nil
 }
