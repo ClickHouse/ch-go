@@ -2,7 +2,9 @@
 
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+)
 
 // ColInt8 represents Int8 column.
 type ColInt8 []int8

@@ -2,7 +2,9 @@
 
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+)
 
 // ColUInt64 represents UInt64 column.
 type ColUInt64 []uint64

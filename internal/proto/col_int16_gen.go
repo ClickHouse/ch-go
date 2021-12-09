@@ -2,7 +2,9 @@
 
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+)
 
 // ColInt16 represents Int16 column.
 type ColInt16 []int16

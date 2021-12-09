@@ -14,6 +14,7 @@ import (
 )
 
 type Variant struct {
+	Float  bool
 	Signed bool
 	Bits   int
 }
@@ -39,7 +40,11 @@ func (v Variant) Name() string {
 	if !v.Signed {
 		b.WriteString("U")
 	}
-	b.WriteString("Int")
+	if v.Float {
+		b.WriteString("Float")
+	} else {
+		b.WriteString("Int")
+	}
 	b.WriteString(strconv.Itoa(v.Bits))
 	return b.String()
 }
@@ -53,7 +58,11 @@ func (v Variant) ElemType() string {
 	if !v.Signed {
 		b.WriteString("u")
 	}
-	b.WriteString("int")
+	if v.Float {
+		b.WriteString("float")
+	} else {
+		b.WriteString("int")
+	}
 	b.WriteString(strconv.Itoa(v.Bits))
 	return b.String()
 }
@@ -76,7 +85,6 @@ func write(name string, v Variant, t *template.Template) error {
 	if err := os.WriteFile(name+".go", data, 0o600); err != nil {
 		return errors.Wrap(err, "write file")
 	}
-
 	return nil
 }
 
@@ -85,6 +93,7 @@ func run() error {
 		tpl     = template.Must(template.New("main").Parse(mainTemplate))
 		testTpl = template.Must(template.New("main").Parse(testTemplate))
 	)
+	var variants []Variant
 	for _, bits := range []int{
 		8,
 		16,
@@ -92,18 +101,27 @@ func run() error {
 		64,
 	} {
 		for _, signed := range []bool{true, false} {
-			v := Variant{
-				Signed: signed,
+			variants = append(variants, Variant{
 				Bits:   bits,
-			}
-
-			base := "col_" + v.ElemType() + "_gen"
-			if err := write(base, v, tpl); err != nil {
-				return errors.Wrap(err, "write")
-			}
-			if err := write(base+"_test", v, testTpl); err != nil {
-				return errors.Wrap(err, "write test")
-			}
+				Signed: signed,
+			})
+		}
+		switch bits {
+		case 32, 64:
+			variants = append(variants, Variant{
+				Bits:   bits,
+				Float:  true,
+				Signed: true,
+			})
+		}
+	}
+	for _, v := range variants {
+		base := "col_" + v.ElemType() + "_gen"
+		if err := write(base, v, tpl); err != nil {
+			return errors.Wrap(err, "write")
+		}
+		if err := write(base+"_test", v, testTpl); err != nil {
+			return errors.Wrap(err, "write test")
 		}
 	}
 	return nil

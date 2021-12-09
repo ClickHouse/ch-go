@@ -2,7 +2,9 @@
 
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+)
 
 // ColUInt16 represents UInt16 column.
 type ColUInt16 []uint16

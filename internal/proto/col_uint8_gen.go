@@ -2,7 +2,9 @@
 
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+)
 
 // ColUInt8 represents UInt8 column.
 type ColUInt8 []uint8

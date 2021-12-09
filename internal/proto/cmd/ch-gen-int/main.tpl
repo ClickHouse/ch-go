@@ -3,7 +3,12 @@
 
 package proto
 
-import "github.com/go-faster/errors"
+import (
+{{- if .Float }}
+   "math"
+{{- end }}
+  "github.com/go-faster/errors"
+)
 
 // {{ .Type }} represents {{ .Name }} column.
 type {{ .Type }} []{{ .ElemType }}
@@ -59,7 +64,9 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   v := *c
   for i := 0; i < len(data); i += size {
     v = append(v,
-    {{- if .Signed }}
+    {{- if .Float }}
+      math.{{ .Name }}frombits(bin.{{ .BinFunc }}(data[i:i+size])),
+    {{- else if .Signed }}
      {{ .ElemType }}(bin.{{ .BinFunc }}(data[i:i+size])),
     {{- else }}
       bin.{{ .BinFunc }}(data[i:i+size]),

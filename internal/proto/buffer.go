@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"math"
 )
 
 // Buffer implements ClickHouse binary protocol encoding.
@@ -136,4 +137,12 @@ func (b *Buffer) PutInt8(v int8) {
 
 func (b *Buffer) PutInt16(v int16) {
 	b.PutUInt16(uint16(v))
+}
+
+func (b *Buffer) PutFloat64(v float64) {
+	b.PutUInt64(math.Float64bits(v))
+}
+
+func (b *Buffer) PutFloat32(v float32) {
+	b.PutUInt32(math.Float32bits(v))
 }
