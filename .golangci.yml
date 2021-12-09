@@ -115,3 +115,6 @@ issues:
     - path: main\.go
       linters: [ goconst, funlen, gocognit, gocyclo ]
 
+    - path: main\.go
+      linters: [ gosec ]
+      text: "G307"

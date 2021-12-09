@@ -69,7 +69,7 @@ func write(name string, v Variant, t *template.Template) error {
 	if err != nil {
 		return errors.Wrap(err, "format")
 	}
-	if err := os.WriteFile(name+".go", data, 0o666); err != nil {
+	if err := os.WriteFile(name+".go", data, 0o600); err != nil {
 		return errors.Wrap(err, "write file")
 	}
 
