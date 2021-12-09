@@ -36,10 +36,8 @@ func (c *ColumnInt8) DecodeColumn(r *Reader, rows int) error {
 		return errors.Wrap(err, "read")
 	}
 	v := *c
-	for i := 0; i < len(data); i += 1 {
-		v = append(v,
-			int8(data[i]),
-		)
+	for i := range data {
+		v = append(v, int8(data[i]))
 	}
 	*c = v
 	return nil

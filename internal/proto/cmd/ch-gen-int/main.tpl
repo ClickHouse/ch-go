@@ -45,16 +45,18 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   }
   {{- if .Byte }}
   *c = append(*c, data...)
+  {{- else if .SingleByte }}
+  v := *c
+  for i := range data {
+    v = append(v, {{ .ElemType }}(data[i]))
+  }
+  *c = v
   {{- else }}
   v := *c
-  for i := 0; i < len(data); i += {{ if .SingleByte }}1{{ else }}size{{ end }} {
+  for i := 0; i < len(data); i += size {
     v = append(v,
     {{- if .Signed }}
-      {{- if .SingleByte }}
-       {{ .ElemType }}(data[i]),
-      {{- else }}
-        {{ .ElemType }}(bin.{{ .BinFunc }}(data[i:i+size])),
-      {{- end }}
+     {{ .ElemType }}(bin.{{ .BinFunc }}(data[i:i+size])),
     {{- else }}
       bin.{{ .BinFunc }}(data[i:i+size]),
     {{- end }}
