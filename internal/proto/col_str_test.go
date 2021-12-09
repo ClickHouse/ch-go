@@ -52,3 +52,56 @@ func TestColStr_EncodeColumn(t *testing.T) {
 		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 	})
 }
+
+func BenchmarkColStr_DecodeColumn(b *testing.B) {
+	const rows = 1_000
+	var data ColStr
+	for i := 0; i < rows; i++ {
+		data.Append("ClickHouse не тормозит")
+	}
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+
+	br := bytes.NewReader(buf.Buf)
+	r := NewReader(br)
+
+	var dec ColStr
+	if err := dec.DecodeColumn(r, rows); err != nil {
+		b.Fatal(err)
+	}
+
+	b.SetBytes(int64(len(buf.Buf)))
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		br.Reset(buf.Buf)
+		r.s.Reset(br)
+		dec.Reset()
+
+		if err := dec.DecodeColumn(r, rows); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkColStr_EncodeColumn(b *testing.B) {
+	const rows = 1_000
+	var data ColStr
+	for i := 0; i < rows; i++ {
+		data.Append("ClickHouse не тормозит")
+	}
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+
+	b.SetBytes(int64(len(buf.Buf)))
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		data.EncodeColumn(&buf)
+	}
+}
