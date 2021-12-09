@@ -1,6 +1,9 @@
 ignore:
   - main.go
   - "_enum.go"
+  - "internal/cht"
+  - "internal/e2e"
+  - "internal/cmd"
 coverage:
   status:
     project: false
