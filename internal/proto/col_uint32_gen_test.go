@@ -27,6 +27,10 @@ func TestColUInt32_DecodeColumn(t *testing.T) {
 		var dec ColUInt32
 		require.NoError(t, dec.DecodeColumn(r, rows))
 		require.Equal(t, data, dec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, ColumnTypeUInt32, dec.Type())
 	})
 	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
