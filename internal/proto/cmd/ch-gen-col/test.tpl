@@ -50,11 +50,14 @@ func Benchmark{{ .Type }}_DecodeColumn(b *testing.B) {
   br := bytes.NewReader(buf.Buf)
   r := NewReader(br)
 
+  var dec {{ .Type }}
+  if err := dec.DecodeColumn(r, rows); err != nil {
+    b.Fatal(err)
+  }
   b.SetBytes(int64(len(buf.Buf)))
   b.ResetTimer()
   b.ReportAllocs()
 
-  var dec {{ .Type }}
   for i := 0; i < b.N; i++ {
     br.Reset(buf.Buf)
     r.s.Reset(br)

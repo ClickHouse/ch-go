@@ -49,11 +49,14 @@ func BenchmarkColInt8_DecodeColumn(b *testing.B) {
 	br := bytes.NewReader(buf.Buf)
 	r := NewReader(br)
 
+	var dec ColInt8
+	if err := dec.DecodeColumn(r, rows); err != nil {
+		b.Fatal(err)
+	}
 	b.SetBytes(int64(len(buf.Buf)))
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	var dec ColInt8
 	for i := 0; i < b.N; i++ {
 		br.Reset(buf.Buf)
 		r.s.Reset(br)
