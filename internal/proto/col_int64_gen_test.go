@@ -44,10 +44,12 @@ func BenchmarkColumnInt64_DecodeColumn(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	var dec ColumnUInt32
+	var dec ColumnInt64
 	for i := 0; i < b.N; i++ {
 		br.Reset(buf.Buf)
+		r.s.Reset(br)
 		dec.Reset()
+
 		if err := dec.DecodeColumn(r, rows); err != nil {
 			b.Fatal(err)
 		}
