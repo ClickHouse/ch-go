@@ -41,14 +41,13 @@ func run(ctx context.Context) error {
 	defer func() {
 		_ = c.Close()
 	}()
-	var data proto.ColumnUInt32
-
-	start := time.Now()
 
 	var (
 		rows       uint64
 		totalBytes uint64
+		data       proto.ColUInt32
 	)
+	start := time.Now()
 	if err := c.Query(ctx, ch.Query{
 		Body: "SELECT v FROM test_values",
 		OnProgress: func(ctx context.Context, p proto.Progress) error {

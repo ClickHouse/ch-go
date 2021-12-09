@@ -32,7 +32,7 @@ func TestConnect(t *testing.T) {
 	})
 	t.Run("SelectOne", func(t *testing.T) {
 		// Select single row.
-		var data proto.ColumnUInt8
+		var data proto.ColUInt8
 		selectOne := ch.Query{
 			Body: "SELECT 1 AS one",
 			Result: []proto.ResultColumn{

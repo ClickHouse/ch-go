@@ -4,39 +4,39 @@ package proto
 
 import "github.com/go-faster/errors"
 
-// ColumnInt8 represents Int8 column.
-type ColumnInt8 []int8
+// ColInt8 represents Int8 column.
+type ColInt8 []int8
 
-// Compile-time assertions for ColumnInt8.
+// Compile-time assertions for ColInt8.
 var (
-	_ Input  = ColumnInt8{}
-	_ Result = (*ColumnInt8)(nil)
+	_ Input  = ColInt8{}
+	_ Result = (*ColInt8)(nil)
 )
 
 // Type returns ColumnType of Int8.
-func (ColumnInt8) Type() ColumnType {
+func (ColInt8) Type() ColumnType {
 	return ColumnTypeInt8
 }
 
 // Rows returns count of rows in column.
-func (c ColumnInt8) Rows() int {
+func (c ColInt8) Rows() int {
 	return len(c)
 }
 
 // Reset resets data in row, preserving capacity for efficiency.
-func (c *ColumnInt8) Reset() {
+func (c *ColInt8) Reset() {
 	*c = (*c)[:0]
 }
 
 // EncodeColumn encodes Int8 rows to *Buffer.
-func (c ColumnInt8) EncodeColumn(b *Buffer) {
+func (c ColInt8) EncodeColumn(b *Buffer) {
 	for _, v := range c {
 		b.PutInt8(v)
 	}
 }
 
 // DecodeColumn decodes Int8 rows from *Reader.
-func (c *ColumnInt8) DecodeColumn(r *Reader, rows int) error {
+func (c *ColInt8) DecodeColumn(r *Reader, rows int) error {
 	data, err := r.ReadRaw(rows)
 	if err != nil {
 		return errors.Wrap(err, "read")

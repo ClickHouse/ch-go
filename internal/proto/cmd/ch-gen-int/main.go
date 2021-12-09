@@ -27,7 +27,7 @@ func (v Variant) Byte() bool {
 }
 
 func (v Variant) Type() string {
-	return "Column" + v.Name()
+	return "Col" + v.Name()
 }
 
 func (v Variant) ColumnType() string {

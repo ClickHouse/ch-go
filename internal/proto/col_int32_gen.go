@@ -4,39 +4,39 @@ package proto
 
 import "github.com/go-faster/errors"
 
-// ColumnInt32 represents Int32 column.
-type ColumnInt32 []int32
+// ColInt32 represents Int32 column.
+type ColInt32 []int32
 
-// Compile-time assertions for ColumnInt32.
+// Compile-time assertions for ColInt32.
 var (
-	_ Input  = ColumnInt32{}
-	_ Result = (*ColumnInt32)(nil)
+	_ Input  = ColInt32{}
+	_ Result = (*ColInt32)(nil)
 )
 
 // Type returns ColumnType of Int32.
-func (ColumnInt32) Type() ColumnType {
+func (ColInt32) Type() ColumnType {
 	return ColumnTypeInt32
 }
 
 // Rows returns count of rows in column.
-func (c ColumnInt32) Rows() int {
+func (c ColInt32) Rows() int {
 	return len(c)
 }
 
 // Reset resets data in row, preserving capacity for efficiency.
-func (c *ColumnInt32) Reset() {
+func (c *ColInt32) Reset() {
 	*c = (*c)[:0]
 }
 
 // EncodeColumn encodes Int32 rows to *Buffer.
-func (c ColumnInt32) EncodeColumn(b *Buffer) {
+func (c ColInt32) EncodeColumn(b *Buffer) {
 	for _, v := range c {
 		b.PutInt32(v)
 	}
 }
 
 // DecodeColumn decodes Int32 rows from *Reader.
-func (c *ColumnInt32) DecodeColumn(r *Reader, rows int) error {
+func (c *ColInt32) DecodeColumn(r *Reader, rows int) error {
 	const size = 32 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {

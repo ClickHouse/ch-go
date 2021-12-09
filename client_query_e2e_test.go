@@ -23,7 +23,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Query(ctx, createTable), "create table")
 
-		data := proto.ColumnUInt8{1, 2, 3, 4}
+		data := proto.ColUInt8{1, 2, 3, 4}
 		insertQuery := Query{
 			Body: "INSERT INTO test_table VALUES",
 			Input: []proto.InputColumn{
@@ -32,7 +32,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
 
-		var gotData proto.ColumnUInt8
+		var gotData proto.ColUInt8
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
 			Result: []proto.ResultColumn{
@@ -46,7 +46,7 @@ func TestClient_Query(t *testing.T) {
 	t.Run("SelectOne", func(t *testing.T) {
 		t.Parallel()
 		// Select single row.
-		var data proto.ColumnUInt8
+		var data proto.ColUInt8
 		selectOne := Query{
 			Body: "SELECT 1 AS one",
 			Result: []proto.ResultColumn{
@@ -64,7 +64,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611
 		var (
-			data  proto.ColumnUInt32
+			data  proto.ColUInt32
 			total int
 		)
 		selectRand := Query{

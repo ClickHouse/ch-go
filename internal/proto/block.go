@@ -77,12 +77,14 @@ func (c InputColumn) EncodeStart(buf *Buffer) {
 	buf.PutString(string(c.Data.Type()))
 }
 
+// Input column.
 type Input interface {
 	Type() ColumnType
 	Rows() int
 	EncodeColumn(b *Buffer)
 }
 
+// Result column.
 type Result interface {
 	Type() ColumnType
 	Rows() int

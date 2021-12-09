@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestColumnUInt32_DecodeColumn(t *testing.T) {
+func TestColUInt32_DecodeColumn(t *testing.T) {
 	const rows = 50_000
-	var data ColumnUInt32
+	var data ColUInt32
 	for i := 0; i < rows; i++ {
 		data = append(data, uint32(i))
 	}
@@ -22,14 +22,14 @@ func TestColumnUInt32_DecodeColumn(t *testing.T) {
 	br := bytes.NewReader(buf.Buf)
 	r := NewReader(br)
 
-	var dec ColumnUInt32
+	var dec ColUInt32
 	require.NoError(t, dec.DecodeColumn(r, rows))
 	require.Equal(t, data, dec)
 }
 
-func BenchmarkColumnUInt32_DecodeColumn(b *testing.B) {
+func BenchmarkColUInt32_DecodeColumn(b *testing.B) {
 	const rows = 50_000
-	var data ColumnUInt32
+	var data ColUInt32
 	for i := 0; i < rows; i++ {
 		data = append(data, uint32(i))
 	}
@@ -44,7 +44,7 @@ func BenchmarkColumnUInt32_DecodeColumn(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	var dec ColumnUInt32
+	var dec ColUInt32
 	for i := 0; i < b.N; i++ {
 		br.Reset(buf.Buf)
 		r.s.Reset(br)
