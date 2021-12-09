@@ -92,6 +92,12 @@ func (b *Buffer) PutString(s string) {
 	b.Buf = append(b.Buf, s...)
 }
 
+func (b *Buffer) PutUInt16(x uint16) {
+	buf := make([]byte, 16/8)
+	bin.PutUint16(buf, x)
+	b.Buf = append(b.Buf, buf...)
+}
+
 func (b *Buffer) PutUInt32(x uint32) {
 	buf := make([]byte, 32/8)
 	bin.PutUint32(buf, x)
@@ -122,4 +128,12 @@ func (b *Buffer) PutBool(v bool) {
 	} else {
 		b.PutUInt8(boolFalse)
 	}
+}
+
+func (b *Buffer) PutInt8(v int8) {
+	b.PutUInt8(uint8(v))
+}
+
+func (b *Buffer) PutInt16(v int16) {
+	b.PutUInt16(uint16(v))
 }
