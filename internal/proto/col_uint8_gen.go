@@ -32,9 +32,7 @@ func (c *ColUInt8) Reset() {
 
 // EncodeColumn encodes UInt8 rows to *Buffer.
 func (c ColUInt8) EncodeColumn(b *Buffer) {
-	for _, v := range c {
-		b.PutUInt8(v)
-	}
+	b.Buf = append(b.Buf, c...)
 }
 
 // DecodeColumn decodes UInt8 rows from *Reader.

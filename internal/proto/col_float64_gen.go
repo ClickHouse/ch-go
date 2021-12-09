@@ -33,8 +33,15 @@ func (c *ColFloat64) Reset() {
 
 // EncodeColumn encodes Float64 rows to *Buffer.
 func (c ColFloat64) EncodeColumn(b *Buffer) {
+	const size = 64 / 8
+	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
+	var offset int
 	for _, v := range c {
-		b.PutFloat64(v)
+		bin.PutUint64(
+			b.Buf[offset:offset+size],
+			math.Float64bits(v),
+		)
+		offset += size
 	}
 }
 

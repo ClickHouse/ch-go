@@ -32,8 +32,9 @@ func (c *ColInt8) Reset() {
 
 // EncodeColumn encodes Int8 rows to *Buffer.
 func (c ColInt8) EncodeColumn(b *Buffer) {
+	b.Buf = append(b.Buf, make([]byte, len(c))...)
 	for _, v := range c {
-		b.PutInt8(v)
+		b.Buf = append(b.Buf, uint8(v))
 	}
 }
 

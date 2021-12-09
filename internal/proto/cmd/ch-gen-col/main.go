@@ -24,7 +24,7 @@ func (v Variant) SingleByte() bool {
 }
 
 func (v Variant) Byte() bool {
-	return v.Bits/8 == 1 && !v.Signed
+	return v.Bits/8 == 1 && !v.Signed && !v.Float
 }
 
 func (v Variant) Type() string {
@@ -51,6 +51,13 @@ func (v Variant) Name() string {
 
 func (v Variant) BinFunc() string {
 	return fmt.Sprintf("Uint%d", v.Bits)
+}
+
+func (v Variant) UnsignedType() string {
+	var b strings.Builder
+	b.WriteString("uint")
+	b.WriteString(strconv.Itoa(v.Bits))
+	return b.String()
 }
 
 func (v Variant) ElemType() string {

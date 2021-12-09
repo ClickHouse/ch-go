@@ -33,8 +33,15 @@ func (c *ColFloat32) Reset() {
 
 // EncodeColumn encodes Float32 rows to *Buffer.
 func (c ColFloat32) EncodeColumn(b *Buffer) {
+	const size = 32 / 8
+	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
+	var offset int
 	for _, v := range c {
-		b.PutFloat32(v)
+		bin.PutUint32(
+			b.Buf[offset:offset+size],
+			math.Float32bits(v),
+		)
+		offset += size
 	}
 }
 

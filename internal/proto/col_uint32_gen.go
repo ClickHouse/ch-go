@@ -32,8 +32,15 @@ func (c *ColUInt32) Reset() {
 
 // EncodeColumn encodes UInt32 rows to *Buffer.
 func (c ColUInt32) EncodeColumn(b *Buffer) {
+	const size = 32 / 8
+	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
+	var offset int
 	for _, v := range c {
-		b.PutUInt32(v)
+		bin.PutUint32(
+			b.Buf[offset:offset+size],
+			v,
+		)
+		offset += size
 	}
 }
 
