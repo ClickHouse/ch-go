@@ -11,7 +11,7 @@ import (
 )
 
 func TestColInt64_DecodeColumn(t *testing.T) {
-	const rows = 50_000
+	const rows = 50
 	var data ColInt64
 	for i := 0; i < rows; i++ {
 		data = append(data, int64(i))

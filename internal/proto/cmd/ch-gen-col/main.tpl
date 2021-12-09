@@ -40,8 +40,8 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
   b.Buf = append(b.Buf, c...)
   {{- else if .SingleByte }}
   b.Buf = append(b.Buf, make([]byte, len(c))...)
-  for _, v := range c {
-    b.Buf = append(b.Buf, {{ .UnsignedType }}(v))
+  for i := range c {
+    b.Buf[i] = {{ .UnsignedType }}(c[i])
   }
   {{- else }}
   const size = {{ .Bits }} / 8

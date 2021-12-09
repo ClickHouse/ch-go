@@ -11,7 +11,7 @@ import (
 )
 
 func TestColInt8_DecodeColumn(t *testing.T) {
-	const rows = 50_000
+	const rows = 50
 	var data ColInt8
 	for i := 0; i < rows; i++ {
 		data = append(data, int8(i))

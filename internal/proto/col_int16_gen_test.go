@@ -11,7 +11,7 @@ import (
 )
 
 func TestColInt16_DecodeColumn(t *testing.T) {
-	const rows = 50_000
+	const rows = 50
 	var data ColInt16
 	for i := 0; i < rows; i++ {
 		data = append(data, int16(i))

@@ -12,7 +12,7 @@ import (
 )
 
 func Test{{ .Type }}_DecodeColumn(t *testing.T) {
-  const rows = 50_000
+  const rows = 50
   var data {{ .Type }}
   for i := 0; i < rows; i++ {
     data = append(data, {{ .ElemType }}(i))

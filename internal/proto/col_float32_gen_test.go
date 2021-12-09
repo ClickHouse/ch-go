@@ -11,7 +11,7 @@ import (
 )
 
 func TestColFloat32_DecodeColumn(t *testing.T) {
-	const rows = 50_000
+	const rows = 50
 	var data ColFloat32
 	for i := 0; i < rows; i++ {
 		data = append(data, float32(i))
