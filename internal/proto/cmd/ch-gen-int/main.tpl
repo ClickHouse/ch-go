@@ -8,6 +8,12 @@ import "github.com/go-faster/errors"
 // {{ .Type }} represents {{ .Name }} column.
 type {{ .Type }} []{{ .ElemType }}
 
+// Compile-time assertions for {{ .Type }}.
+var (
+  _ Input  = {{ .Type }}{}
+  _ Result = (*{{ .Type }})(nil)
+)
+
 // Type returns ColumnType of {{ .Name }}.
 func ({{ .Type }}) Type() ColumnType {
   return {{ .ColumnType }}
@@ -29,7 +35,6 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
     b.Put{{ .Name }}(v)
   }
 }
-
 
 // DecodeColumn decodes {{ .Name }} rows from *Reader.
 func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {

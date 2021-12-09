@@ -7,6 +7,12 @@ import "github.com/go-faster/errors"
 // ColumnUInt16 represents UInt16 column.
 type ColumnUInt16 []uint16
 
+// Compile-time assertions for ColumnUInt16.
+var (
+	_ Input  = ColumnUInt16{}
+	_ Result = (*ColumnUInt16)(nil)
+)
+
 // Type returns ColumnType of UInt16.
 func (ColumnUInt16) Type() ColumnType {
 	return ColumnTypeUInt16

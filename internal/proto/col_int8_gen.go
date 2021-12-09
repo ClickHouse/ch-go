@@ -7,6 +7,12 @@ import "github.com/go-faster/errors"
 // ColumnInt8 represents Int8 column.
 type ColumnInt8 []int8
 
+// Compile-time assertions for ColumnInt8.
+var (
+	_ Input  = ColumnInt8{}
+	_ Result = (*ColumnInt8)(nil)
+)
+
 // Type returns ColumnType of Int8.
 func (ColumnInt8) Type() ColumnType {
 	return ColumnTypeInt8

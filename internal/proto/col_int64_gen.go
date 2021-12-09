@@ -7,6 +7,12 @@ import "github.com/go-faster/errors"
 // ColumnInt64 represents Int64 column.
 type ColumnInt64 []int64
 
+// Compile-time assertions for ColumnInt64.
+var (
+	_ Input  = ColumnInt64{}
+	_ Result = (*ColumnInt64)(nil)
+)
+
 // Type returns ColumnType of Int64.
 func (ColumnInt64) Type() ColumnType {
 	return ColumnTypeInt64

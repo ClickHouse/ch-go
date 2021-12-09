@@ -7,6 +7,12 @@ import "github.com/go-faster/errors"
 // ColumnInt32 represents Int32 column.
 type ColumnInt32 []int32
 
+// Compile-time assertions for ColumnInt32.
+var (
+	_ Input  = ColumnInt32{}
+	_ Result = (*ColumnInt32)(nil)
+)
+
 // Type returns ColumnType of Int32.
 func (ColumnInt32) Type() ColumnType {
 	return ColumnTypeInt32
