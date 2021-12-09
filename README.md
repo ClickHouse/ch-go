@@ -2,6 +2,11 @@
 
 WIP TCP ClickHouse client in Go.
 
+## Supported types
+* UInt8, UInt16, Uint32, Uint64
+* Int8, Int16, Int32, Int64
+* String
+
 ## Reference
 
 * [clickhouse-cpp](https://github.com/ClickHouse/clickhouse-cpp)
