@@ -55,11 +55,31 @@ func (v Variant) ElemType() string {
 }
 
 //go:embed main.tpl
-var t string
+var mainTemplate string
+
+//go:embed test.tpl
+var testTemplate string
+
+func write(name string, v Variant, t *template.Template) error {
+	out := new(bytes.Buffer)
+	if err := t.Execute(out, v); err != nil {
+		return errors.Wrap(err, "execute")
+	}
+	data, err := format.Source(out.Bytes())
+	if err != nil {
+		return errors.Wrap(err, "format")
+	}
+	if err := os.WriteFile(name+".go", data, 0o666); err != nil {
+		return errors.Wrap(err, "write file")
+	}
+
+	return nil
+}
 
 func run() error {
 	var (
-		tpl = template.Must(template.New("main").Parse(t))
+		tpl     = template.Must(template.New("main").Parse(mainTemplate))
+		testTpl = template.Must(template.New("main").Parse(testTemplate))
 	)
 	for _, bits := range []int{
 		8,
@@ -72,20 +92,13 @@ func run() error {
 				Signed: signed,
 				Bits:   bits,
 			}
-			out := new(bytes.Buffer)
 
-			if err := tpl.Execute(out, v); err != nil {
-				return errors.Wrap(err, "execute")
+			base := "col_" + v.ElemType() + "_gen"
+			if err := write(base, v, tpl); err != nil {
+				return errors.Wrap(err, "write")
 			}
-
-			data, err := format.Source(out.Bytes())
-			if err != nil {
-				return errors.Wrap(err, "format")
-			}
-
-			name := "col_" + v.ElemType() + "_gen.go"
-			if err := os.WriteFile(name, data, 0o666); err != nil {
-				return errors.Wrap(err, "write file")
+			if err := write(base+"_test", v, testTpl); err != nil {
+				return errors.Wrap(err, "write test")
 			}
 		}
 	}
