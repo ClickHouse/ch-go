@@ -55,3 +55,23 @@ func BenchmarkColUInt32_DecodeColumn(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkColUInt32_EncodeColumn(b *testing.B) {
+	const rows = 50_000
+	var data ColUInt32
+	for i := 0; i < rows; i++ {
+		data = append(data, uint32(i))
+	}
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+
+	b.SetBytes(int64(len(buf.Buf)))
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		data.EncodeColumn(&buf)
+	}
+}

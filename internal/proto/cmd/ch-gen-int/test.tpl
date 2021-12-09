@@ -56,3 +56,24 @@ func Benchmark{{ .Type }}_DecodeColumn(b *testing.B) {
     }
   }
 }
+
+func Benchmark{{ .Type }}_EncodeColumn(b *testing.B) {
+  const rows = 50_000
+  var data {{ .Type }}
+  for i := 0; i < rows; i++ {
+    data = append(data, {{ .ElemType }}(i))
+  }
+
+  var buf Buffer
+  data.EncodeColumn(&buf)
+
+  b.SetBytes(int64(len(buf.Buf)))
+  b.ResetTimer()
+  b.ReportAllocs()
+
+  for i := 0; i < b.N; i++ {
+    buf.Reset()
+    data.EncodeColumn(&buf)
+  }
+}
+
