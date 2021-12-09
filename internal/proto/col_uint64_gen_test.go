@@ -4,6 +4,7 @@ package proto
 
 import (
 	"bytes"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,12 +20,20 @@ func TestColUInt64_DecodeColumn(t *testing.T) {
 	var buf Buffer
 	data.EncodeColumn(&buf)
 
-	br := bytes.NewReader(buf.Buf)
-	r := NewReader(br)
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
 
-	var dec ColUInt64
-	require.NoError(t, dec.DecodeColumn(r, rows))
-	require.Equal(t, data, dec)
+		var dec ColUInt64
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, data, dec)
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+
+		var dec ColUInt64
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
 }
 
 func BenchmarkColUInt64_DecodeColumn(b *testing.B) {

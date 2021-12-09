@@ -35,6 +35,9 @@ func (r *Reader) ReadRaw(n int) ([]byte, error) {
 	r.b.Ensure(n)
 
 	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
 		return nil, errors.Wrap(err, "read full")
 	}
 
