@@ -78,7 +78,7 @@ func readFile(t testing.TB, elems ...string) []byte {
 	t.Helper()
 
 	p := filePath(elems...)
-	data, err := os.ReadFile(p)
+	data, err := os.ReadFile(p) // nolint:gosec // testing
 	if err != nil {
 		t.Fatalf("golden file %s: %+v", path.Join(elems...), err)
 	}
@@ -137,7 +137,7 @@ func Bytes(t testing.TB, data []byte, name ...string) {
 	// Adding ".raw" prefix to visually distinguish hex and raw.
 	last := len(name) - 1
 	rawName := append([]string{}, name...)
-	rawName[last] = name[last] + ".raw"
+	rawName[last] += ".raw"
 
 	if !exists(t, rawName...) {
 		t.Log("Populating initial golden file")
@@ -149,7 +149,7 @@ func Bytes(t testing.TB, data []byte, name ...string) {
 		// updates.
 		dump := hex.Dump(data)
 		dumpName := append([]string{}, name...)
-		dumpName[last] = dumpName[last] + ".hex"
+		dumpName[last] += ".hex"
 		writeFile(t, []byte(dump), dumpName...)
 
 		// Writing raw file.
