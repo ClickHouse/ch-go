@@ -20,3 +20,11 @@ func TestBlockInfo_Encode(t *testing.T) {
 		require.Equal(t, i, v)
 	})
 }
+
+func TestBlock_EncodeAware(t *testing.T) {
+	Gold(t, Block{
+		Info:    BlockInfo{},
+		Columns: 15,
+		Rows:    10,
+	})
+}
