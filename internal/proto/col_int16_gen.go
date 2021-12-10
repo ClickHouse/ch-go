@@ -33,8 +33,8 @@ func (c *ColInt16) Reset() {
 // EncodeColumn encodes Int16 rows to *Buffer.
 func (c ColInt16) EncodeColumn(b *Buffer) {
 	const size = 16 / 8
+	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	var offset int
 	for _, v := range c {
 		bin.PutUint16(
 			b.Buf[offset:offset+size],

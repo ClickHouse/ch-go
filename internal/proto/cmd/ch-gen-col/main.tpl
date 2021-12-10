@@ -39,14 +39,15 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
   {{- if .Byte }}
   b.Buf = append(b.Buf, c...)
   {{- else if .SingleByte }}
+  start := len(b.Buf)
   b.Buf = append(b.Buf, make([]byte, len(c))...)
   for i := range c {
-    b.Buf[i] = {{ .UnsignedType }}(c[i])
+    b.Buf[i + start] = {{ .UnsignedType }}(c[i])
   }
   {{- else }}
   const size = {{ .Bits }} / 8
+  offset := len(b.Buf)
   b.Buf = append(b.Buf, make([]byte, size * len(c))...)
-  var offset int
   for _, v := range c {
     bin.Put{{ .BinFunc }}(
       b.Buf[offset:offset+size],

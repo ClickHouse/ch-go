@@ -77,6 +77,26 @@ func TestClient_Query(t *testing.T) {
 		require.Equal(t, 1, data.Rows())
 		require.Equal(t, "foo", data.First())
 	})
+	t.Run("SelectArr", func(t *testing.T) {
+		t.Parallel()
+		var data proto.ColUInt8
+		arr := proto.ColArr{
+			Data: &data,
+		}
+		selectArr := Query{
+			Body: "SELECT [1, 2, 3] AS arr",
+			Result: []proto.ResultColumn{
+				{
+					Name: "arr",
+					Data: &arr,
+				},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectArr))
+		require.Equal(t, 1, arr.Rows())
+		require.Equal(t, 3, data.Rows())
+		require.Equal(t, proto.ColUInt8{1, 2, 3}, data)
+	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611

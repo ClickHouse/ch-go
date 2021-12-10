@@ -1,6 +1,14 @@
 package proto
 
+import (
+	"strings"
+)
+
 type ColumnType string
+
+func (c ColumnType) IsArray() bool {
+	return strings.HasPrefix(string(c), string(ColumnTypeArray))
+}
 
 const (
 	ColumnTypeInt8    ColumnType = "Int8"
@@ -14,4 +22,5 @@ const (
 	ColumnTypeFloat32 ColumnType = "Float32"
 	ColumnTypeFloat64 ColumnType = "Float64"
 	ColumnTypeString  ColumnType = "String"
+	ColumnTypeArray   ColumnType = "Array"
 )

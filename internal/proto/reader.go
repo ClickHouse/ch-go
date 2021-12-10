@@ -142,19 +142,19 @@ func (r *Reader) Int() (int, error) {
 
 // Int32 decodes int32 value.
 func (r *Reader) Int32() (int32, error) {
-	if err := r.readFull(32 / 8); err != nil {
-		return 0, errors.Wrap(err, "read")
+	v, err := r.UInt32()
+	if err != nil {
+		return 0, err
 	}
-	v := bin.Uint32(r.b.Buf)
 	return int32(v), nil
 }
 
 // Int64 decodes int64 value.
 func (r *Reader) Int64() (int64, error) {
-	if err := r.readFull(64 / 8); err != nil {
-		return 0, errors.Wrap(err, "read")
+	v, err := r.UInt64()
+	if err != nil {
+		return 0, err
 	}
-	v := bin.Uint64(r.b.Buf)
 	return int64(v), nil
 }
 
@@ -172,6 +172,15 @@ func (r *Reader) UInt32() (uint32, error) {
 		return 0, errors.Wrap(err, "read")
 	}
 	v := bin.Uint32(r.b.Buf)
+	return v, nil
+}
+
+// UInt64 decodes uint64 value.
+func (r *Reader) UInt64() (uint64, error) {
+	if err := r.readFull(64 / 8); err != nil {
+		return 0, errors.Wrap(err, "read")
+	}
+	v := bin.Uint64(r.b.Buf)
 	return v, nil
 }
 
