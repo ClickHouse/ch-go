@@ -15,23 +15,23 @@ import (
 
 const defaultDir = "_golden"
 
-// update reports whether golden files update is requested.
+// _update reports whether golden files _update is requested.
 //
 // Call Init() in TestMain to propagate.
-var update bool
+var _update bool
 
-// clean reports whether golden files update is requested.
+// _clean reports whether golden files _update is requested.
 //
 // Call Init() in TestMain to propagate.
-var clean bool
+var _clean bool
 
 // Init should be called in TestMain.
 func Init() {
-	flag.BoolVar(&update, "update", false, "update golden files")
-	flag.BoolVar(&clean, "clean", true, "clean golden files")
+	flag.BoolVar(&_update, "update", false, "update golden files")
+	flag.BoolVar(&_clean, "clean", true, "clean golden files")
 	flag.Parse()
 
-	if clean && update {
+	if _clean && _update {
 		dir, err := os.ReadDir(defaultDir)
 		if err != nil {
 			// Ignore any error.
@@ -112,6 +112,7 @@ func Str(t testing.TB, s string, name ...string) {
 		name = []string{"file.txt"}
 	}
 
+	update := _update
 	if !exists(t, name...) {
 		t.Log("Populating initial golden file")
 		update = true
@@ -141,9 +142,9 @@ func Bytes(t testing.TB, data []byte, name ...string) {
 
 	if !exists(t, rawName...) {
 		t.Log("Populating initial golden file")
-		update = true
+		_update = true
 	}
-	if update {
+	if _update {
 		// Writing hex dump next to raw binary to make
 		// git diff more understandable on golden file
 		// updates.
