@@ -43,6 +43,51 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 4)
 		require.Equal(t, data, gotData)
 	})
+	t.Run("InsertArr", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		require.NoError(t, conn.Query(ctx, Query{
+			Body: "CREATE TABLE test_array_table (v Array(String)) ENGINE = MergeTree ORDER BY v",
+		}), "create table")
+
+		var data proto.ColStr
+		arr := proto.ColArr{
+			Data: &data,
+		}
+		data.ArrAppend(&arr, []string{"foo", "bar", "baz"})
+		data.ArrAppend(&arr, []string{"Hello", "World!"})
+		data.ArrAppend(&arr, []string{"", "", "0", "None", "False"})
+
+		_ = data.ForEach(func(i int, s string) error {
+			t.Logf("[%d] %s", i, s)
+			return nil
+		})
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_array_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: &arr},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		var gotData proto.ColStr
+		gotArr := proto.ColArr{
+			Data: &gotData,
+		}
+		selectData := Query{
+			Body: "SELECT * FROM test_array_table",
+			Result: []proto.ResultColumn{
+				{Name: "v", Data: &gotArr},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		_ = gotData.ForEach(func(i int, s string) error {
+			t.Logf("[%d] %s", i, s)
+			return nil
+		})
+	})
 	t.Run("SelectOne", func(t *testing.T) {
 		t.Parallel()
 		// Select single row.
