@@ -40,15 +40,13 @@ func (c *ColArr) DecodeColumn(r *Reader, rows int) error {
 	if err := c.Offsets.DecodeColumn(r, rows); err != nil {
 		return errors.Wrap(err, "read offsets")
 	}
-
-	var start uint64
-	for i := 0; i < rows; i++ {
-		end := c.Offsets[i]
-		size := int(end - start)
-		if err := c.Data.DecodeColumn(r, size); err != nil {
-			return errors.Wrap(err, "decode data")
-		}
-		start = end
+	var size int
+	if l := len(c.Offsets); l > 0 {
+		// Pick last offset as total size of "elements" column.
+		size = int(c.Offsets[l-1])
+	}
+	if err := c.Data.DecodeColumn(r, size); err != nil {
+		return errors.Wrap(err, "decode data")
 	}
 
 	return nil

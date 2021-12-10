@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-faster/ch/internal/gold"
@@ -29,16 +30,25 @@ func (c ColInt8) ArrForEach(arr *ColArr, f func(i int, data []int8) error) error
 
 func TestColArr_DecodeColumn(t *testing.T) {
 	var data ColInt8
-	col := ColArr{
+	arr := ColArr{
 		Data: &data,
 	}
-	const rows = 4
+
+	const rows = 5
+	var values [][]int8
 	for i := 0; i < rows; i++ {
-		data.ArrAppend(&col, []int8{1, int8(i)})
+		var v []int8
+		for j := 0; j < i+2; j++ {
+			v = append(v, 10+int8(j*2)+int8(3*i))
+		}
+		values = append(values, v)
+	}
+	for _, v := range values {
+		data.ArrAppend(&arr, v)
 	}
 
 	var buf Buffer
-	col.EncodeColumn(&buf)
+	arr.EncodeColumn(&buf)
 
 	t.Run("Golden", func(t *testing.T) {
 		gold.Bytes(t, buf.Buf, "col_arr_int8")
@@ -51,7 +61,12 @@ func TestColArr_DecodeColumn(t *testing.T) {
 	br := bytes.NewReader(buf.Buf)
 	r := NewReader(br)
 	require.NoError(t, out.DecodeColumn(r, rows))
+	require.Equal(t, rows, out.Rows())
+
+	assert.Equal(t, data, outData)
 	require.NoError(t, outData.ArrForEach(&out, func(i int, data []int8) error {
+		t.Logf("%v", data)
+		assert.Equal(t, values[i], data, "[%d] mismatch", i)
 		return nil
 	}))
 }

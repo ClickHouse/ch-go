@@ -48,45 +48,41 @@ func TestClient_Query(t *testing.T) {
 		conn := Conn(t)
 
 		require.NoError(t, conn.Query(ctx, Query{
-			Body: "CREATE TABLE test_array_table (v Array(String)) ENGINE = MergeTree ORDER BY v",
+			Body: "CREATE TABLE test_array_table (id UInt8, v Array(String)) ENGINE = MergeTree ORDER BY id",
 		}), "create table")
 
-		var data proto.ColStr
-		arr := proto.ColArr{
-			Data: &data,
+		values := [][]string{
+			{"foo", "bar", "Baz"},
+			{"Hello", "World!"},
+			{"ClickHouse", "", "Goes", "", "Fasta!"},
 		}
-		data.ArrAppend(&arr, []string{"foo", "bar", "baz"})
-		data.ArrAppend(&arr, []string{"Hello", "World!"})
-		data.ArrAppend(&arr, []string{"", "", "0", "None", "False"})
 
-		_ = data.ForEach(func(i int, s string) error {
-			t.Logf("[%d] %s", i, s)
-			return nil
-		})
+		var data proto.ColStr
+		arr := proto.ColArr{Data: &data}
+		for _, v := range values {
+			data.ArrAppend(&arr, v)
+		}
 
-		insertQuery := Query{
+		insertArr := Query{
 			Body: "INSERT INTO test_array_table VALUES",
 			Input: []proto.InputColumn{
+				{Name: "id", Data: proto.ColUInt8{1, 2, 3}},
 				{Name: "v", Data: &arr},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Query(ctx, insertArr), "insert")
 
 		var gotData proto.ColStr
-		gotArr := proto.ColArr{
-			Data: &gotData,
-		}
-		selectData := Query{
-			Body: "SELECT * FROM test_array_table",
+		gotArr := proto.ColArr{Data: &gotData}
+		selectArr := Query{
+			Body: "SELECT v FROM test_array_table",
 			Result: []proto.ResultColumn{
 				{Name: "v", Data: &gotArr},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
-		_ = gotData.ForEach(func(i int, s string) error {
-			t.Logf("[%d] %s", i, s)
-			return nil
-		})
+		require.NoError(t, conn.Query(ctx, selectArr), "select")
+		require.Equal(t, data, gotData)
+		require.Equal(t, arr.Offsets, gotArr.Offsets)
 	})
 	t.Run("SelectOne", func(t *testing.T) {
 		t.Parallel()
