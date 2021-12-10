@@ -1,18 +1,23 @@
 package gold_test
 
 import (
-	"strings"
+	"os"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 
 	"github.com/go-faster/ch/internal/gold"
 )
 
-func TestReadFile(t *testing.T) {
-	const (
-		name = "hello.txt"
-		text = "Hello, world!"
-	)
-	require.Equal(t, text, strings.TrimSpace(string(gold.ReadFile(t, name))))
+func TestStr(t *testing.T) {
+	gold.Str(t, "Hello, world!\n", "hello.txt")
+}
+
+func TestBytes(t *testing.T) {
+	gold.Bytes(t, append([]byte{1, 2, 3}, "Hi!"...))
+}
+
+func TestMain(m *testing.M) {
+	// Explicitly registering flags for golden files.
+	gold.Init()
+
+	os.Exit(m.Run())
 }
