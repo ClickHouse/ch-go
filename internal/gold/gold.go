@@ -94,8 +94,8 @@ func writeFile(t testing.TB, data []byte, elems ...string) {
 	require.NoError(t, os.WriteFile(p, data, 0o600), "write golden file")
 }
 
-// NormalizeNewlines normalizes \r\n (windows) and \r (mac)
-// into \n (unix)
+// normalizeNewlines normalizes \r\n (windows) and \r (mac)
+// into \n (unix).
 func normalizeNewlines(d []byte) []byte {
 	// replace CR LF \r\n (windows) with LF \n (unix)
 	d = bytes.ReplaceAll(d, []byte{13, 10}, []byte{10})
