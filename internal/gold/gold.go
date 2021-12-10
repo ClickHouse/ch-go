@@ -141,11 +141,12 @@ func Bytes(t testing.TB, data []byte, name ...string) {
 	rawName := append([]string{}, name...)
 	rawName[last] += ".raw"
 
+	update := _update
 	if !exists(t, rawName...) {
 		t.Log("Populating initial golden file")
-		_update = true
+		update = true
 	}
-	if _update {
+	if update {
 		// Writing hex dump next to raw binary to make
 		// git diff more understandable on golden file
 		// updates.
