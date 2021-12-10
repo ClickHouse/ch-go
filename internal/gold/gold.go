@@ -53,6 +53,26 @@ func filePath(elems ...string) string {
 	)
 }
 
+func exists(t testing.TB, elems ...string) bool {
+	t.Helper()
+
+	p := filePath(elems...)
+	data, err := os.Stat(p)
+	if err == nil {
+		if data.IsDir() {
+			t.Fatalf("golden file %s is directory", p)
+		}
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	// Unexpected error
+	t.Fatal(err)
+	return false
+}
+
 // readFile reads golden file.
 func readFile(t testing.TB, elems ...string) []byte {
 	t.Helper()
@@ -92,6 +112,10 @@ func Str(t testing.TB, s string, name ...string) {
 		name = []string{"file.txt"}
 	}
 
+	if !exists(t, name...) {
+		t.Log("Populating initial golden file")
+		update = true
+	}
 	if update {
 		writeFile(t, []byte(s), name...)
 	}
@@ -112,8 +136,13 @@ func Bytes(t testing.TB, data []byte, name ...string) {
 
 	// Adding ".raw" prefix to visually distinguish hex and raw.
 	last := len(name) - 1
-	name[last] = name[last] + ".raw"
+	rawName := append([]string{}, name...)
+	rawName[last] = name[last] + ".raw"
 
+	if !exists(t, rawName...) {
+		t.Log("Populating initial golden file")
+		update = true
+	}
 	if update {
 		// Writing hex dump next to raw binary to make
 		// git diff more understandable on golden file
@@ -124,9 +153,9 @@ func Bytes(t testing.TB, data []byte, name ...string) {
 		writeFile(t, []byte(dump), dumpName...)
 
 		// Writing raw file.
-		writeFile(t, data, name...)
+		writeFile(t, data, rawName...)
 	}
 
-	expected := readFile(t, name...)
+	expected := readFile(t, rawName...)
 	require.Equal(t, expected, data, "golden file binary mismatch")
 }

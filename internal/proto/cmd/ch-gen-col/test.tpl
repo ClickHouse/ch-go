@@ -9,6 +9,8 @@ import (
   "io"
 
   "github.com/stretchr/testify/require"
+
+  "github.com/go-faster/ch/internal/gold"
 )
 
 func Test{{ .Type }}_DecodeColumn(t *testing.T) {
@@ -20,7 +22,9 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
 
   var buf Buffer
   data.EncodeColumn(&buf)
-
+  t.Run("Golden", func(t *testing.T) {
+    gold.Bytes(t, buf.Buf, "col_{{ .ElemType }}")
+  })
   t.Run("Ok", func(t *testing.T) {
     br := bytes.NewReader(buf.Buf)
     r := NewReader(br)
