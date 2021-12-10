@@ -1,10 +1,11 @@
 package proto
 
 import (
-	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-faster/ch/internal/gold"
 )
 
 func TestClientHello_Encode(t *testing.T) {
@@ -19,10 +20,7 @@ func TestClientHello_Encode(t *testing.T) {
 		Password:        "",
 	}
 	b.Encode(v)
-	const expHex = "000263680101a8c00206676974687562036e656f00"
-	exp, _ := hex.DecodeString(expHex)
-	require.Equal(t, exp, b.Buf)
-
+	gold.Bytes(t, b.Buf, "client_hello")
 	t.Run("Decode", func(t *testing.T) {
 		var dec ClientHello
 		requireDecode(t, b.Buf, int(ClientCodeHello), &dec)
