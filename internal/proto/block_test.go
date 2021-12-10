@@ -23,7 +23,10 @@ func TestBlockInfo_Encode(t *testing.T) {
 
 func TestBlock_EncodeAware(t *testing.T) {
 	Gold(t, Block{
-		Info:    BlockInfo{},
+		Info: BlockInfo{
+			Overflows: true,
+			BucketNum: 2014,
+		},
 		Columns: 15,
 		Rows:    10,
 	})
