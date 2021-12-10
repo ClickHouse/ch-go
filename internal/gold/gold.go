@@ -15,12 +15,13 @@ import (
 
 const defaultDir = "_golden"
 
-// _update reports whether golden files _update is requested.
+// _update reports whether golden files update is requested.
 //
 // Call Init() in TestMain to propagate.
 var _update bool
 
-// _clean reports whether golden files _update is requested.
+// _clean reports whether all golden files should be removed before
+// running tests.
 //
 // Call Init() in TestMain to propagate.
 var _clean bool
