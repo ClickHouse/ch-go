@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-faster/ch/internal/gold"
 )
 
 func (c *ColInt8) ArrAppend(arr *ColArr, data []int8) {
@@ -37,6 +39,10 @@ func TestColArr_DecodeColumn(t *testing.T) {
 
 	var buf Buffer
 	col.EncodeColumn(&buf)
+
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_arr_int8")
+	})
 
 	var outData ColInt8
 	out := ColArr{

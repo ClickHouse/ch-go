@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-faster/ch/internal/gold"
 )
 
 func TestColStr_EncodeColumn(t *testing.T) {
@@ -27,6 +29,9 @@ func TestColStr_EncodeColumn(t *testing.T) {
 	var buf Buffer
 	data.EncodeColumn(&buf)
 
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_str")
+	})
 	t.Run("Ok", func(t *testing.T) {
 		br := bytes.NewReader(buf.Buf)
 		r := NewReader(br)
