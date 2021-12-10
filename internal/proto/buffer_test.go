@@ -38,6 +38,8 @@ func TestBuffer(t *testing.T) {
 	b.PutBool(true)
 	b.PutBool(false)
 	b.PutByte(1)
+	b.PutFloat32(1.12345)
+	b.PutFloat64(500.345)
 
 	gold.Bytes(t, b.Buf, "buffer")
 }
