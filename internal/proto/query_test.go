@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/go-faster/ch/internal/gold"
 )
 
 const queryCreateDatabaseHex = "012432336164326330372d32663" +
@@ -68,15 +70,7 @@ func TestQuery_DecodeAware(t *testing.T) {
 func TestQuery_EncodeAware(t *testing.T) {
 	buf := new(Buffer)
 	queryCreateDatabase.EncodeAware(buf, 54450)
-	data, err := hex.DecodeString(queryCreateDatabaseHex)
-	require.NoError(t, err)
-
-	if !bytes.Equal(data, buf.Buf) {
-		t.Errorf("mismatch:\n%s\n%s",
-			hex.Dump(data),
-			hex.Dump(buf.Buf),
-		)
-	}
+	gold.Bytes(t, buf.Buf, "query_create_db")
 
 	r := NewReader(bytes.NewReader(buf.Buf))
 	v, err := r.UVarInt()
