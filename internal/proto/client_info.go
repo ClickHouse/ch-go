@@ -228,12 +228,45 @@ func (c *ClientInfo) DecodeAware(r *Reader, version int) error {
 		c.Patch = v
 	}
 	if FeatureOpenTelemetry.In(version) {
-		v, err := r.Bool()
+		hasTrace, err := r.Bool()
 		if err != nil {
 			return errors.Wrap(err, "open telemetry start")
 		}
-		if v {
-			return errors.New("open telemetry not implemented")
+		if hasTrace {
+			var cfg trace.SpanContextConfig
+			{
+				v, err := r.ReadRaw(len(cfg.TraceID))
+				if err != nil {
+					return errors.Wrap(err, "trace id")
+				}
+				copy(cfg.TraceID[:], v)
+			}
+			{
+				v, err := r.ReadRaw(len(cfg.SpanID))
+				if err != nil {
+					return errors.Wrap(err, "span id")
+				}
+				copy(cfg.SpanID[:], v)
+			}
+			{
+				v, err := r.Str()
+				if err != nil {
+					return errors.Wrap(err, "trace state")
+				}
+				state, err := trace.ParseTraceState(v)
+				if err != nil {
+					return errors.Wrap(err, "parse trace state")
+				}
+				cfg.TraceState = state
+			}
+			{
+				v, err := r.Byte()
+				if err != nil {
+					return errors.Wrap(err, "trace flag")
+				}
+				cfg.TraceFlags = trace.TraceFlags(v)
+			}
+			c.Span = trace.NewSpanContext(cfg)
 		}
 	}
 
