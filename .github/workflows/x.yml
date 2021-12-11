@@ -11,8 +11,6 @@ on:
 jobs:
   test:
     uses: go-faster/x/.github/workflows/test.yml@main
-  cover:
-    uses: go-faster/x/.github/workflows/cover.yml@main
   lint:
     uses: go-faster/x/.github/workflows/lint.yml@main
   commit:

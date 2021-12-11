@@ -1,4 +1,4 @@
-name: e2e
+name: cover
 
 on:
   push:
@@ -12,18 +12,9 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        clickhouse:
-          - 21.8.11.4-lts
-          - 21.9.6.24-stable
-          - 21.10.4.26-stable
-          - 21.11.4.14-stable
-          - 21.12.1.8691-testing
+    env:
+      CH_VER: 21.11.4.14-stable
     steps:
-      - uses: actions/checkout@v2
-
       - name: Set up ClickHouse cache
         uses: actions/cache@v2.1.7
         with:
@@ -38,11 +29,11 @@ jobs:
 
       - name: Get ClickHouse asset version
         id: asset
-        run: echo "::set-output name=version::$(echo '${{ matrix.clickhouse }}' | cut -f1 -d'-')"
+        run: echo "::set-output name=version::$(echo '${{ env.CH_VER }}' | cut -f1 -d'-')"
 
       - name: Download ClickHouse
         if: steps.ch_exists.outputs.files_exists != 'true'
-        run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v${{ matrix.clickhouse }}/clickhouse-common-static-${{ steps.asset.outputs.version }}.tgz"
+        run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v${{ env.CH_VER }}/clickhouse-common-static-${{ steps.asset.outputs.version }}.tgz"
 
       - name: Install ClickHouse
         if: steps.ch_exists.outputs.files_exists != 'true'
@@ -67,10 +58,44 @@ jobs:
             ${{ steps.go-env.outputs.modcache }}
           key: e2e-${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            test-${{ runner.os }}-go-
+            e2e-${{ runner.os }}-go-
 
-      - name: Run tests
+      - name: Checkout code
+        uses: actions/checkout@v2.4.0
+
+      - name: Run tests with coverage
+        run: make coverage
         env:
           CH_BIN: "/opt/ch/clickhouse"
           CH_E2E: "TRUE"
-        run: go test -v ./...
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: coverage
+          path: profile.out
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Send coverage
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          file: profile.out
+
+  send:
+    runs-on: ubuntu-latest
+    needs:
+      - run
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2.4.0
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2.0.10
+        with:
+          name: coverage
+
+      - name: Send coverage
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          file: profile.out
