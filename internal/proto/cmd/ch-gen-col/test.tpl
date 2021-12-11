@@ -17,13 +17,13 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
   const rows = 50
   var data {{ .Type }}
   for i := 0; i < rows; i++ {
-    data = append(data, {{ .ElemType }}(i))
+    data = append(data, {{ .New }}(i))
   }
 
   var buf Buffer
   data.EncodeColumn(&buf)
   t.Run("Golden", func(t *testing.T) {
-    gold.Bytes(t, buf.Buf, "col_{{ .ElemType }}")
+    gold.Bytes(t, buf.Buf, "col_{{ .ElemLower }}")
   })
   t.Run("Ok", func(t *testing.T) {
     br := bytes.NewReader(buf.Buf)
@@ -49,7 +49,7 @@ func Benchmark{{ .Type }}_DecodeColumn(b *testing.B) {
   const rows = 50_000
   var data {{ .Type }}
   for i := 0; i < rows; i++ {
-    data = append(data, {{ .ElemType }}(i))
+    data = append(data, {{ .New }}(i))
   }
 
   var buf Buffer
@@ -81,7 +81,7 @@ func Benchmark{{ .Type }}_EncodeColumn(b *testing.B) {
   const rows = 50_000
   var data {{ .Type }}
   for i := 0; i < rows; i++ {
-    data = append(data, {{ .ElemType }}(i))
+    data = append(data, {{ .New }}(i))
   }
 
   var buf Buffer

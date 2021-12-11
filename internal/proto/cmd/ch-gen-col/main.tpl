@@ -49,7 +49,7 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
   offset := len(b.Buf)
   b.Buf = append(b.Buf, make([]byte, size * len(c))...)
   for _, v := range c {
-    bin.Put{{ .BinFunc }}(
+    {{ .BinPut }}(
       b.Buf[offset:offset+size],
     {{- if .Float }}
       math.{{ .Name }}bits(v),
@@ -91,9 +91,9 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
     {{- if .Float }}
       math.{{ .Name }}frombits(bin.{{ .BinFunc }}(data[i:i+size])),
     {{- else if .Signed }}
-     {{ .ElemType }}(bin.{{ .BinFunc }}(data[i:i+size])),
+     {{ .ElemType }}({{ .BinGet }}(data[i:i+size])),
     {{- else }}
-      bin.{{ .BinFunc }}(data[i:i+size]),
+      {{ .BinGet }}(data[i:i+size]),
     {{- end }}
     )
   }

@@ -35,6 +35,13 @@ func (v Variant) ColumnType() string {
 	return "ColumnType" + v.Name()
 }
 
+func (v Variant) New() string {
+	if v.Custom() {
+		return v.ElemType() + "FromInt"
+	}
+	return v.ElemType()
+}
+
 func (v Variant) Name() string {
 	var b strings.Builder
 	if !v.Signed {
@@ -53,22 +60,57 @@ func (v Variant) BinFunc() string {
 	return fmt.Sprintf("Uint%d", v.Bits)
 }
 
+func (v Variant) BinGet() string {
+	if v.Custom() {
+		return fmt.Sprintf("binUInt%d", v.Bits)
+	}
+	return "bin." + v.BinFunc()
+}
+
+func (v Variant) BinPut() string {
+	if v.Custom() {
+		return fmt.Sprintf("binPutUInt%d", v.Bits)
+	}
+	return "bin.Put" + v.BinFunc()
+}
+
+func (v Variant) Custom() bool {
+	return v.Bits > 64
+}
+
 func (v Variant) UnsignedType() string {
 	var b strings.Builder
-	b.WriteString("uint")
+	if v.Custom() {
+		b.WriteString("UInt")
+	} else {
+		b.WriteString("uint")
+	}
 	b.WriteString(strconv.Itoa(v.Bits))
 	return b.String()
 }
 
+func (v Variant) ElemLower() string {
+	return strings.ToLower(v.ElemType())
+}
+
 func (v Variant) ElemType() string {
 	var b strings.Builder
+	var (
+		unsigned = "u"
+		integer  = "int"
+		float    = "float"
+	)
+	if v.Custom() {
+		unsigned = "U"
+		integer = "Int"
+	}
 	if !v.Signed {
-		b.WriteString("u")
+		b.WriteString(unsigned)
 	}
 	if v.Float {
-		b.WriteString("float")
+		b.WriteString(float)
 	} else {
-		b.WriteString("int")
+		b.WriteString(integer)
 	}
 	b.WriteString(strconv.Itoa(v.Bits))
 	return b.String()
@@ -106,6 +148,7 @@ func run() error {
 		16,
 		32,
 		64,
+		128,
 	} {
 		for _, signed := range []bool{true, false} {
 			variants = append(variants, Variant{
@@ -123,7 +166,7 @@ func run() error {
 		}
 	}
 	for _, v := range variants {
-		base := "col_" + v.ElemType() + "_gen"
+		base := "col_" + v.ElemLower() + "_gen"
 		if err := write(base, v, tpl); err != nil {
 			return errors.Wrap(err, "write")
 		}
