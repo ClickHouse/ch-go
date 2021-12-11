@@ -20,5 +20,7 @@ func TestClientInfo_EncodeAware(t *testing.T) {
 		r := NewReader(bytes.NewReader(b.Buf))
 		assert.NoError(t, i.DecodeAware(r, queryProtoVersion))
 		assert.Equal(t, v, i)
+
+		requireNoShortRead(t, b.Buf, aware(&i))
 	})
 }
