@@ -101,6 +101,13 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 1)
 		require.Equal(t, byte(1), data[0])
 	})
+	t.Run("Exception", func(t *testing.T) {
+		t.Parallel()
+		drop := Query{Body: "DROP TABLE _3_"}
+		err := Conn(t).Query(ctx, drop)
+		require.True(t, IsException(err))
+		require.True(t, IsErr(err, proto.ErrUnknownTable))
+	})
 	t.Run("SelectStr", func(t *testing.T) {
 		t.Parallel()
 		// Select single string row.
