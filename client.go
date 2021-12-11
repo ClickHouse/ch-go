@@ -112,7 +112,7 @@ func (c *Client) exception() (*Exception, error) {
 	var list []proto.Exception
 	for {
 		var ex proto.Exception
-		if err := ex.Decode(c.reader); err != nil {
+		if err := c.decode(&ex); err != nil {
 			return nil, errors.Wrap(err, "decode")
 		}
 

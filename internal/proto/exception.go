@@ -11,8 +11,8 @@ type Exception struct {
 	Nested  bool
 }
 
-// Decode exception.
-func (e *Exception) Decode(r *Reader) error {
+// DecodeAware decodes exception.
+func (e *Exception) DecodeAware(r *Reader, _ int) error {
 	code, err := r.Int32()
 	if err != nil {
 		return errors.Wrap(err, "code")
@@ -47,4 +47,13 @@ func (e *Exception) Decode(r *Reader) error {
 	e.Nested = nested
 
 	return nil
+}
+
+// EncodeAware encodes exception.
+func (e *Exception) EncodeAware(b *Buffer, _ int) {
+	b.PutInt32(int32(e.Code))
+	b.PutString(e.Name)
+	b.PutString(e.Message)
+	b.PutString(e.Stack)
+	b.PutBool(e.Nested)
 }

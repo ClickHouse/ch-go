@@ -105,6 +105,9 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		drop := Query{Body: "DROP TABLE _3_"}
 		err := Conn(t).Query(ctx, drop)
+		ex, ok := AsException(err)
+		t.Logf("%#v", ex)
+		require.True(t, ok)
 		require.True(t, IsException(err))
 		require.True(t, IsErr(err, proto.ErrUnknownTable))
 	})
