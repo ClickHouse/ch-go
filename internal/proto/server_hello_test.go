@@ -48,7 +48,7 @@ func BenchmarkServerHello_Decode(b *testing.B) {
 		var serverHello ServerHello
 		for i := 0; i < b.N; i++ {
 			buf.Reset(raw.Buf)
-			r.s.Reset(buf)
+			r.raw.Reset(buf)
 
 			if err := serverHello.DecodeAware(r, Version); err != nil {
 				b.Fatal(err)
@@ -60,7 +60,7 @@ func BenchmarkServerHello_Decode(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			buf.Reset(raw.Buf)
-			r.s.Reset(buf)
+			r.raw.Reset(buf)
 
 			name, err := r.StrRaw()
 			if err != nil {

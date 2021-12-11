@@ -17,6 +17,7 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pascaldekloe/name v1.0.0 // indirect
+	github.com/pierrec/lz4/v4 v4.1.12 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.opentelemetry.io/otel v1.3.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect

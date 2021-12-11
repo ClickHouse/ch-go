@@ -82,7 +82,7 @@ func BenchmarkColStr_DecodeColumn(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		br.Reset(buf.Buf)
-		r.s.Reset(br)
+		r.raw.Reset(br)
 		dec.Reset()
 
 		if err := dec.DecodeColumn(r, rows); err != nil {

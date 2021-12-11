@@ -196,6 +196,13 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 	if !code.IsAServerCode() {
 		return 0, errors.Errorf("bad server packet type %d", n)
 	}
+	if c.compression == proto.CompressionEnabled {
+		if code.Compressible() {
+			c.reader.EnableCompression()
+		} else {
+			c.reader.DisableCompression()
+		}
+	}
 
 	return code, nil
 }

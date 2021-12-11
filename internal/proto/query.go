@@ -1,6 +1,8 @@
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+)
 
 type Query struct {
 	ID          string

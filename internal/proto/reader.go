@@ -21,9 +21,34 @@ type AwareDecoder interface {
 }
 
 // Reader implements ClickHouse protocol decoding from buffered reader.
+// Not goroutine-safe.
 type Reader struct {
-	s *bufio.Reader
-	b *Buffer
+	raw  *bufio.Reader // raw bytes, e.g. on the wire
+	data io.Reader     // data, decompressed or same as raw
+	b    *Buffer       // internal buffer
+
+	decompressed io.Reader // decompressed data stream, from raw
+}
+
+func (r *Reader) ReadByte() (byte, error) {
+	if err := r.readFull(1); err != nil {
+		return 0, err
+	}
+	return r.b.Buf[0], nil
+}
+
+// EnableCompression makes next reads use decompressed source of data.
+func (r *Reader) EnableCompression() {
+	r.data = r.decompressed
+}
+
+// DisableCompression makes next read use raw source of data.
+func (r *Reader) DisableCompression() {
+	r.data = r.raw
+}
+
+func (r *Reader) Read(p []byte) (n int, err error) {
+	return r.data.Read(p)
 }
 
 // Decode value.
@@ -32,7 +57,7 @@ func (r *Reader) Decode(v Decoder) error {
 }
 
 func (r *Reader) ReadFull(buf []byte) error {
-	if _, err := io.ReadFull(r.s, buf); err != nil {
+	if _, err := io.ReadFull(r, buf); err != nil {
 		if err == io.EOF {
 			err = io.ErrUnexpectedEOF
 		}
@@ -57,7 +82,7 @@ func (r *Reader) ReadRaw(n int) ([]byte, error) {
 
 // UVarInt reads uint64 from internal reader.
 func (r *Reader) UVarInt() (uint64, error) {
-	n, err := binary.ReadUvarint(r.s)
+	n, err := binary.ReadUvarint(r)
 	if err == io.EOF {
 		err = io.ErrUnexpectedEOF
 	}
@@ -95,7 +120,7 @@ func (r *Reader) StrRaw() ([]byte, error) {
 		return nil, errors.Wrap(err, "read length")
 	}
 	r.b.Ensure(n)
-	if _, err := io.ReadFull(r.s, r.b.Buf); err != nil {
+	if _, err := io.ReadFull(r.data, r.b.Buf); err != nil {
 		return nil, errors.Wrap(err, "read str")
 	}
 
@@ -269,8 +294,10 @@ const defaultReaderSize = 1024 // 1kb
 
 // NewReader initializes new Reader from provided io.Reader.
 func NewReader(r io.Reader) *Reader {
+	c := bufio.NewReaderSize(r, defaultReaderSize)
 	return &Reader{
-		s: bufio.NewReaderSize(r, defaultReaderSize),
-		b: &Buffer{},
+		raw:  c,
+		data: c,
+		b:    &Buffer{},
 	}
 }
