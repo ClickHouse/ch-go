@@ -72,11 +72,6 @@ func (b *Buffer) PutInt(x int) {
 	b.PutUVarInt(uint64(x))
 }
 
-// PutInt128 puts 16-byte integer.
-func (b *Buffer) PutInt128(v [128 / 8]byte) {
-	b.Buf = append(b.Buf, v[:]...)
-}
-
 // PutByte encodes byte as uint8.
 func (b *Buffer) PutByte(x byte) {
 	b.PutUInt8(x)
@@ -91,6 +86,10 @@ func (b *Buffer) PutLen(x int) {
 func (b *Buffer) PutString(s string) {
 	b.PutLen(len(s))
 	b.Buf = append(b.Buf, s...)
+}
+
+func (b *Buffer) PutUInt8(x uint8) {
+	b.Buf = append(b.Buf, x)
 }
 
 func (b *Buffer) PutUInt16(x uint16) {
@@ -111,24 +110,10 @@ func (b *Buffer) PutUInt64(x uint64) {
 	b.Buf = append(b.Buf, buf...)
 }
 
-func (b *Buffer) PutInt64(x int64) {
-	b.PutUInt64(uint64(x))
-}
-
-func (b *Buffer) PutInt32(x int32) {
-	b.PutUInt32(uint32(x))
-}
-
-func (b *Buffer) PutUInt8(x uint8) {
-	b.Buf = append(b.Buf, x)
-}
-
-func (b *Buffer) PutBool(v bool) {
-	if v {
-		b.PutUInt8(boolTrue)
-	} else {
-		b.PutUInt8(boolFalse)
-	}
+func (b *Buffer) PutUInt128(x UInt128) {
+	buf := make([]byte, 128/8)
+	binPutUInt128(buf, x)
+	b.Buf = append(b.Buf, buf...)
 }
 
 func (b *Buffer) PutInt8(v int8) {
@@ -137,6 +122,26 @@ func (b *Buffer) PutInt8(v int8) {
 
 func (b *Buffer) PutInt16(v int16) {
 	b.PutUInt16(uint16(v))
+}
+
+func (b *Buffer) PutInt32(x int32) {
+	b.PutUInt32(uint32(x))
+}
+
+func (b *Buffer) PutInt64(x int64) {
+	b.PutUInt64(uint64(x))
+}
+
+func (b *Buffer) PutInt128(x Int128) {
+	b.PutUInt128(UInt128(x))
+}
+
+func (b *Buffer) PutBool(v bool) {
+	if v {
+		b.PutUInt8(boolTrue)
+	} else {
+		b.PutUInt8(boolFalse)
+	}
 }
 
 func (b *Buffer) PutFloat64(v float64) {

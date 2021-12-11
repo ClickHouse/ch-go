@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"io"
+	"math"
 	"unicode/utf8"
 
 	"github.com/go-faster/errors"
@@ -140,6 +141,24 @@ func (r *Reader) Int() (int, error) {
 	return int(n), nil
 }
 
+// Int8 decodes int8 value.
+func (r *Reader) Int8() (int8, error) {
+	v, err := r.UInt8()
+	if err != nil {
+		return 0, err
+	}
+	return int8(v), nil
+}
+
+// Int16 decodes int16 value.
+func (r *Reader) Int16() (int16, error) {
+	v, err := r.UInt16()
+	if err != nil {
+		return 0, err
+	}
+	return int16(v), nil
+}
+
 // Int32 decodes int32 value.
 func (r *Reader) Int32() (int32, error) {
 	v, err := r.UInt32()
@@ -158,6 +177,20 @@ func (r *Reader) Int64() (int64, error) {
 	return int64(v), nil
 }
 
+// Int128 decodes Int128 value.
+func (r *Reader) Int128() (Int128, error) {
+	v, err := r.UInt128()
+	if err != nil {
+		return Int128{}, err
+	}
+	return Int128(v), nil
+}
+
+// Byte decodes byte value.
+func (r *Reader) Byte() (byte, error) {
+	return r.UInt8()
+}
+
 // UInt8 decodes uint8 value.
 func (r *Reader) UInt8() (uint8, error) {
 	if err := r.readFull(1); err != nil {
@@ -166,13 +199,20 @@ func (r *Reader) UInt8() (uint8, error) {
 	return r.b.Buf[0], nil
 }
 
+// UInt16 decodes uint16 value.
+func (r *Reader) UInt16() (uint16, error) {
+	if err := r.readFull(2); err != nil {
+		return 0, errors.Wrap(err, "read")
+	}
+	return bin.Uint16(r.b.Buf), nil
+}
+
 // UInt32 decodes uint32 value.
 func (r *Reader) UInt32() (uint32, error) {
 	if err := r.readFull(32 / 8); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
-	v := bin.Uint32(r.b.Buf)
-	return v, nil
+	return bin.Uint32(r.b.Buf), nil
 }
 
 // UInt64 decodes uint64 value.
@@ -180,8 +220,33 @@ func (r *Reader) UInt64() (uint64, error) {
 	if err := r.readFull(64 / 8); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
-	v := bin.Uint64(r.b.Buf)
-	return v, nil
+	return bin.Uint64(r.b.Buf), nil
+}
+
+// UInt128 decodes UInt128 value.
+func (r *Reader) UInt128() (UInt128, error) {
+	if err := r.readFull(128 / 8); err != nil {
+		return UInt128{}, errors.Wrap(err, "read")
+	}
+	return binUInt128(r.b.Buf), nil
+}
+
+// Float32 decodes float32 value.
+func (r *Reader) Float32() (float32, error) {
+	v, err := r.UInt32()
+	if err != nil {
+		return 0, errors.Wrap(err, "bits")
+	}
+	return math.Float32frombits(v), nil
+}
+
+// Float64 decodes float64 value.
+func (r *Reader) Float64() (float64, error) {
+	v, err := r.UInt64()
+	if err != nil {
+		return 0, errors.Wrap(err, "bits")
+	}
+	return math.Float64frombits(v), nil
 }
 
 // Bool decodes bool as uint8.
