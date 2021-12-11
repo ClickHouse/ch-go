@@ -23,8 +23,10 @@ func TestClientHello_Encode(t *testing.T) {
 	gold.Bytes(t, b.Buf, "client_hello")
 	t.Run("Decode", func(t *testing.T) {
 		var dec ClientHello
-		requireDecode(t, b.Buf, int(ClientCodeHello), &dec)
+		buf := skipCode(t, b.Buf, int(ClientCodeHello))
+		requireDecode(t, buf, &dec)
 		require.Equal(t, v, dec)
+		requireNoShortRead(t, buf, &dec)
 	})
 }
 

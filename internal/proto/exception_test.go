@@ -58,8 +58,9 @@ func TestException_Encode(t *testing.T) {
 		var b Buffer
 		e.EncodeAware(&b, Version)
 
-		var dec Exception
-		require.NoError(t, dec.DecodeAware(b.Reader(), Version))
-		require.Equal(t, e, &dec)
+		dec := &Exception{}
+		requireDecode(t, b.Buf, aware(dec))
+		require.Equal(t, e, dec)
+		requireNoShortRead(t, b.Buf, aware(dec))
 	})
 }
