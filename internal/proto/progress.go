@@ -4,6 +4,7 @@ import (
 	"github.com/go-faster/errors"
 )
 
+// Progress of query execution.
 type Progress struct {
 	Rows      uint64
 	Bytes     uint64
@@ -11,6 +12,16 @@ type Progress struct {
 
 	WroteRows  uint64
 	WroteBytes uint64
+}
+
+func (p Progress) EncodeAware(b *Buffer, version int) {
+	b.PutUVarInt(p.Rows)
+	b.PutUVarInt(p.Bytes)
+	b.PutUVarInt(p.TotalRows)
+	if FeatureClientWriteInfo.In(version) {
+		b.PutUVarInt(p.WroteRows)
+		b.PutUVarInt(p.WroteBytes)
+	}
 }
 
 func (p *Progress) DecodeAware(r *Reader, version int) error {
@@ -28,7 +39,7 @@ func (p *Progress) DecodeAware(r *Reader, version int) error {
 		}
 		p.Bytes = v
 	}
-	if FeatureClientWriteInfo.In(version) {
+	{
 		v, err := r.UVarInt()
 		if err != nil {
 			return errors.Wrap(err, "total rows")
