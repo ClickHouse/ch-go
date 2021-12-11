@@ -4,6 +4,7 @@ ignore:
   - "./internal/cht/*"
   - "./internal/e2e/*"
   - "./internal/cmd/*"
+  - "./internal/gold/*"
 coverage:
   status:
     project: false
