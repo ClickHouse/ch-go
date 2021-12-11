@@ -76,6 +76,31 @@ type Query struct {
 	OnProfile  func(ctx context.Context, p proto.Profile) error
 }
 
+func (c *Client) decodeBlock(ctx context.Context, q Query) error {
+	if proto.FeatureTempTables.In(c.info.ProtocolVersion) {
+		v, err := c.reader.Str()
+		if err != nil {
+			return errors.Wrap(err, "temp table")
+		}
+		if v != "" {
+			return errors.Errorf("unexpected temp table %q", v)
+		}
+	}
+	var block proto.Block
+	if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
+		return errors.Wrap(err, "decode block")
+	}
+	if block.End() {
+		return nil
+	}
+	if f := q.OnData; f != nil {
+		if err := f(ctx); err != nil {
+			return errors.Wrap(err, "data")
+		}
+	}
+	return nil
+}
+
 // Query performs Query on ClickHouse server.
 func (c *Client) Query(ctx context.Context, q Query) error {
 	if q.QueryID == "" {
@@ -116,8 +141,6 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 		return errors.Wrap(err, "flush")
 	}
 
-	var block proto.Block
-
 	for {
 		if ctx.Err() != nil {
 			_ = c.cancelQuery(context.Background())
@@ -130,22 +153,8 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 
 		switch code {
 		case proto.ServerCodeData:
-			if proto.FeatureTempTables.In(c.info.ProtocolVersion) {
-				v, err := c.reader.Str()
-				if err != nil {
-					return errors.Wrap(err, "temp table")
-				}
-				if v != "" {
-					return errors.Errorf("unexpected temp table %q", v)
-				}
-			}
-			if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
+			if err := c.decodeBlock(ctx, q); err != nil {
 				return errors.Wrap(err, "decode block")
-			}
-			if f := q.OnData; f != nil && !block.End() {
-				if err := f(ctx); err != nil {
-					return errors.Wrap(err, "data")
-				}
 			}
 		case proto.ServerCodeException:
 			e, err := c.exception()
