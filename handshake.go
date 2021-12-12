@@ -7,7 +7,7 @@ import (
 	"go.uber.org/multierr"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/go-faster/ch/internal/proto"
+	"github.com/go-faster/ch/proto"
 )
 
 func (c *Client) handshake(ctx context.Context) error {

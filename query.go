@@ -8,12 +8,12 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
-	"github.com/go-faster/ch/internal/proto"
+	proto2 "github.com/go-faster/ch/proto"
 )
 
 // cancelQuery cancels query.
 func (c *Client) cancelQuery(ctx context.Context) error {
-	proto.ClientCodeCancel.Encode(c.buf)
+	proto2.ClientCodeCancel.Encode(c.buf)
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
 	}
@@ -29,19 +29,19 @@ func (c *Client) sendQuery(ctx context.Context, query, queryID string) {
 			zap.String("query_id", queryID),
 		)
 	}
-	c.encode(proto.Query{
+	c.encode(proto2.Query{
 		ID:          queryID,
 		Body:        query,
 		Secret:      "",
-		Stage:       proto.StageComplete,
+		Stage:       proto2.StageComplete,
 		Compression: c.compression,
-		Info: proto.ClientInfo{
+		Info: proto2.ClientInfo{
 			ProtocolVersion: c.info.ProtocolVersion,
 			Major:           c.info.Major,
 			Minor:           c.info.Minor,
 			Patch:           0,
-			Interface:       proto.InterfaceTCP,
-			Query:           proto.ClientQueryInitial,
+			Interface:       proto2.InterfaceTCP,
+			Query:           proto2.ClientQueryInitial,
 
 			InitialUser:    "",
 			InitialQueryID: "",
@@ -56,7 +56,7 @@ func (c *Client) sendQuery(ctx context.Context, query, queryID string) {
 	})
 
 	// External tables end.
-	c.encode(proto.ClientData{})
+	c.encode(proto2.ClientData{})
 }
 
 // Query to ClickHouse.
@@ -67,17 +67,17 @@ type Query struct {
 	QueryID string
 
 	// Input columns for INSERT operations.
-	Input []proto.InputColumn
+	Input []proto2.InputColumn
 	// Result columns for SELECT operations.
-	Result []proto.ResultColumn
+	Result []proto2.ResultColumn
 
 	OnData     func(ctx context.Context) error
-	OnProgress func(ctx context.Context, p proto.Progress) error
-	OnProfile  func(ctx context.Context, p proto.Profile) error
+	OnProgress func(ctx context.Context, p proto2.Progress) error
+	OnProfile  func(ctx context.Context, p proto2.Profile) error
 }
 
 func (c *Client) decodeBlock(ctx context.Context, q Query) error {
-	if proto.FeatureTempTables.In(c.info.ProtocolVersion) {
+	if proto2.FeatureTempTables.In(c.info.ProtocolVersion) {
 		v, err := c.reader.Str()
 		if err != nil {
 			return errors.Wrap(err, "temp table")
@@ -86,7 +86,7 @@ func (c *Client) decodeBlock(ctx context.Context, q Query) error {
 			return errors.Errorf("unexpected temp table %q", v)
 		}
 	}
-	var block proto.Block
+	var block proto2.Block
 	if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
 		return errors.Wrap(err, "decode block")
 	}
@@ -111,9 +111,9 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 
 	if len(q.Input) > 0 {
 		rows := q.Input[0].Data.Rows()
-		c.encode(proto.ClientData{
-			Block: proto.Block{
-				Info: proto.BlockInfo{
+		c.encode(proto2.ClientData{
+			Block: proto2.Block{
+				Info: proto2.BlockInfo{
 					BucketNum: -1,
 				},
 				Columns: len(q.Input),
@@ -134,7 +134,7 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 		}
 
 		// End of data.
-		c.encode(proto.ClientData{})
+		c.encode(proto2.ClientData{})
 	}
 
 	if err := c.flush(ctx); err != nil {
@@ -152,17 +152,17 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 		}
 
 		switch code {
-		case proto.ServerCodeData:
+		case proto2.ServerCodeData:
 			if err := c.decodeBlock(ctx, q); err != nil {
 				return errors.Wrap(err, "decode block")
 			}
-		case proto.ServerCodeException:
+		case proto2.ServerCodeException:
 			e, err := c.exception()
 			if err != nil {
 				return errors.Wrap(err, "decode exception")
 			}
 			return e
-		case proto.ServerCodeProgress:
+		case proto2.ServerCodeProgress:
 			p, err := c.progress()
 			if err != nil {
 				return errors.Wrap(err, "progress")
@@ -181,7 +181,7 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 					return errors.Wrap(err, "progress")
 				}
 			}
-		case proto.ServerCodeProfile:
+		case proto2.ServerCodeProfile:
 			p, err := c.profile()
 			if err != nil {
 				return errors.Wrap(err, "profile")
@@ -198,13 +198,13 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 					return errors.Wrap(err, "profile")
 				}
 			}
-		case proto.ServerCodeTableColumns:
+		case proto2.ServerCodeTableColumns:
 			// Ignoring for now.
-			var info proto.TableColumns
+			var info proto2.TableColumns
 			if err := c.decode(&info); err != nil {
 				return errors.Wrap(err, "table columns")
 			}
-		case proto.ServerCodeEndOfStream:
+		case proto2.ServerCodeEndOfStream:
 			return nil
 		default:
 			return errors.Errorf("unexpected code %s", code)

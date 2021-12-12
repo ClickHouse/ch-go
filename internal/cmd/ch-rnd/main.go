@@ -12,7 +12,7 @@ import (
 	"github.com/go-faster/errors"
 
 	"github.com/go-faster/ch"
-	"github.com/go-faster/ch/internal/proto"
+	proto2 "github.com/go-faster/ch/proto"
 )
 
 func run(ctx context.Context) error {
@@ -45,17 +45,17 @@ func run(ctx context.Context) error {
 	var (
 		rows       uint64
 		totalBytes uint64
-		data       proto.ColUInt32
+		data       proto2.ColUInt32
 	)
 	start := time.Now()
 	if err := c.Query(ctx, ch.Query{
 		Body: "SELECT v FROM test_values",
-		OnProgress: func(ctx context.Context, p proto.Progress) error {
+		OnProgress: func(ctx context.Context, p proto2.Progress) error {
 			rows += p.Rows
 			totalBytes += p.Bytes
 			return nil
 		},
-		Result: []proto.ResultColumn{
+		Result: []proto2.ResultColumn{
 			{Name: "v", Data: &data},
 		},
 	}); err != nil {

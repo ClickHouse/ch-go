@@ -3,8 +3,9 @@
 package proto
 
 import (
-	"github.com/go-faster/errors"
 	"math"
+
+	"github.com/go-faster/errors"
 )
 
 // ColFloat64 represents Float64 column.

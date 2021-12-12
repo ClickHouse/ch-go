@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"github.com/go-faster/ch/internal/gold"
-	"github.com/go-faster/ch/internal/proto"
+	proto2 "github.com/go-faster/ch/proto"
 )
 
 func encodeTestStrBlock() []byte {
-	b := &proto.Buffer{}
-	d := &proto.ColStr{}
-	arr := &proto.ColArr{
+	b := &proto2.Buffer{}
+	d := &proto2.ColStr{}
+	arr := &proto2.ColArr{
 		Data: d,
 	}
 	for _, v := range [][]string{
@@ -24,19 +24,19 @@ func encodeTestStrBlock() []byte {
 	} {
 		d.ArrAppend(arr, v)
 	}
-	input := []proto.InputColumn{
+	input := []proto2.InputColumn{
 		{
 			Name: "foo",
 			Data: arr,
 		},
 	}
-	block := &proto.Block{
-		Info:    proto.BlockInfo{BucketNum: -1},
+	block := &proto2.Block{
+		Info:    proto2.BlockInfo{BucketNum: -1},
 		Columns: 1,
 		Rows:    3,
 	}
 
-	block.EncodeAware(b, proto.Version)
+	block.EncodeAware(b, proto2.Version)
 	for _, col := range input {
 		col.EncodeStart(b)
 		col.Data.EncodeColumn(b)
@@ -49,13 +49,13 @@ func TestEncodeBlock(t *testing.T) {
 	data := encodeTestStrBlock()
 	gold.Bytes(t, data, "test_arr_str_block")
 
-	r := proto.NewReader(bytes.NewReader(data))
-	v := proto.Version
-	d := []proto.ResultColumn{
+	r := proto2.NewReader(bytes.NewReader(data))
+	v := proto2.Version
+	d := []proto2.ResultColumn{
 		{
 			Name: "foo",
-			Data: &proto.ColArr{
-				Data: &proto.ColStr{},
+			Data: &proto2.ColArr{
+				Data: &proto2.ColStr{},
 			},
 		},
 	}
@@ -65,7 +65,7 @@ func TestEncodeBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var block proto.Block
+	var block proto2.Block
 	if err := block.DecodeBlock(r, v, d); err != nil {
 		t.Fatal(err)
 	}
@@ -78,13 +78,13 @@ func FuzzDecodeBlock(f *testing.F) {
 	f.Add(encodeTestStrBlock())
 
 	f.Fuzz(func(t *testing.T, data []byte) {
-		r := proto.NewReader(bytes.NewReader(data))
-		v := proto.Version
-		d := []proto.ResultColumn{
+		r := proto2.NewReader(bytes.NewReader(data))
+		v := proto2.Version
+		d := []proto2.ResultColumn{
 			{
 				Name: "foo",
-				Data: &proto.ColArr{
-					Data: &proto.ColStr{},
+				Data: &proto2.ColArr{
+					Data: &proto2.ColStr{},
 				},
 			},
 		}
@@ -94,7 +94,7 @@ func FuzzDecodeBlock(f *testing.F) {
 			t.Skip()
 		}
 
-		var block proto.Block
+		var block proto2.Block
 		if err := block.DecodeBlock(r, v, d); err != nil {
 			t.Skip()
 		}

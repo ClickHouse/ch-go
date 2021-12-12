@@ -12,7 +12,7 @@ import (
 	"github.com/go-faster/errors"
 	"go.uber.org/zap"
 
-	"github.com/go-faster/ch/internal/proto"
+	proto2 "github.com/go-faster/ch/proto"
 )
 
 // Client implements ClickHouse binary protocol client on top of
@@ -20,13 +20,13 @@ import (
 type Client struct {
 	lg     *zap.Logger
 	conn   net.Conn
-	buf    *proto.Buffer
-	reader *proto.Reader
-	info   proto.ClientHello
-	server proto.ServerHello
+	buf    *proto2.Buffer
+	reader *proto2.Reader
+	info   proto2.ClientHello
+	server proto2.ServerHello
 	tz     *time.Location
 
-	compression proto.Compression
+	compression proto2.Compression
 	settings    []Setting
 }
 
@@ -37,7 +37,7 @@ type Setting struct {
 }
 
 // serverInfo returns server information.
-func (c *Client) serverInfo() proto.ServerHello { return c.server }
+func (c *Client) serverInfo() proto2.ServerHello { return c.server }
 
 // Location returns current server timezone.
 func (c *Client) Location() *time.Location { return c.tz }
@@ -59,14 +59,14 @@ func (c *Client) Close() error {
 
 // Exception is server-side error.
 type Exception struct {
-	Code    proto.Error
+	Code    proto2.Error
 	Name    string
 	Message string
 	Stack   string
 	Next    []Exception // non-nil only for top exception
 }
 
-func (e *Exception) IsCode(codes ...proto.Error) bool {
+func (e *Exception) IsCode(codes ...proto2.Error) bool {
 	if e == nil || len(codes) == 0 {
 		return false
 	}
@@ -94,7 +94,7 @@ func AsException(err error) (*Exception, bool) {
 }
 
 // IsErr reports whether err is error with provided exception codes.
-func IsErr(err error, codes ...proto.Error) bool {
+func IsErr(err error, codes ...proto2.Error) bool {
 	if e, ok := AsException(err); ok {
 		return e.IsCode(codes...)
 	}
@@ -109,9 +109,9 @@ func IsException(err error) bool {
 
 // Exception reads exception from server.
 func (c *Client) exception() (*Exception, error) {
-	var list []proto.Exception
+	var list []proto2.Exception
 	for {
-		var ex proto.Exception
+		var ex proto2.Exception
 		if err := c.decode(&ex); err != nil {
 			return nil, errors.Wrap(err, "decode")
 		}
@@ -139,32 +139,32 @@ func (c *Client) exception() (*Exception, error) {
 	return e, nil
 }
 
-func (c *Client) decode(v proto.AwareDecoder) error {
+func (c *Client) decode(v proto2.AwareDecoder) error {
 	return v.DecodeAware(c.reader, c.info.ProtocolVersion)
 }
 
-func (c *Client) progress() (proto.Progress, error) {
-	var p proto.Progress
+func (c *Client) progress() (proto2.Progress, error) {
+	var p proto2.Progress
 
 	if err := c.decode(&p); err != nil {
-		return proto.Progress{}, errors.Wrap(err, "decode")
+		return proto2.Progress{}, errors.Wrap(err, "decode")
 	}
 
 	return p, nil
 }
 
-func (c *Client) profile() (proto.Profile, error) {
-	var p proto.Profile
+func (c *Client) profile() (proto2.Profile, error) {
+	var p proto2.Profile
 
 	if err := c.decode(&p); err != nil {
-		return proto.Profile{}, errors.Wrap(err, "decode")
+		return proto2.Profile{}, errors.Wrap(err, "decode")
 	}
 
 	return p, nil
 }
 
 // packet reads server code.
-func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
+func (c *Client) packet(ctx context.Context) (proto2.ServerCode, error) {
 	const defaultTimeout = time.Second * 3
 
 	deadline := time.Now().Add(defaultTimeout)
@@ -186,7 +186,7 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 		return 0, errors.Wrap(err, "uvarint")
 	}
 
-	code := proto.ServerCode(n)
+	code := proto2.ServerCode(n)
 	if ce := c.lg.Check(zap.DebugLevel, "Packet"); ce != nil {
 		ce.Write(
 			zap.Uint64("packet_code_raw", n),
@@ -196,7 +196,7 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 	if !code.IsAServerCode() {
 		return 0, errors.Errorf("bad server packet type %d", n)
 	}
-	if c.compression == proto.CompressionEnabled {
+	if c.compression == proto2.CompressionEnabled {
 		if code.Compressible() {
 			c.reader.EnableCompression()
 		} else {
@@ -229,7 +229,7 @@ func (c *Client) flush(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) encode(v proto.AwareEncoder) {
+func (c *Client) encode(v proto2.AwareEncoder) {
 	v.EncodeAware(c.buf, c.info.ProtocolVersion)
 }
 
@@ -261,17 +261,17 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 
 	c := &Client{
 		conn:     conn,
-		buf:      new(proto.Buffer),
-		reader:   proto.NewReader(conn),
+		buf:      new(proto2.Buffer),
+		reader:   proto2.NewReader(conn),
 		settings: opt.Settings,
 		lg:       opt.Logger,
 
-		info: proto.ClientHello{
-			Name:  proto.Name,
-			Major: proto.Major,
-			Minor: proto.Minor,
+		info: proto2.ClientHello{
+			Name:  proto2.Name,
+			Major: proto2.Major,
+			Minor: proto2.Minor,
 
-			ProtocolVersion: proto.Version,
+			ProtocolVersion: proto2.Version,
 
 			Database: opt.Database,
 			User:     opt.User,

@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/internal/cht"
-	"github.com/go-faster/ch/internal/proto"
+	proto2 "github.com/go-faster/ch/proto"
 )
 
 func TestConnect(t *testing.T) {
@@ -32,10 +32,10 @@ func TestConnect(t *testing.T) {
 	})
 	t.Run("SelectOne", func(t *testing.T) {
 		// Select single row.
-		var data proto.ColUInt8
+		var data proto2.ColUInt8
 		selectOne := ch.Query{
 			Body: "SELECT 1 AS one",
-			Result: []proto.ResultColumn{
+			Result: []proto2.ResultColumn{
 				{
 					Name: "one",
 					Data: &data,

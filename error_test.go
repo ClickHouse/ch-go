@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/multierr"
 
-	"github.com/go-faster/ch/internal/proto"
+	"github.com/go-faster/ch/proto"
 )
 
 func TestError(t *testing.T) {
