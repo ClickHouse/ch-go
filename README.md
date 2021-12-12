@@ -45,7 +45,8 @@ func main() {
 ```
 
 ```
-750ms 500000000 rows 4.0 GB 5.3 GB/s
+750ms  500 b.rows  4 GB 5.3 GB/s (1 job)
+ 1.3s 2500 b.rows 20 GB  15 GB/s (5 jobs)
 ```
 
 ## Features
