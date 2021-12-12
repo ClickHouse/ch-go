@@ -172,7 +172,7 @@ func (b *Block) DecodeBlock(r *Reader, version int, target []ResultColumn) error
 			continue
 		}
 
-		t := target[0]
+		t := target[i]
 		// Checking column name and type.
 		if t.Name != columnName {
 			return errors.Errorf("[%d]: unexpected column %q (%q expected)", i, columnName, t.Name)
