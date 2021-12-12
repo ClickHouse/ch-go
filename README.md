@@ -32,6 +32,18 @@ WIP TCP ClickHouse client in Go.
 * String
 * Array(T)
 
+## TODO
+- [ ] Compression
+  - [ ] LZ4
+  - [ ] ZSTD
+- [ ] Enum8, Enum16
+- [ ] LowCardinality
+- [ ] Map(K, V)
+- [ ] Nullable
+- [ ] External tables
+- [ ] Server in Go for tests
+- [ ] Pooling
+
 ## Reference
 
 * [clickhouse-cpp](https://github.com/ClickHouse/clickhouse-cpp)
