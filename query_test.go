@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	proto2 "github.com/go-faster/ch/proto"
+	"github.com/go-faster/ch/proto"
 )
 
 func TestClient_Query(t *testing.T) {
@@ -23,19 +23,19 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Query(ctx, createTable), "create table")
 
-		data := proto2.ColUInt8{1, 2, 3, 4}
+		data := proto.ColUInt8{1, 2, 3, 4}
 		insertQuery := Query{
 			Body: "INSERT INTO test_table VALUES",
-			Input: []proto2.InputColumn{
+			Input: []proto.InputColumn{
 				{Name: "id", Data: &data},
 			},
 		}
 		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
 
-		var gotData proto2.ColUInt8
+		var gotData proto.ColUInt8
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
-			Result: []proto2.ResultColumn{
+			Result: []proto.ResultColumn{
 				{Name: "id", Data: &gotData},
 			},
 		}
@@ -57,26 +57,26 @@ func TestClient_Query(t *testing.T) {
 			{"ClickHouse", "", "Goes", "", "Fasta!"},
 		}
 
-		var data proto2.ColStr
-		arr := proto2.ColArr{Data: &data}
+		var data proto.ColStr
+		arr := proto.ColArr{Data: &data}
 		for _, v := range values {
 			data.ArrAppend(&arr, v)
 		}
 
 		insertArr := Query{
 			Body: "INSERT INTO test_array_table VALUES",
-			Input: []proto2.InputColumn{
-				{Name: "id", Data: proto2.ColUInt8{1, 2, 3}},
+			Input: []proto.InputColumn{
+				{Name: "id", Data: proto.ColUInt8{1, 2, 3}},
 				{Name: "v", Data: &arr},
 			},
 		}
 		require.NoError(t, conn.Query(ctx, insertArr), "insert")
 
-		var gotData proto2.ColStr
-		gotArr := proto2.ColArr{Data: &gotData}
+		var gotData proto.ColStr
+		gotArr := proto.ColArr{Data: &gotData}
 		selectArr := Query{
 			Body: "SELECT v FROM test_array_table",
-			Result: []proto2.ResultColumn{
+			Result: []proto.ResultColumn{
 				{Name: "v", Data: &gotArr},
 			},
 		}
@@ -87,10 +87,10 @@ func TestClient_Query(t *testing.T) {
 	t.Run("SelectOne", func(t *testing.T) {
 		t.Parallel()
 		// Select single row.
-		var data proto2.ColUInt8
+		var data proto.ColUInt8
 		selectOne := Query{
 			Body: "SELECT 1 AS one",
-			Result: []proto2.ResultColumn{
+			Result: []proto.ResultColumn{
 				{
 					Name: "one",
 					Data: &data,
@@ -104,12 +104,12 @@ func TestClient_Query(t *testing.T) {
 	t.Run("SelectInt128", func(t *testing.T) {
 		t.Parallel()
 		var (
-			signed   proto2.ColInt128
-			unsigned proto2.ColUInt128
+			signed   proto.ColInt128
+			unsigned proto.ColUInt128
 		)
 		selectOne := Query{
 			Body: "SELECT toInt128(-109331) as signed, toUInt128(4012) as unsigned",
-			Result: []proto2.ResultColumn{
+			Result: []proto.ResultColumn{
 				{Name: "signed", Data: &signed},
 				{Name: "unsigned", Data: &unsigned},
 			},
@@ -118,9 +118,9 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, signed, 1)
 		require.Len(t, unsigned, 1)
 
-		expectedSigned := proto2.ColInt128{proto2.Int128FromInt(-109331)}
+		expectedSigned := proto.ColInt128{proto.Int128FromInt(-109331)}
 		require.Equal(t, expectedSigned, signed)
-		expectedUnsigned := proto2.ColUInt128{proto2.UInt128FromInt(4012)}
+		expectedUnsigned := proto.ColUInt128{proto.UInt128FromInt(4012)}
 		require.Equal(t, expectedUnsigned, unsigned)
 	})
 	t.Run("Exception", func(t *testing.T) {
@@ -131,15 +131,15 @@ func TestClient_Query(t *testing.T) {
 		t.Logf("%#v", ex)
 		require.True(t, ok)
 		require.True(t, IsException(err))
-		require.True(t, IsErr(err, proto2.ErrUnknownTable))
+		require.True(t, IsErr(err, proto.ErrUnknownTable))
 	})
 	t.Run("SelectStr", func(t *testing.T) {
 		t.Parallel()
 		// Select single string row.
-		var data proto2.ColStr
+		var data proto.ColStr
 		selectStr := Query{
 			Body: "SELECT 'foo' AS s",
-			Result: []proto2.ResultColumn{
+			Result: []proto.ResultColumn{
 				{
 					Name: "s",
 					Data: &data,
@@ -152,13 +152,13 @@ func TestClient_Query(t *testing.T) {
 	})
 	t.Run("SelectArr", func(t *testing.T) {
 		t.Parallel()
-		var data proto2.ColUInt8
-		arr := proto2.ColArr{
+		var data proto.ColUInt8
+		arr := proto.ColArr{
 			Data: &data,
 		}
 		selectArr := Query{
 			Body: "SELECT [1, 2, 3] AS arr",
-			Result: []proto2.ResultColumn{
+			Result: []proto.ResultColumn{
 				{
 					Name: "arr",
 					Data: &arr,
@@ -168,13 +168,13 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, Conn(t).Query(ctx, selectArr))
 		require.Equal(t, 1, arr.Rows())
 		require.Equal(t, 3, data.Rows())
-		require.Equal(t, proto2.ColUInt8{1, 2, 3}, data)
+		require.Equal(t, proto.ColUInt8{1, 2, 3}, data)
 	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611
 		var (
-			data  proto2.ColUInt32
+			data  proto.ColUInt32
 			total int
 		)
 		selectRand := Query{
@@ -183,7 +183,7 @@ func TestClient_Query(t *testing.T) {
 				total += len(data)
 				return nil
 			},
-			Result: []proto2.ResultColumn{
+			Result: []proto.ResultColumn{
 				{
 					Name: "v",
 					Data: &data,

@@ -5,11 +5,11 @@ import (
 
 	"github.com/go-faster/errors"
 
-	proto2 "github.com/go-faster/ch/proto"
+	"github.com/go-faster/ch/proto"
 )
 
 func (c *Client) Ping(ctx context.Context) error {
-	c.buf.Encode(proto2.ClientCodePing)
+	c.buf.Encode(proto.ClientCodePing)
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
 	}
@@ -18,7 +18,7 @@ func (c *Client) Ping(ctx context.Context) error {
 		return errors.Wrap(err, "read")
 	}
 	switch p {
-	case proto2.ServerCodePong:
+	case proto.ServerCodePong:
 		return nil
 	default:
 		return errors.Errorf("unexpected packet %s", p)

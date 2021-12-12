@@ -8,7 +8,7 @@ import (
 	"github.com/go-faster/errors"
 
 	"github.com/go-faster/ch"
-	proto2 "github.com/go-faster/ch/proto"
+	"github.com/go-faster/ch/proto"
 )
 
 func run(ctx context.Context) error {
@@ -22,7 +22,7 @@ func run(ctx context.Context) error {
 
 	if err := c.Query(ctx, ch.Query{
 		Body: "DROP TABLE test_array_table",
-	}); err != nil && !ch.IsErr(err, proto2.ErrUnknownTable) {
+	}); err != nil && !ch.IsErr(err, proto.ErrUnknownTable) {
 		return errors.Wrap(err, "create table")
 	}
 	if err := c.Query(ctx, ch.Query{
@@ -31,8 +31,8 @@ func run(ctx context.Context) error {
 		return errors.Wrap(err, "create table")
 	}
 
-	var data proto2.ColStr
-	arr := proto2.ColArr{
+	var data proto.ColStr
+	arr := proto.ColArr{
 		Data: &data,
 	}
 	data.ArrAppend(&arr, []string{"foo", "bar", "baz"})
@@ -40,7 +40,7 @@ func run(ctx context.Context) error {
 	data.ArrAppend(&arr, []string{"", "", "0", "None", "False"})
 	if err := c.Query(ctx, ch.Query{
 		Body: "INSERT INTO test_array_table VALUES",
-		Input: []proto2.InputColumn{
+		Input: []proto.InputColumn{
 			{Name: "v", Data: &arr},
 		},
 	}); err != nil {
