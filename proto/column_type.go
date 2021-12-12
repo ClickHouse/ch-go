@@ -6,6 +6,10 @@ import (
 
 type ColumnType string
 
+func (c ColumnType) String() string {
+	return string(c)
+}
+
 func (c ColumnType) IsArray() bool {
 	return strings.HasPrefix(string(c), string(ColumnTypeArray))
 }
