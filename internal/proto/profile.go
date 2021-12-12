@@ -57,3 +57,13 @@ func (p *Profile) DecodeAware(r *Reader, _ int) error {
 
 	return nil
 }
+
+func (p Profile) EncodeAware(b *Buffer, _ int) {
+	ServerCodeProfile.Encode(b)
+	b.PutUVarInt(p.Rows)
+	b.PutUVarInt(p.Blocks)
+	b.PutUVarInt(p.Bytes)
+	b.PutBool(p.AppliedLimit)
+	b.PutUVarInt(p.RowsBeforeLimit)
+	b.PutBool(p.CalculatedRowsBeforeLimit)
+}
