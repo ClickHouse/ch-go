@@ -43,7 +43,7 @@ func requireNoShortRead(t testing.TB, buf []byte, v Decoder) {
 func skipCode(t testing.TB, buf []byte, code int) []byte {
 	t.Helper()
 
-	v, n := binary.Varint(buf)
+	v, n := binary.Uvarint(buf)
 	if int(v) != code {
 		t.Fatalf("code mismatch: %d (got) != %d (expected)", v, code)
 	}

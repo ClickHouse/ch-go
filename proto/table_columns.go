@@ -24,3 +24,9 @@ func (c *TableColumns) DecodeAware(r *Reader, _ int) error {
 	}
 	return nil
 }
+
+func (c TableColumns) EncodeAware(b *Buffer, _ int) {
+	ServerCodeTableColumns.Encode(b)
+	b.PutString(c.First)
+	b.PutString(c.Second)
+}

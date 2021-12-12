@@ -20,7 +20,7 @@ func TestProfile_EncodeAware(t *testing.T) {
 	Gold(t, &p)
 
 	t.Run("Decode", func(t *testing.T) {
-		buf := skipCode(t, b.Buf, int(ServerCodeProgress))
+		buf := skipCode(t, b.Buf, int(ServerCodeProfile))
 		var dec Profile
 		requireDecode(t, buf, aware(&dec))
 		require.Equal(t, p, dec)
