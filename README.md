@@ -10,7 +10,7 @@ WIP TCP ClickHouse client in Go.
   * Up to 500x faster than HTTP API
   * Low memory overhead (column blocks are slices, i.e. continuous memory)
 * Rigorously tested
-  * ARM, Windows, Mac, Linux (also x86)
+  * **ARM**64, Windows, Mac, Linux (also x86)
   * Unit tests for encoding and decoding
     * Golden files for all packets, columns
     * Both server and client structures
