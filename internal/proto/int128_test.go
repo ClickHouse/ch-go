@@ -20,7 +20,7 @@ func TestInt128_Int(t *testing.T) {
 	} {
 		assert.Equal(t, x, Int128FromInt(x).Int())
 	}
-	assert.Equal(t, math.MaxInt64, Int128{High: 1}.Int())
+	assert.Equal(t, math.MaxInt, Int128{High: 1}.Int())
 }
 
 func TestInt128_UInt64(t *testing.T) {
