@@ -3,8 +3,9 @@
 WIP TCP ClickHouse client in Go.
 
 ## Supported types
-* UInt8, UInt16, UInt32, UInt64, UInt128
-* Int8, Int16, Int32, Int64, Int128
+* UInt8, UInt16, UInt32, UInt64
+* Int8, Int16, Int32, Int64
+* UInt128, Int128
 * String
 * Array(T)
 
