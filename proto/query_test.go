@@ -81,4 +81,6 @@ func TestQuery_EncodeAware(t *testing.T) {
 	assert.NoError(t, dec.DecodeAware(r, 54450))
 	assert.Equal(t, dec.Body, "CREATE DATABASE test;")
 	assert.Equal(t, queryCreateDatabase, dec)
+
+	requireNoShortRead(t, buf.Buf, aware(&dec))
 }
