@@ -101,6 +101,28 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 1)
 		require.Equal(t, byte(1), data[0])
 	})
+	t.Run("SelectInt128", func(t *testing.T) {
+		t.Parallel()
+		var (
+			signed   proto.ColInt128
+			unsigned proto.ColUInt128
+		)
+		selectOne := Query{
+			Body: "SELECT toInt128(-109331) as signed, toUInt128(4012) as unsigned",
+			Result: []proto.ResultColumn{
+				{Name: "signed", Data: &signed},
+				{Name: "unsigned", Data: &unsigned},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectOne))
+		require.Len(t, signed, 1)
+		require.Len(t, unsigned, 1)
+
+		expectedSigned := proto.ColInt128{proto.Int128FromInt(-109331)}
+		require.Equal(t, expectedSigned, signed)
+		expectedUnsigned := proto.ColUInt128{proto.UInt128FromInt(4012)}
+		require.Equal(t, expectedUnsigned, unsigned)
+	})
 	t.Run("Exception", func(t *testing.T) {
 		t.Parallel()
 		drop := Query{Body: "DROP TABLE _3_"}
