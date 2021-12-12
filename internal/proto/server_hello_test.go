@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestServerHello_Decode(t *testing.T) {
+func TestServerHello_DecodeAware(t *testing.T) {
 	data, err := hex.DecodeString("11436c69636b486f75736520736572766572150bb2a9030d4575726f70652f4d6f73636f7705616c70686103")
 	require.NoError(t, err)
 
@@ -24,6 +24,28 @@ func TestServerHello_Decode(t *testing.T) {
 		Timezone:    "Europe/Moscow",
 		DisplayName: "alpha",
 	}, v)
+}
+
+func TestServerHello_EncodeAware(t *testing.T) {
+	var b Buffer
+	v := ServerHello{
+		Name:        "ClickHouse server",
+		Major:       21,
+		Minor:       11,
+		Patch:       3,
+		Revision:    54450,
+		Timezone:    "Europe/Moscow",
+		DisplayName: "alpha",
+	}
+	Gold(t, &v)
+	v.EncodeAware(&b, Version)
+	t.Run("Decode", func(t *testing.T) {
+		var dec ServerHello
+		buf := skipCode(t, b.Buf, int(ServerCodeHello))
+		requireDecode(t, buf, aware(&dec))
+		require.Equal(t, v, dec)
+		requireNoShortRead(t, buf, aware(&dec))
+	})
 }
 
 func BenchmarkServerHello_Decode(b *testing.B) {

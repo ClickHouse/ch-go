@@ -101,3 +101,20 @@ func (s *ServerHello) DecodeAware(r *Reader, v int) error {
 
 	return nil
 }
+
+func (s *ServerHello) EncodeAware(b *Buffer, v int) {
+	ServerCodeHello.Encode(b)
+	b.PutString(s.Name)
+	b.PutInt(s.Major)
+	b.PutInt(s.Minor)
+	b.PutInt(s.Revision)
+	if FeatureTimezone.In(v) {
+		b.PutString(s.Timezone)
+	}
+	if FeatureDisplayName.In(v) {
+		b.PutString(s.DisplayName)
+	}
+	if FeatureVersionPatch.In(v) {
+		b.PutInt(s.Patch)
+	}
+}
