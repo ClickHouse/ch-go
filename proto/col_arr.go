@@ -1,8 +1,6 @@
 package proto
 
 import (
-	"strings"
-
 	"github.com/go-faster/errors"
 )
 
@@ -23,13 +21,7 @@ func (c ColArr) EncodeColumn(b *Buffer) {
 }
 
 func (c ColArr) Type() ColumnType {
-	var b strings.Builder
-	b.WriteString(string(ColumnTypeArray))
-	b.WriteRune('(')
-	b.WriteString(string(c.Data.Type()))
-	b.WriteRune(')')
-
-	return ColumnType(b.String())
+	return c.Data.Type().Array()
 }
 
 func (c ColArr) Rows() int {
