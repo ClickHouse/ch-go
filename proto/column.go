@@ -58,4 +58,6 @@ const (
 	ColumnTypeFloat64 ColumnType = "Float64"
 	ColumnTypeString  ColumnType = "String"
 	ColumnTypeArray   ColumnType = "Array"
+	ColumnTypeIPv4    ColumnType = "IPv4"
+	ColumnTypeIPv6    ColumnType = "IPv6"
 )

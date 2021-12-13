@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"inet.af/netaddr"
 
 	"github.com/go-faster/ch/proto"
 )
@@ -169,6 +170,23 @@ func TestClient_Query(t *testing.T) {
 		require.Equal(t, 1, arr.Rows())
 		require.Equal(t, 3, data.Rows())
 		require.Equal(t, proto.ColUInt8{1, 2, 3}, data)
+	})
+	t.Run("SelectIPv4", func(t *testing.T) {
+		t.Parallel()
+		var data proto.ColIPv4
+		selectArr := Query{
+			Body: "SELECT toIPv4('127.1.1.5') AS ip",
+			Result: []proto.ResultColumn{
+				{
+					Name: "ip",
+					Data: &data,
+				},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectArr))
+		require.Equal(t, 1, data.Rows())
+		t.Logf("%v %s", data[0], data[0].ToIP())
+		require.Equal(t, netaddr.MustParseIP("127.1.1.5"), data[0].ToIP())
 	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
