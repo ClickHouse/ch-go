@@ -29,8 +29,9 @@ type Client struct {
 
 	// compressor performs block compression,
 	// see encodeBlock.
-	compressor  *compress.Writer
-	compression proto.Compression
+	compressor        *compress.Writer
+	compression       proto.Compression
+	compressionMethod compress.Method
 
 	settings []Setting
 }
@@ -201,13 +202,6 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 	if !code.IsAServerCode() {
 		return 0, errors.Errorf("bad server packet type %d", n)
 	}
-	if c.compression == proto.CompressionEnabled {
-		if code.Compressible() {
-			c.reader.EnableCompression()
-		} else {
-			c.reader.DisableCompression()
-		}
-	}
 
 	return code, nil
 }
@@ -236,13 +230,28 @@ func (c *Client) encode(v proto.AwareEncoder) {
 	v.EncodeAware(c.buf, c.info.ProtocolVersion)
 }
 
+//go:generate go run github.com/dmarkham/enumer -transform snake_upper -type Compression -trimprefix Compression -output compression_enum.go
+
+// Compression setting.
+//
+// Trade bandwidth for CPU.
+type Compression byte
+
+const (
+	// CompressionDisabled disables compression. Lowest CPU overhead.
+	CompressionDisabled Compression = iota
+	// CompressionLZ4 enables LZ4 compression for data. Medium CPU overhead.
+	CompressionLZ4
+)
+
 // Options for Client.
 type Options struct {
-	Logger   *zap.Logger
-	Database string
-	User     string
-	Password string
-	Settings []Setting
+	Logger      *zap.Logger
+	Database    string
+	User        string
+	Password    string
+	Settings    []Setting
+	Compression Compression
 }
 
 func (o *Options) setDefaults() {
@@ -269,6 +278,8 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		settings: opt.Settings,
 		lg:       opt.Logger,
 
+		compressor: compress.NewWriter(),
+
 		info: proto.ClientHello{
 			Name:  proto.Name,
 			Major: proto.Major,
@@ -280,6 +291,13 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 			User:     opt.User,
 			Password: opt.Password,
 		},
+	}
+	switch opt.Compression {
+	case CompressionLZ4:
+		c.compression = proto.CompressionEnabled
+		c.compressionMethod = compress.LZ4
+	default:
+		c.compression = proto.CompressionDisabled
 	}
 	if err := c.handshake(ctx); err != nil {
 		return nil, errors.Wrap(err, "handshake")

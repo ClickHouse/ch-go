@@ -8,6 +8,7 @@ import "encoding/binary"
 // Method is compression codec.
 type Method byte
 
+// Possible compression methods.
 const (
 	None Method = 0x02
 	LZ4  Method = 0x82
@@ -21,11 +22,11 @@ const (
 	maxBlockSize       = 1024 * 1024 * 1   // 1MB
 	maxDataSize        = 1024 * 1024 * 128 // 128MB
 
-	hDataSize = 17
-	hRawSize  = 21
+	hRawSize  = 17
+	hDataSize = 21
 	hMethod   = 16
 
-	dataSizeOffset = 9
+	rawSizeOffset = 9
 )
 
 var bin = binary.LittleEndian

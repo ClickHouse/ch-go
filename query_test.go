@@ -194,3 +194,30 @@ func TestClient_Query(t *testing.T) {
 		require.Equal(t, numbers, total)
 	})
 }
+
+func TestClientCompression(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := func(t *testing.T) *Client {
+		return ConnOpt(t, Options{
+			Compression: CompressionLZ4,
+		})
+	}
+	t.Run("SelectStr", func(t *testing.T) {
+		t.Parallel()
+		// Select single string row.
+		var data proto.ColStr
+		selectStr := Query{
+			Body: "SELECT 'foo' AS s",
+			Result: []proto.ResultColumn{
+				{
+					Name: "s",
+					Data: &data,
+				},
+			},
+		}
+		require.NoError(t, conn(t).Query(ctx, selectStr))
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, "foo", data.First())
+	})
+}

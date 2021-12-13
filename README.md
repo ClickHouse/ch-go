@@ -79,9 +79,11 @@ func main() {
 * String
 * Array(T)
 
+LZ4 compression is supported.
+
 ## TODO
-- [ ] Compression
-  - [ ] LZ4
+- [x] Compression
+  - [x] LZ4
   - [ ] ZSTD
 - [ ] Enum8, Enum16
 - [ ] LowCardinality

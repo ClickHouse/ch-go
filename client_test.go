@@ -10,15 +10,17 @@ import (
 	"github.com/go-faster/ch/internal/cht"
 )
 
-func Conn(t testing.TB) *Client {
+func ConnOpt(t testing.TB, opt Options) *Client {
 	t.Helper()
 
 	ctx := context.Background()
 	server := cht.Connect(t)
 
-	client, err := Dial(ctx, server.TCP, Options{
-		Logger: zaptest.NewLogger(t),
-	})
+	if opt.Logger == nil {
+		opt.Logger = zaptest.NewLogger(t)
+	}
+
+	client, err := Dial(ctx, server.TCP, opt)
 	require.NoError(t, err)
 
 	t.Log("Connected", client.serverInfo(), client.Location())
@@ -27,4 +29,8 @@ func Conn(t testing.TB) *Client {
 	})
 
 	return client
+}
+
+func Conn(t testing.TB) *Client {
+	return ConnOpt(t, Options{})
 }

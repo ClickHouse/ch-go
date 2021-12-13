@@ -8,6 +8,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-faster/errors"
+
+	"github.com/go-faster/ch/internal/compress"
 )
 
 // Decoder implements decoding from Reader.
@@ -296,8 +298,9 @@ const defaultReaderSize = 1024 // 1kb
 func NewReader(r io.Reader) *Reader {
 	c := bufio.NewReaderSize(r, defaultReaderSize)
 	return &Reader{
-		raw:  c,
-		data: c,
-		b:    &Buffer{},
+		raw:          c,
+		data:         c,
+		b:            &Buffer{},
+		decompressed: compress.NewReader(c),
 	}
 }

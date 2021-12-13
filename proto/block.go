@@ -122,7 +122,6 @@ func (b *Block) DecodeBlock(r *Reader, version int, target []ResultColumn) error
 			return errors.Wrap(err, "info")
 		}
 	}
-
 	{
 		v, err := r.Int()
 		if err != nil {

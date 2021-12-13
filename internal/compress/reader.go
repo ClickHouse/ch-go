@@ -1,8 +1,10 @@
 package compress
 
 import (
+	"fmt"
 	"io"
 
+	"github.com/go-faster/city"
 	"github.com/go-faster/errors"
 	"github.com/pierrec/lz4/v4"
 )
@@ -13,20 +15,25 @@ type Reader struct {
 	data   []byte
 	pos    int64
 	raw    []byte
-	header [headerSize]byte
+	header []byte
+}
+
+func formatU128(v city.U128) string {
+	return fmt.Sprintf("0x%x%x", v.Low, v.High)
 }
 
 // readBlock reads next compressed data into raw and decompresses into data.
-func (c *Reader) readBlock() error {
-	c.pos = 0
+func (r *Reader) readBlock() error {
+	r.pos = 0
 
-	if _, err := io.ReadFull(c.reader, c.header[:]); err != nil {
+	_ = r.header[headerSize-1]
+	if _, err := io.ReadFull(r.reader, r.header); err != nil {
 		return errors.Wrap(err, "header")
 	}
 
 	var (
-		dataSize = int(bin.Uint32(c.header[hDataSize:])) - dataSizeOffset
-		rawSize  = int(bin.Uint32(c.header[hRawSize:]))
+		rawSize  = int(bin.Uint32(r.header[hRawSize:])) - rawSizeOffset
+		dataSize = int(bin.Uint32(r.header[hDataSize:]))
 	)
 	if dataSize < 0 || dataSize > maxDataSize {
 		return errors.Errorf("data size should be %d < %d < %d", 0, dataSize, maxDataSize)
@@ -34,19 +41,36 @@ func (c *Reader) readBlock() error {
 	if rawSize < 0 || rawSize > maxBlockSize {
 		return errors.Errorf("raw size should be %d < %d < %d", 0, rawSize, maxBlockSize)
 	}
-	c.data = append(c.data[:0], make([]byte, dataSize)...)
-	c.raw = append(c.raw[:0], make([]byte, rawSize)...)
 
-	switch m := Method(c.header[hMethod]); m {
+	r.data = append(r.data[:0], make([]byte, dataSize)...)
+	r.raw = append(r.raw[:0], r.header...)
+	r.raw = append(r.raw, make([]byte, rawSize)...)
+	_ = r.raw[:rawSize+headerSize-1]
+
+	if _, err := io.ReadFull(r.reader, r.raw[headerSize:]); err != nil {
+		return errors.Wrap(err, "read raw")
+	}
+	hGot := city.U128{
+		Low:  bin.Uint64(r.raw[0:8]),
+		High: bin.Uint64(r.raw[8:16]),
+	}
+	h := city.CH128(r.raw[hMethod:])
+	if hGot != h {
+		return errors.Errorf("data corrupted: hash mismatch: %v (actual) != %v (got in header)",
+			formatU128(h), formatU128(hGot),
+		)
+	}
+	switch m := Method(r.header[hMethod]); m {
 	case LZ4:
-		if _, err := io.ReadFull(c.reader, c.raw); err != nil {
-			return errors.Wrap(err, "read raw")
-		}
-		n, err := lz4.UncompressBlock(c.raw, c.data)
+		n, err := lz4.UncompressBlock(r.raw[headerSize:], r.data)
 		if err != nil {
-			return errors.Wrap(err, "lz4")
+			return errors.Wrap(err, "uncompress")
 		}
-		c.data = c.data[:n]
+		if n != dataSize {
+			return errors.Errorf("unexpected uncompressed data size: %d (actual) != %d (got in header)",
+				n, dataSize,
+			)
+		}
 	default:
 		return errors.Errorf("compression 0x%02x not implemented", m)
 	}
@@ -55,13 +79,21 @@ func (c *Reader) readBlock() error {
 }
 
 // Read implements io.Reader.
-func (c *Reader) Read(p []byte) (n int, err error) {
-	if c.pos >= int64(len(c.data)) {
-		if err := c.readBlock(); err != nil {
+func (r *Reader) Read(p []byte) (n int, err error) {
+	if r.pos >= int64(len(r.data)) {
+		if err := r.readBlock(); err != nil {
 			return 0, errors.Wrap(err, "read next block")
 		}
 	}
-	n = copy(p, c.data[c.pos:])
-	c.pos += int64(n)
+	n = copy(p, r.data[r.pos:])
+	r.pos += int64(n)
 	return n, nil
+}
+
+// NewReader returns new *Reader from r.
+func NewReader(r io.Reader) *Reader {
+	return &Reader{
+		reader: r,
+		header: make([]byte, headerSize),
+	}
 }

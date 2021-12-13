@@ -91,6 +91,10 @@ func (c *Client) decodeBlock(ctx context.Context, q Query) error {
 		}
 	}
 	var block proto.Block
+	if c.compression == proto.CompressionEnabled {
+		c.reader.EnableCompression()
+	}
+	defer c.reader.DisableCompression()
 	if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
 		return errors.Wrap(err, "decode block")
 	}
@@ -142,7 +146,7 @@ func (c *Client) encodeBlock(input []proto.InputColumn) error {
 		if err := c.compressor.Compress(data); err != nil {
 			return errors.Wrap(err, "compress")
 		}
-		c.buf.Buf = append(c.buf.Buf[start:], c.compressor.Data...)
+		c.buf.Buf = append(c.buf.Buf[:start], c.compressor.Data...)
 	}
 
 	return nil
