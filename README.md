@@ -70,6 +70,7 @@ func main() {
     * 21.12.1.8691-testing
   * Fuzzing
 * Int128 and UInt128
+* LZ4 compression
 * As close to ClickHouse as possible
 
 ## Supported types
@@ -78,8 +79,6 @@ func main() {
 * UInt128, Int128
 * String
 * Array(T)
-
-LZ4 compression is supported.
 
 ## TODO
 - [x] Compression
