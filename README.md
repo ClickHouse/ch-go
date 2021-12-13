@@ -81,9 +81,6 @@ func main() {
 * Array(T)
 
 ## TODO
-- [x] Compression
-  - [x] LZ4
-  - [ ] ZSTD
 - [ ] Enum8, Enum16
 - [ ] LowCardinality
 - [ ] Map(K, V)
@@ -91,6 +88,7 @@ func main() {
 - [ ] External tables
 - [ ] Server in Go for tests
 - [ ] Pooling
+- [ ] ZSTD Compression
 
 ## Reference
 
