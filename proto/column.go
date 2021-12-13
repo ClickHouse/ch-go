@@ -33,7 +33,6 @@ func (c ColumnType) Conflicts(b ColumnType) bool {
 		return false
 	}
 	if c.Base() != b.Base() {
-		fmt.Println(c.Base(), b.Base())
 		return true
 	}
 	if c.Base() == ColumnTypeDateTime {
