@@ -12,6 +12,37 @@ func (c ColumnType) String() string {
 	return string(c)
 }
 
+func (c ColumnType) Base() ColumnType {
+	if c == "" {
+		return ""
+	}
+	var (
+		v     = string(c)
+		start = strings.Index(v, "(")
+		end   = strings.LastIndex(v, ")")
+	)
+	if start <= 0 || end <= 0 || end < start {
+		return c
+	}
+	return c[:start]
+}
+
+// Conflicts reports whether two types conflict.
+func (c ColumnType) Conflicts(b ColumnType) bool {
+	if c == b {
+		return false
+	}
+	if c.Base() != b.Base() {
+		fmt.Println(c.Base(), b.Base())
+		return true
+	}
+	if c.Base() == ColumnTypeDateTime {
+		// Timezone metadata is only for view, so no conflict.
+		return false
+	}
+	return true
+}
+
 // With returns ColumnType(p1, p2, ...) from ColumnType.
 func (c ColumnType) With(params ...string) ColumnType {
 	if len(params) == 0 {

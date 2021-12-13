@@ -17,4 +17,36 @@ func TestColumnType_Elem(t *testing.T) {
 		assert.Equal(t, ColumnTypeNone, ColumnTypeFloat32.Elem())
 		assert.False(t, ColumnTypeInt32.IsArray())
 	})
+	t.Run("Conflict", func(t *testing.T) {
+		t.Run("Compatible", func(t *testing.T) {
+			for _, tt := range []struct {
+				A, B ColumnType
+			}{
+				{}, // blank
+				{A: ColumnTypeInt32, B: ColumnTypeInt32},
+				{A: ColumnTypeDateTime, B: ColumnTypeDateTime},
+				{A: ColumnTypeArray.Sub(ColumnTypeInt32), B: ColumnTypeArray.Sub(ColumnTypeInt32)},
+				{A: ColumnTypeDateTime.With("Europe/Moscow"), B: ColumnTypeDateTime.With("UTC")},
+				{A: ColumnTypeDateTime.With("Europe/Moscow"), B: ColumnTypeDateTime},
+			} {
+				assert.False(t, tt.A.Conflicts(tt.B),
+					"%s ~ %s", tt.A, tt.B,
+				)
+			}
+		})
+		t.Run("Incompatible", func(t *testing.T) {
+			for _, tt := range []struct {
+				A, B ColumnType
+			}{
+				{A: ColumnTypeInt64}, // blank
+				{A: ColumnTypeInt32, B: ColumnTypeInt64},
+				{A: ColumnTypeDateTime, B: ColumnTypeInt32},
+				{A: ColumnTypeArray.Sub(ColumnTypeInt32), B: ColumnTypeArray.Sub(ColumnTypeInt64)},
+			} {
+				assert.True(t, tt.A.Conflicts(tt.B),
+					"%s !~ %s", tt.A, tt.B,
+				)
+			}
+		})
+	})
 }
