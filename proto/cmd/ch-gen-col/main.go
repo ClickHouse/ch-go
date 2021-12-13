@@ -65,13 +65,30 @@ func (v Variant) BinFunc() string {
 }
 
 func (v Variant) BinGet() string {
+	if v.IPv6() {
+		return "binIPv6"
+	}
 	if v.Big() {
+		if v.IP {
+			return "binIPv6"
+		}
 		return fmt.Sprintf("binUInt%d", v.Bits)
 	}
 	return "bin." + v.BinFunc()
 }
 
+func (v Variant) IPv6() bool {
+	return v.IP && v.Bits == 128
+}
+
+func (v Variant) IPv4() bool {
+	return v.IP && v.Bits == 32
+}
+
 func (v Variant) BinPut() string {
+	if v.IPv6() {
+		return "binPutIPv6"
+	}
 	if v.Big() {
 		return fmt.Sprintf("binPutUInt%d", v.Bits)
 	}
@@ -83,7 +100,7 @@ func (v Variant) Big() bool {
 }
 
 func (v Variant) Cast() bool {
-	return v.Signed || v.IP
+	return v.Signed || v.IPv4()
 }
 
 func (v Variant) UnsignedType() string {
@@ -102,13 +119,11 @@ func (v Variant) ElemLower() string {
 }
 
 func (v Variant) ElemType() string {
-	if v.IP {
-		switch v.Bits {
-		case 32:
-			return "IPv4"
-		case 128:
-			return "IPv6"
-		}
+	if v.IPv4() {
+		return "IPv4"
+	}
+	if v.IPv6() {
+		return "IPv6"
 	}
 	var b strings.Builder
 	var (
@@ -171,6 +186,10 @@ func run() error {
 		},
 		{ // IPv4
 			Bits: 32,
+			IP:   true,
+		},
+		{ // IPv6
+			Bits: 128,
 			IP:   true,
 		},
 	}

@@ -188,6 +188,24 @@ func TestClient_Query(t *testing.T) {
 		t.Logf("%v %s", data[0], data[0].ToIP())
 		require.Equal(t, netaddr.MustParseIP("127.1.1.5"), data[0].ToIP())
 	})
+	t.Run("SelectIPv6", func(t *testing.T) {
+		t.Parallel()
+		var data proto.ColIPv6
+		selectArr := Query{
+			Body: "SELECT toIPv6('2001:0DB8:AC10:FE01:FEED:BABE:CAFE:F00D') AS ip",
+			Result: []proto.ResultColumn{
+				{
+					Name: "ip",
+					Data: &data,
+				},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectArr))
+		require.Equal(t, 1, data.Rows())
+		t.Logf("%v %s", data[0], data[0].ToIP())
+		expected := netaddr.MustParseIP("2001:db8:ac10:fe01:feed:babe:cafe:f00d")
+		require.Equal(t, expected, data[0].ToIP())
+	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611
