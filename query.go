@@ -93,8 +93,8 @@ func (c *Client) decodeBlock(ctx context.Context, q Query) error {
 	var block proto.Block
 	if c.compression == proto.CompressionEnabled {
 		c.reader.EnableCompression()
+		defer c.reader.DisableCompression()
 	}
-	defer c.reader.DisableCompression()
 	if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
 		return errors.Wrap(err, "decode block")
 	}
