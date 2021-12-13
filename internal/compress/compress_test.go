@@ -4,22 +4,36 @@ import (
 	"bytes"
 	"io"
 	"math/rand"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestMain(m *testing.M) {
+	// Explicitly registering flags for golden files.
+	gold.Init()
+
+	os.Exit(m.Run())
+}
+
 func TestCompress(t *testing.T) {
-	data := []byte{1, 2, 3, 4, 5}
+	data := []byte(strings.Repeat("Hello!\n", 25))
 
 	w := NewWriter()
 	require.NoError(t, w.Compress(data))
+	gold.Bytes(t, data, "data_raw")
+	gold.Bytes(t, w.Data, "data_compressed")
 
 	r := NewReader(bytes.NewReader(w.Data))
 
 	out := make([]byte, len(data))
 	_, err := io.ReadFull(r, out)
 	require.NoError(t, err)
+	require.Equal(t, data, out)
 }
 
 func BenchmarkWriter_Compress(b *testing.B) {
