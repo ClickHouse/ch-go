@@ -47,7 +47,7 @@ func TestCompress(t *testing.T) {
 			// Corrupt checksum.
 			for i := 0; i < 16; i++ {
 				b := append([]byte{}, w.Data...) // clone
-				b[i] += 1
+				b[i]++
 				r := NewReader(bytes.NewReader(b))
 				_, err := io.ReadFull(r, out)
 				require.Error(t, err)
@@ -57,7 +57,7 @@ func TestCompress(t *testing.T) {
 			// Corrupt bytes after checksum.
 			for i := 16; i < len(w.Data); i++ {
 				b := append([]byte{}, w.Data...) // clone
-				b[i] += 1
+				b[i]++
 				r := NewReader(bytes.NewReader(b))
 				_, err := io.ReadFull(r, out)
 				require.Error(t, err)
