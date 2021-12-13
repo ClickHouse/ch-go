@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"inet.af/netaddr"
@@ -205,6 +206,62 @@ func TestClient_Query(t *testing.T) {
 		t.Logf("%v %s", data[0], data[0].ToIP())
 		expected := netaddr.MustParseIP("2001:db8:ac10:fe01:feed:babe:cafe:f00d")
 		require.Equal(t, expected, data[0].ToIP())
+	})
+	t.Run("SelectDateTime", func(t *testing.T) {
+		t.Parallel()
+		const (
+			tz = "Europe/Moscow"
+			dt = "2019-01-01 00:00:00"
+		)
+		var data proto.ColDateTime
+		selectArr := Query{
+			Body: fmt.Sprintf("SELECT toDateTime('%s', '%s') as time", dt, tz),
+			Result: []proto.ResultColumn{
+				{
+					Name: "time",
+					Data: &data,
+				},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectArr))
+		require.Equal(t, 1, data.Rows())
+		loc, err := time.LoadLocation(tz)
+		require.NoError(t, err)
+		exp, err := time.ParseInLocation("2006-01-02 15:04:05", dt, loc)
+		v := data[0].Time().In(loc)
+		require.NoError(t, err)
+		require.True(t, exp.Equal(v))
+		t.Logf("%s %d", v, v.Unix())
+	})
+	t.Run("InsertDateTime", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		// Create table, no data fetch.
+		createTable := Query{
+			Body: "CREATE TABLE test_table (d DateTime) ENGINE = MergeTree ORDER BY d",
+		}
+		require.NoError(t, conn.Query(ctx, createTable), "create table")
+
+		data := proto.ColDateTime{1546290000}
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "d", Data: &data},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		var gotData proto.ColDateTime
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: []proto.ResultColumn{
+				{Name: "d", Data: &gotData},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.Len(t, data, 1)
+		require.Equal(t, data, gotData)
 	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()

@@ -12,6 +12,26 @@ func (c ColumnType) String() string {
 	return string(c)
 }
 
+// With returns ColumnType(p1, p2, ...) from ColumnType.
+func (c ColumnType) With(params ...string) ColumnType {
+	if len(params) == 0 {
+		return c
+	}
+	s := fmt.Sprintf("%s(%s)",
+		c, strings.Join(params, ","),
+	)
+	return ColumnType(s)
+}
+
+// Sub of T returns T(A, B, ...).
+func (c ColumnType) Sub(subtypes ...ColumnType) ColumnType {
+	var params []string
+	for _, t := range subtypes {
+		params = append(params, t.String())
+	}
+	return c.With(params...)
+}
+
 func (c ColumnType) Elem() ColumnType {
 	if c == "" {
 		return ""
@@ -35,7 +55,7 @@ func (c ColumnType) IsArray() bool {
 
 // Array returns Array(ColumnType).
 func (c ColumnType) Array() ColumnType {
-	return ColumnType(fmt.Sprintf("%s(%s)", ColumnTypeArray, c))
+	return ColumnTypeArray.Sub(c)
 }
 
 // Common colum type names. Does not represent full set of supported types,
@@ -43,21 +63,22 @@ func (c ColumnType) Array() ColumnType {
 //
 // For example: Array(Int8) or even Array(Array(String)).
 const (
-	ColumnTypeNone    ColumnType = ""
-	ColumnTypeInt8    ColumnType = "Int8"
-	ColumnTypeInt16   ColumnType = "Int16"
-	ColumnTypeInt32   ColumnType = "Int32"
-	ColumnTypeInt64   ColumnType = "Int64"
-	ColumnTypeInt128  ColumnType = "Int128"
-	ColumnTypeUInt8   ColumnType = "UInt8"
-	ColumnTypeUInt16  ColumnType = "UInt16"
-	ColumnTypeUInt32  ColumnType = "UInt32"
-	ColumnTypeUInt64  ColumnType = "UInt64"
-	ColumnTypeUInt128 ColumnType = "UInt128"
-	ColumnTypeFloat32 ColumnType = "Float32"
-	ColumnTypeFloat64 ColumnType = "Float64"
-	ColumnTypeString  ColumnType = "String"
-	ColumnTypeArray   ColumnType = "Array"
-	ColumnTypeIPv4    ColumnType = "IPv4"
-	ColumnTypeIPv6    ColumnType = "IPv6"
+	ColumnTypeNone     ColumnType = ""
+	ColumnTypeInt8     ColumnType = "Int8"
+	ColumnTypeInt16    ColumnType = "Int16"
+	ColumnTypeInt32    ColumnType = "Int32"
+	ColumnTypeInt64    ColumnType = "Int64"
+	ColumnTypeInt128   ColumnType = "Int128"
+	ColumnTypeUInt8    ColumnType = "UInt8"
+	ColumnTypeUInt16   ColumnType = "UInt16"
+	ColumnTypeUInt32   ColumnType = "UInt32"
+	ColumnTypeUInt64   ColumnType = "UInt64"
+	ColumnTypeUInt128  ColumnType = "UInt128"
+	ColumnTypeFloat32  ColumnType = "Float32"
+	ColumnTypeFloat64  ColumnType = "Float64"
+	ColumnTypeString   ColumnType = "String"
+	ColumnTypeArray    ColumnType = "Array"
+	ColumnTypeIPv4     ColumnType = "IPv4"
+	ColumnTypeIPv6     ColumnType = "IPv6"
+	ColumnTypeDateTime ColumnType = "DateTime"
 )

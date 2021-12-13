@@ -13,11 +13,27 @@ import (
 	"github.com/go-faster/errors"
 )
 
+type Kind byte
+
+const (
+	KindInt Kind = iota
+	KindFloat
+	KindIP
+	KindDateTime
+)
+
 type Variant struct {
-	Float  bool
+	Kind   Kind
 	Signed bool
 	Bits   int
-	IP     bool
+}
+
+func (v Variant) IsFloat() bool {
+	return v.Kind == KindFloat
+}
+
+func (v Variant) IsInt() bool {
+	return v.Kind == KindInt
 }
 
 func (v Variant) SingleByte() bool {
@@ -25,7 +41,7 @@ func (v Variant) SingleByte() bool {
 }
 
 func (v Variant) Byte() bool {
-	return v.Bits/8 == 1 && !v.Signed && !v.Float
+	return v.Bits/8 == 1 && !v.Signed && v.IsInt()
 }
 
 func (v Variant) Type() string {
@@ -44,16 +60,17 @@ func (v Variant) New() string {
 }
 
 func (v Variant) Name() string {
-	if v.IP {
+	if v.Kind != KindInt && v.Kind != KindFloat {
 		return v.ElemType()
 	}
 	var b strings.Builder
 	if !v.Signed {
 		b.WriteString("U")
 	}
-	if v.Float {
+	switch v.Kind {
+	case KindFloat:
 		b.WriteString("Float")
-	} else {
+	case KindInt:
 		b.WriteString("Int")
 	}
 	b.WriteString(strconv.Itoa(v.Bits))
@@ -69,20 +86,21 @@ func (v Variant) BinGet() string {
 		return "binIPv6"
 	}
 	if v.Big() {
-		if v.IP {
-			return "binIPv6"
-		}
 		return fmt.Sprintf("binUInt%d", v.Bits)
 	}
 	return "bin." + v.BinFunc()
 }
 
+func (v Variant) IsIP() bool {
+	return v.Kind == KindIP
+}
+
 func (v Variant) IPv6() bool {
-	return v.IP && v.Bits == 128
+	return v.IsIP() && v.Bits == 128
 }
 
 func (v Variant) IPv4() bool {
-	return v.IP && v.Bits == 32
+	return v.IsIP() && v.Bits == 32
 }
 
 func (v Variant) BinPut() string {
@@ -125,6 +143,12 @@ func (v Variant) ElemType() string {
 	if v.IPv6() {
 		return "IPv6"
 	}
+	if v.Kind == KindDateTime {
+		if v.Bits == 64 {
+			return "DateTime64"
+		}
+		return "DateTime"
+	}
 	var b strings.Builder
 	var (
 		unsigned = "u"
@@ -138,7 +162,7 @@ func (v Variant) ElemType() string {
 	if !v.Signed {
 		b.WriteString(unsigned)
 	}
-	if v.Float {
+	if v.IsFloat() {
 		b.WriteString(float)
 	} else {
 		b.WriteString(integer)
@@ -176,21 +200,26 @@ func run() error {
 	variants := []Variant{
 		{ // Float32
 			Bits:   32,
-			Float:  true,
+			Kind:   KindFloat,
 			Signed: true,
 		},
 		{ // Float64
 			Bits:   64,
-			Float:  true,
+			Kind:   KindFloat,
 			Signed: true,
 		},
 		{ // IPv4
 			Bits: 32,
-			IP:   true,
+			Kind: KindIP,
 		},
 		{ // IPv6
 			Bits: 128,
-			IP:   true,
+			Kind: KindIP,
+		},
+		{ // DateTIme
+			Bits:   32,
+			Signed: true,
+			Kind:   KindDateTime,
 		},
 	}
 	for _, bits := range []int{
@@ -202,6 +231,7 @@ func run() error {
 	} {
 		for _, signed := range []bool{true, false} {
 			variants = append(variants, Variant{
+				Kind:   KindInt,
 				Bits:   bits,
 				Signed: signed,
 			})

@@ -78,6 +78,7 @@ func main() {
 * Int8, Int16, Int32, Int64
 * UInt128, Int128
 * IPv4, IPv6
+* DateTime
 * String
 * Array(T)
 

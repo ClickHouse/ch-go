@@ -4,7 +4,7 @@
 package proto
 
 import (
-{{- if .Float }}
+{{- if .IsFloat }}
    "math"
 {{- end }}
   "github.com/go-faster/errors"
@@ -65,7 +65,7 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
   for _, v := range c {
     {{ .BinPut }}(
       b.Buf[offset:offset+size],
-    {{- if .Float }}
+    {{- if .IsFloat }}
       math.{{ .Name }}bits(v),
     {{- else if .Cast }}
       {{ .UnsignedType }}(v),
@@ -102,7 +102,7 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   v := *c
   for i := 0; i < len(data); i += size {
     v = append(v,
-    {{- if .Float }}
+    {{- if .IsFloat }}
       math.{{ .Name }}frombits(bin.{{ .BinFunc }}(data[i:i+size])),
     {{- else if .Cast }}
      {{ .ElemType }}({{ .BinGet }}(data[i:i+size])),
