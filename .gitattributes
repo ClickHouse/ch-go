@@ -1,2 +1,3 @@
 *.raw linguist-generated
 *.tpl linguist-language=Go
+*.raw -crlf
