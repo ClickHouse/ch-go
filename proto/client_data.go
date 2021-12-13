@@ -1,14 +1,24 @@
 package proto
 
+import "github.com/go-faster/errors"
+
 type ClientData struct {
 	TableName string
-	Block     Block
 }
 
 func (c ClientData) EncodeAware(b *Buffer, version int) {
-	ClientCodeData.Encode(b)
 	if FeatureTempTables.In(version) {
 		b.PutString(c.TableName)
 	}
-	c.Block.EncodeAware(b, version)
+}
+
+func (c *ClientData) DecodeAware(r *Reader, version int) error {
+	if FeatureTempTables.In(version) {
+		v, err := r.Str()
+		if err != nil {
+			return errors.Wrap(err, "temp tables")
+		}
+		c.TableName = v
+	}
+	return nil
 }

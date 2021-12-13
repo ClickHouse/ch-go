@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/dmarkham/enumer v1.5.3
 	github.com/dustin/go-humanize v1.0.0
+	github.com/go-faster/city v0.5.0
 	github.com/go-faster/errors v0.5.0
 	github.com/google/uuid v1.3.0
 	github.com/pierrec/lz4/v4 v4.1.12

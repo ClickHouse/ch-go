@@ -22,7 +22,7 @@ func (c *Client) cancelQuery(ctx context.Context) error {
 }
 
 // sendQuery starts query.
-func (c *Client) sendQuery(ctx context.Context, query, queryID string) {
+func (c *Client) sendQuery(ctx context.Context, query, queryID string) error {
 	if ce := c.lg.Check(zap.DebugLevel, "sendQuery"); ce != nil {
 		ce.Write(
 			zap.String("query", query),
@@ -55,8 +55,12 @@ func (c *Client) sendQuery(ctx context.Context, query, queryID string) {
 		},
 	})
 
-	// External tables end.
-	c.encode(proto.ClientData{})
+	// Encoding that there are no external tables.
+	if err := c.encodeBlankBlock(); err != nil {
+		return errors.Wrap(err, "external tables end")
+	}
+
+	return nil
 }
 
 // Query to ClickHouse.
@@ -101,46 +105,75 @@ func (c *Client) decodeBlock(ctx context.Context, q Query) error {
 	return nil
 }
 
+// encodeBlock encodes data block into buf, performing compression if needed.
+//
+// If input length is zero, blank block will be encoded, which is special case
+// for "end of data".
+func (c *Client) encodeBlock(input []proto.InputColumn) error {
+	proto.ClientCodeData.Encode(c.buf)
+	proto.ClientData{}.EncodeAware(c.buf, c.info.ProtocolVersion)
+	// Saving offset of compressible data.
+	start := len(c.buf.Buf)
+	b := proto.Block{
+		Columns: len(input),
+	}
+	if len(input) > 0 {
+		b.Rows = input[0].Data.Rows()
+		b.Info = proto.BlockInfo{
+			// TODO(ernado): investigate and document
+			BucketNum: -1,
+		}
+	}
+	b.EncodeAware(c.buf, c.info.ProtocolVersion)
+	for _, col := range input {
+		if r := col.Data.Rows(); r != b.Rows {
+			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
+		}
+		col.EncodeStart(c.buf)
+		col.Data.EncodeColumn(c.buf)
+	}
+
+	// Performing compression.
+	//
+	// Note: only blocks are compressed.
+	// See "Compressible" method of server or client code for reference.
+	if c.compression == proto.CompressionEnabled {
+		data := c.buf.Buf[start:]
+		if err := c.compressor.Compress(data); err != nil {
+			return errors.Wrap(err, "compress")
+		}
+		c.buf.Buf = append(c.buf.Buf[start:], c.compressor.Data...)
+	}
+
+	return nil
+}
+
+// encodeBlankBlock encodes block with zero columns and rows which is special
+// case for "end of data".
+func (c *Client) encodeBlankBlock() error {
+	return c.encodeBlock(nil)
+}
+
 // Query performs Query on ClickHouse server.
 func (c *Client) Query(ctx context.Context, q Query) error {
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
 	}
-
-	c.sendQuery(ctx, q.Body, q.QueryID)
-
-	if len(q.Input) > 0 {
-		rows := q.Input[0].Data.Rows()
-		c.encode(proto.ClientData{
-			Block: proto.Block{
-				Info: proto.BlockInfo{
-					BucketNum: -1,
-				},
-				Columns: len(q.Input),
-				Rows:    rows,
-			},
-		})
-		for _, col := range q.Input {
-			if r := col.Data.Rows(); r != rows {
-				return errors.Errorf("%q has %d rows, expected %d", col.Name, r, rows)
-			}
-
-			col.EncodeStart(c.buf)
-			col.Data.EncodeColumn(c.buf)
-
-			if err := c.flush(ctx); err != nil {
-				return errors.Wrap(err, "flush")
-			}
-		}
-
-		// End of data.
-		c.encode(proto.ClientData{})
+	if err := c.sendQuery(ctx, q.Body, q.QueryID); err != nil {
+		return errors.Wrap(err, "send query")
 	}
-
+	if len(q.Input) > 0 {
+		if err := c.encodeBlock(q.Input); err != nil {
+			return errors.Wrap(err, "write block")
+		}
+		// Encoding that there is no more data.
+		if err := c.encodeBlankBlock(); err != nil {
+			return errors.Wrap(err, "write end of data")
+		}
+	}
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
 	}
-
 	for {
 		if ctx.Err() != nil {
 			_ = c.cancelQuery(context.Background())

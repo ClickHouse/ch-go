@@ -12,6 +12,7 @@ import (
 	"github.com/go-faster/errors"
 	"go.uber.org/zap"
 
+	"github.com/go-faster/ch/internal/compress"
 	"github.com/go-faster/ch/proto"
 )
 
@@ -26,8 +27,12 @@ type Client struct {
 	server proto.ServerHello
 	tz     *time.Location
 
+	// compressor performs block compression,
+	// see encodeBlock.
+	compressor  *compress.Writer
 	compression proto.Compression
-	settings    []Setting
+
+	settings []Setting
 }
 
 // Setting to send to server.
@@ -220,11 +225,9 @@ func (c *Client) flush(ctx context.Context) error {
 	if n != len(c.buf.Buf) {
 		return errors.Wrap(io.ErrShortWrite, "wrote less than expected")
 	}
-
 	if ce := c.lg.Check(zap.DebugLevel, "Flush"); ce != nil {
 		ce.Write(zap.Int("bytes", n))
 	}
-
 	c.buf.Reset()
 	return nil
 }
