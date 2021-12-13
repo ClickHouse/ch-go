@@ -6,7 +6,7 @@ import (
 	"github.com/pierrec/lz4/v4"
 )
 
-// Writer handles compression.
+// Writer encodes compressed blocks.
 type Writer struct {
 	Data []byte
 

@@ -7,7 +7,7 @@ import (
 	"github.com/pierrec/lz4/v4"
 )
 
-// Reader handles compression.
+// Reader decodes compressed blocks.
 type Reader struct {
 	reader io.Reader
 	data   []byte
