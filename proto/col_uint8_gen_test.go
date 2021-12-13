@@ -44,6 +44,42 @@ func TestColUInt8_DecodeColumn(t *testing.T) {
 	})
 }
 
+func TestColUInt8Array(t *testing.T) {
+	const rows = 50
+	data := NewArrUInt8()
+	for i := 0; i < rows; i++ {
+		data.AppendUInt8([]uint8{
+			uint8(i),
+			uint8(i + 1),
+			uint8(i + 2),
+		})
+	}
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_arr_uint8")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+
+		dec := NewArrUInt8()
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, data, dec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, ColumnTypeUInt8.Array(), dec.Type())
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+
+		dec := NewArrUInt8()
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
+}
+
 func BenchmarkColUInt8_DecodeColumn(b *testing.B) {
 	const rows = 50_000
 	var data ColUInt8

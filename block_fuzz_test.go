@@ -45,6 +45,40 @@ func encodeTestStrBlock() []byte {
 	return b.Buf
 }
 
+func encodeTestIPv6Block() []byte {
+	b := &proto.Buffer{}
+	d := &proto.ColIPv6{}
+	arr := &proto.ColArr{
+		Data: d,
+	}
+	for _, v := range [][]string{
+		{"foo", "bar"},
+		{"1", "2", "3", "4"},
+		{"", strings.Repeat("123", 3)},
+	} {
+		d.ArrAppend(arr, v)
+	}
+	input := []proto.InputColumn{
+		{
+			Name: "foo",
+			Data: arr,
+		},
+	}
+	block := &proto.Block{
+		Info:    proto.BlockInfo{BucketNum: -1},
+		Columns: 1,
+		Rows:    3,
+	}
+
+	block.EncodeAware(b, proto.Version)
+	for _, col := range input {
+		col.EncodeStart(b)
+		col.Data.EncodeColumn(b)
+	}
+
+	return b.Buf
+}
+
 func TestEncodeBlock(t *testing.T) {
 	data := encodeTestStrBlock()
 	gold.Bytes(t, data, "test_arr_str_block")

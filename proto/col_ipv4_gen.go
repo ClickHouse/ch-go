@@ -30,6 +30,20 @@ func (c *ColIPv4) Reset() {
 	*c = (*c)[:0]
 }
 
+// NewArrIPv4 returns new Array(IPv4).
+func NewArrIPv4() *ColArr {
+	return &ColArr{
+		Data: new(ColIPv4),
+	}
+}
+
+// AppendIPv4 appends slice of IPv4 to Array(IPv4).
+func (c *ColArr) AppendIPv4(data []IPv4) {
+	d := c.Data.(*ColIPv4)
+	*d = append(*d, data...)
+	c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes IPv4 rows to *Buffer.
 func (c ColIPv4) EncodeColumn(b *Buffer) {
 	const size = 32 / 8

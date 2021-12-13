@@ -31,6 +31,20 @@ func (c *ColFloat32) Reset() {
 	*c = (*c)[:0]
 }
 
+// NewArrFloat32 returns new Array(Float32).
+func NewArrFloat32() *ColArr {
+	return &ColArr{
+		Data: new(ColFloat32),
+	}
+}
+
+// AppendFloat32 appends slice of float32 to Array(Float32).
+func (c *ColArr) AppendFloat32(data []float32) {
+	d := c.Data.(*ColFloat32)
+	*d = append(*d, data...)
+	c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes Float32 rows to *Buffer.
 func (c ColFloat32) EncodeColumn(b *Buffer) {
 	const size = 32 / 8

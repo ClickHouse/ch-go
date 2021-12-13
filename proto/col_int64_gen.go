@@ -30,6 +30,20 @@ func (c *ColInt64) Reset() {
 	*c = (*c)[:0]
 }
 
+// NewArrInt64 returns new Array(Int64).
+func NewArrInt64() *ColArr {
+	return &ColArr{
+		Data: new(ColInt64),
+	}
+}
+
+// AppendInt64 appends slice of int64 to Array(Int64).
+func (c *ColArr) AppendInt64(data []int64) {
+	d := c.Data.(*ColInt64)
+	*d = append(*d, data...)
+	c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes Int64 rows to *Buffer.
 func (c ColInt64) EncodeColumn(b *Buffer) {
 	const size = 64 / 8

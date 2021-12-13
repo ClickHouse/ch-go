@@ -51,7 +51,7 @@ func TestColArr_DecodeColumn(t *testing.T) {
 	arr.EncodeColumn(&buf)
 
 	t.Run("Golden", func(t *testing.T) {
-		gold.Bytes(t, buf.Buf, "col_arr_int8")
+		gold.Bytes(t, buf.Buf, "col_arr_int8_manual")
 	})
 	t.Run("ColumnType", func(t *testing.T) {
 		require.Equal(t, "Array(Int8)", arr.Type().String())

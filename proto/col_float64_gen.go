@@ -31,6 +31,20 @@ func (c *ColFloat64) Reset() {
 	*c = (*c)[:0]
 }
 
+// NewArrFloat64 returns new Array(Float64).
+func NewArrFloat64() *ColArr {
+	return &ColArr{
+		Data: new(ColFloat64),
+	}
+}
+
+// AppendFloat64 appends slice of float64 to Array(Float64).
+func (c *ColArr) AppendFloat64(data []float64) {
+	d := c.Data.(*ColFloat64)
+	*d = append(*d, data...)
+	c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes Float64 rows to *Buffer.
 func (c ColFloat64) EncodeColumn(b *Buffer) {
 	const size = 64 / 8

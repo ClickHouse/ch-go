@@ -30,6 +30,20 @@ func (c *ColUInt8) Reset() {
 	*c = (*c)[:0]
 }
 
+// NewArrUInt8 returns new Array(UInt8).
+func NewArrUInt8() *ColArr {
+	return &ColArr{
+		Data: new(ColUInt8),
+	}
+}
+
+// AppendUInt8 appends slice of uint8 to Array(UInt8).
+func (c *ColArr) AppendUInt8(data []uint8) {
+	d := c.Data.(*ColUInt8)
+	*d = append(*d, data...)
+	c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes UInt8 rows to *Buffer.
 func (c ColUInt8) EncodeColumn(b *Buffer) {
 	b.Buf = append(b.Buf, c...)

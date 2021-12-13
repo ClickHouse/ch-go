@@ -30,6 +30,20 @@ func (c *ColInt16) Reset() {
 	*c = (*c)[:0]
 }
 
+// NewArrInt16 returns new Array(Int16).
+func NewArrInt16() *ColArr {
+	return &ColArr{
+		Data: new(ColInt16),
+	}
+}
+
+// AppendInt16 appends slice of int16 to Array(Int16).
+func (c *ColArr) AppendInt16(data []int16) {
+	d := c.Data.(*ColInt16)
+	*d = append(*d, data...)
+	c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes Int16 rows to *Buffer.
 func (c ColInt16) EncodeColumn(b *Buffer) {
 	const size = 16 / 8

@@ -45,6 +45,42 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
   })
 }
 
+func Test{{ .Type }}Array(t *testing.T) {
+  const rows = 50
+  data := NewArr{{ .Name }}()
+  for i := 0; i < rows; i++ {
+    data.Append{{ .Name }}([]{{ .ElemType }}{
+      {{ .New }}(i),
+      {{ .New }}(i+1),
+      {{ .New }}(i+2),
+    })
+  }
+
+  var buf Buffer
+  data.EncodeColumn(&buf)
+  t.Run("Golden", func(t *testing.T) {
+    gold.Bytes(t, buf.Buf, "col_arr_{{ .ElemLower }}")
+  })
+  t.Run("Ok", func(t *testing.T) {
+    br := bytes.NewReader(buf.Buf)
+    r := NewReader(br)
+
+    dec := NewArr{{ .Name }}()
+    require.NoError(t, dec.DecodeColumn(r, rows))
+    require.Equal(t, data, dec)
+    require.Equal(t, rows, dec.Rows())
+    dec.Reset()
+    require.Equal(t, 0, dec.Rows())
+    require.Equal(t, {{ .ColumnType }}.Array(), dec.Type())
+  })
+  t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+    r := NewReader(bytes.NewReader(nil))
+
+    dec := NewArr{{ .Name }}()
+    require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+  })
+}
+
 func Benchmark{{ .Type }}_DecodeColumn(b *testing.B) {
   const rows = 50_000
   var data {{ .Type }}

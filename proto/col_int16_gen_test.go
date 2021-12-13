@@ -44,6 +44,42 @@ func TestColInt16_DecodeColumn(t *testing.T) {
 	})
 }
 
+func TestColInt16Array(t *testing.T) {
+	const rows = 50
+	data := NewArrInt16()
+	for i := 0; i < rows; i++ {
+		data.AppendInt16([]int16{
+			int16(i),
+			int16(i + 1),
+			int16(i + 2),
+		})
+	}
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_arr_int16")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+
+		dec := NewArrInt16()
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, data, dec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, ColumnTypeInt16.Array(), dec.Type())
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+
+		dec := NewArrInt16()
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
+}
+
 func BenchmarkColInt16_DecodeColumn(b *testing.B) {
 	const rows = 50_000
 	var data ColInt16

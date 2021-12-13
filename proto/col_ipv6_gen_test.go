@@ -44,6 +44,42 @@ func TestColIPv6_DecodeColumn(t *testing.T) {
 	})
 }
 
+func TestColIPv6Array(t *testing.T) {
+	const rows = 50
+	data := NewArrIPv6()
+	for i := 0; i < rows; i++ {
+		data.AppendIPv6([]IPv6{
+			IPv6FromInt(i),
+			IPv6FromInt(i + 1),
+			IPv6FromInt(i + 2),
+		})
+	}
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_arr_ipv6")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+
+		dec := NewArrIPv6()
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, data, dec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, ColumnTypeIPv6.Array(), dec.Type())
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+
+		dec := NewArrIPv6()
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
+}
+
 func BenchmarkColIPv6_DecodeColumn(b *testing.B) {
 	const rows = 50_000
 	var data ColIPv6

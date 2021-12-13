@@ -44,6 +44,42 @@ func TestColIPv4_DecodeColumn(t *testing.T) {
 	})
 }
 
+func TestColIPv4Array(t *testing.T) {
+	const rows = 50
+	data := NewArrIPv4()
+	for i := 0; i < rows; i++ {
+		data.AppendIPv4([]IPv4{
+			IPv4(i),
+			IPv4(i + 1),
+			IPv4(i + 2),
+		})
+	}
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_arr_ipv4")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+
+		dec := NewArrIPv4()
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, data, dec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, ColumnTypeIPv4.Array(), dec.Type())
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+
+		dec := NewArrIPv4()
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
+}
+
 func BenchmarkColIPv4_DecodeColumn(b *testing.B) {
 	const rows = 50_000
 	var data ColIPv4

@@ -30,6 +30,20 @@ func (c *ColIPv6) Reset() {
 	*c = (*c)[:0]
 }
 
+// NewArrIPv6 returns new Array(IPv6).
+func NewArrIPv6() *ColArr {
+	return &ColArr{
+		Data: new(ColIPv6),
+	}
+}
+
+// AppendIPv6 appends slice of IPv6 to Array(IPv6).
+func (c *ColArr) AppendIPv6(data []IPv6) {
+	d := c.Data.(*ColIPv6)
+	*d = append(*d, data...)
+	c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes IPv6 rows to *Buffer.
 func (c ColIPv6) EncodeColumn(b *Buffer) {
 	const size = 128 / 8

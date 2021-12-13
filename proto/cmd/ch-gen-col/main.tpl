@@ -34,6 +34,20 @@ func (c *{{ .Type }}) Reset() {
   *c = (*c)[:0]
 }
 
+// NewArr{{ .Name }} returns new Array({{ .Name }}).
+func NewArr{{ .Name }}() *ColArr {
+  return &ColArr{
+    Data: new({{ .Type }}),
+  }
+}
+
+// Append{{ .Name }} appends slice of {{ .ElemType }} to Array({{ .Name }}).
+func (c *ColArr) Append{{ .Name }}(data []{{ .ElemType }}) {
+  d := c.Data.(*{{ .Type }})
+  *d = append(*d, data...)
+  c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes {{ .Name }} rows to *Buffer.
 func (c {{ .Type }}) EncodeColumn(b *Buffer) {
   {{- if .Byte }}

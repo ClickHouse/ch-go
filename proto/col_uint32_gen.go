@@ -30,6 +30,20 @@ func (c *ColUInt32) Reset() {
 	*c = (*c)[:0]
 }
 
+// NewArrUInt32 returns new Array(UInt32).
+func NewArrUInt32() *ColArr {
+	return &ColArr{
+		Data: new(ColUInt32),
+	}
+}
+
+// AppendUInt32 appends slice of uint32 to Array(UInt32).
+func (c *ColArr) AppendUInt32(data []uint32) {
+	d := c.Data.(*ColUInt32)
+	*d = append(*d, data...)
+	c.Offsets = append(c.Offsets, uint64(len(*d)))
+}
+
 // EncodeColumn encodes UInt32 rows to *Buffer.
 func (c ColUInt32) EncodeColumn(b *Buffer) {
 	const size = 32 / 8
