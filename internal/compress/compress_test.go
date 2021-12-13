@@ -43,26 +43,14 @@ func TestCompress(t *testing.T) {
 		}
 	})
 	t.Run("CheckHash", func(t *testing.T) {
-		t.Run("BadHash", func(t *testing.T) {
-			// Corrupt checksum.
-			for i := 0; i < 16; i++ {
-				b := append([]byte{}, w.Data...) // clone
-				b[i]++
-				r := NewReader(bytes.NewReader(b))
-				_, err := io.ReadFull(r, out)
-				require.Error(t, err)
-			}
-		})
-		t.Run("BadData", func(t *testing.T) {
-			// Corrupt bytes after checksum.
-			for i := 16; i < len(w.Data); i++ {
-				b := append([]byte{}, w.Data...) // clone
-				b[i]++
-				r := NewReader(bytes.NewReader(b))
-				_, err := io.ReadFull(r, out)
-				require.Error(t, err)
-			}
-		})
+		// Corrupt bytes of data or checksum.
+		for i := 0; i < len(w.Data); i++ {
+			b := append([]byte{}, w.Data...) // clone
+			b[i]++
+			r := NewReader(bytes.NewReader(b))
+			_, err := io.ReadFull(r, out)
+			require.Error(t, err)
+		}
 	})
 }
 
