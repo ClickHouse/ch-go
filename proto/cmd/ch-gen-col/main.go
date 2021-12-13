@@ -17,6 +17,7 @@ type Variant struct {
 	Float  bool
 	Signed bool
 	Bits   int
+	IP     bool
 }
 
 func (v Variant) SingleByte() bool {
@@ -36,13 +37,16 @@ func (v Variant) ColumnType() string {
 }
 
 func (v Variant) New() string {
-	if v.Custom() {
+	if v.Big() {
 		return v.ElemType() + "FromInt"
 	}
 	return v.ElemType()
 }
 
 func (v Variant) Name() string {
+	if v.IP {
+		return v.ElemType()
+	}
 	var b strings.Builder
 	if !v.Signed {
 		b.WriteString("U")
@@ -61,26 +65,30 @@ func (v Variant) BinFunc() string {
 }
 
 func (v Variant) BinGet() string {
-	if v.Custom() {
+	if v.Big() {
 		return fmt.Sprintf("binUInt%d", v.Bits)
 	}
 	return "bin." + v.BinFunc()
 }
 
 func (v Variant) BinPut() string {
-	if v.Custom() {
+	if v.Big() {
 		return fmt.Sprintf("binPutUInt%d", v.Bits)
 	}
 	return "bin.Put" + v.BinFunc()
 }
 
-func (v Variant) Custom() bool {
+func (v Variant) Big() bool {
 	return v.Bits > 64
+}
+
+func (v Variant) Cast() bool {
+	return v.Signed || v.IP
 }
 
 func (v Variant) UnsignedType() string {
 	var b strings.Builder
-	if v.Custom() {
+	if v.Big() {
 		b.WriteString("UInt")
 	} else {
 		b.WriteString("uint")
@@ -94,13 +102,21 @@ func (v Variant) ElemLower() string {
 }
 
 func (v Variant) ElemType() string {
+	if v.IP {
+		switch v.Bits {
+		case 32:
+			return "IPv4"
+		case 128:
+			return "IPv6"
+		}
+	}
 	var b strings.Builder
 	var (
 		unsigned = "u"
 		integer  = "int"
 		float    = "float"
 	)
-	if v.Custom() {
+	if v.Big() {
 		unsigned = "U"
 		integer = "Int"
 	}
@@ -142,7 +158,22 @@ func run() error {
 		tpl     = template.Must(template.New("main").Parse(mainTemplate))
 		testTpl = template.Must(template.New("main").Parse(testTemplate))
 	)
-	var variants []Variant
+	variants := []Variant{
+		{ // Float32
+			Bits:   32,
+			Float:  true,
+			Signed: true,
+		},
+		{ // Float64
+			Bits:   64,
+			Float:  true,
+			Signed: true,
+		},
+		{ // IPv4
+			Bits: 32,
+			IP:   true,
+		},
+	}
 	for _, bits := range []int{
 		8,
 		16,
@@ -154,14 +185,6 @@ func run() error {
 			variants = append(variants, Variant{
 				Bits:   bits,
 				Signed: signed,
-			})
-		}
-		switch bits {
-		case 32, 64:
-			variants = append(variants, Variant{
-				Bits:   bits,
-				Float:  true,
-				Signed: true,
 			})
 		}
 	}
