@@ -16,8 +16,9 @@ func TestBlockInfo_Encode(t *testing.T) {
 	require.Equal(t, []byte{0x1, 0x1, 0x2, 0x20, 0x4, 0x0, 0x0, 0x0}, b.Buf)
 	t.Run("Decode", func(t *testing.T) {
 		var v BlockInfo
-		require.NoError(t, b.Reader().Decode(&v))
+		requireDecode(t, b.Buf, &v)
 		require.Equal(t, i, v)
+		requireNoShortRead(t, b.Buf, &v)
 	})
 }
 
