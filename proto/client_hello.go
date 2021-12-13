@@ -11,7 +11,8 @@ type ClientHello struct {
 
 	// ProtocolVersion is TCP protocol version of client.
 	//
-	// Usually it is equal to the latest compatible server revinio.
+	// Usually it is equal to the latest compatible server revision, but
+	// should not be confused with it.
 	ProtocolVersion int
 
 	Database string
