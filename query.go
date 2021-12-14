@@ -201,6 +201,9 @@ func (c *Client) sendInput(ctx context.Context, q Query) error {
 	//
 	// NB: atomicity is guaranteed only within single block.
 	for {
+		if err := ctx.Err(); err != nil {
+			return errors.Wrap(err, "context")
+		}
 		if err := c.encodeBlock(q.Input); err != nil {
 			return errors.Wrap(err, "write block")
 		}

@@ -207,6 +207,9 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 }
 
 func (c *Client) flush(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context")
+	}
 	if deadline, ok := ctx.Deadline(); ok {
 		if err := c.conn.SetWriteDeadline(deadline); err != nil {
 			return errors.Wrap(err, "set write deadline")
