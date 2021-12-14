@@ -15,7 +15,7 @@ type ColFixedStr struct {
 	Size int // N
 }
 
-// Compile-time assertions for ColStr.
+// Compile-time assertions for ColFixedStr.
 var (
 	_ Input  = ColFixedStr{}
 	_ Result = (*ColFixedStr)(nil)
