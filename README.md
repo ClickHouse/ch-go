@@ -56,6 +56,7 @@ func main() {
   * Up to 40x faster than row-first design around `sql`
   * Up to 500x faster than HTTP API
   * Low memory overhead (column blocks are slices, i.e. continuous memory)
+  * As close to ClickHouse as possible
 * Rigorously tested
   * **ARM**64, Windows, Mac, Linux (also x86)
   * Unit tests for encoding and decoding
@@ -71,7 +72,6 @@ func main() {
   * Fuzzing
 * Int128 and UInt128
 * LZ4 compression
-* As close to ClickHouse as possible
 
 ## Supported types
 * UInt8, UInt16, UInt32, UInt64
@@ -80,6 +80,7 @@ func main() {
 * IPv4, IPv6
 * DateTime
 * String
+* FixedString(N)
 * Array(T)
 
 ## TODO
