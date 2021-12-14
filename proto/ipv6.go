@@ -8,7 +8,7 @@ import (
 
 // IPv6 represents UInt128 address as uint32 number.
 //
-// Not using netaddr.IP because UInt128 is more effective.
+// Not using netaddr.IP because UInt128 is more efficient.
 //
 // Use ToIP helper for convenience.
 type IPv6 UInt128
