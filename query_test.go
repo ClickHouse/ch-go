@@ -3,6 +3,7 @@ package ch
 import (
 	"context"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -44,6 +45,57 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, conn.Query(ctx, selectData), "select")
 		require.Len(t, data, 4)
 		require.Equal(t, data, gotData)
+	})
+	t.Run("InsertStream", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		// Create table, no data fetch.
+		createTable := Query{
+			Body: "CREATE TABLE test_table (id UInt8) ENGINE = TinyLog",
+		}
+		require.NoError(t, conn.Query(ctx, createTable), "create table")
+
+		const (
+			blocks = 5 // total blocks
+			size   = 4 // rows in single blocks
+		)
+		var (
+			data  proto.ColUInt8
+			total int
+		)
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "id", Data: &data},
+			},
+			OnInput: func(ctx context.Context) error {
+				data = append(data[:0], uint8(total), 2, 3, 4)
+				total++
+				if total > blocks {
+					return io.EOF
+				}
+				return nil
+			},
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		var (
+			gotTotal int
+			gotData  proto.ColUInt8
+		)
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: []proto.ResultColumn{
+				{Name: "id", Data: &gotData},
+			},
+			OnResult: func(ctx context.Context, b proto.Block) error {
+				gotTotal += len(gotData)
+				return nil
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.Equal(t, blocks*size, gotTotal)
 	})
 	t.Run("InsertArr", func(t *testing.T) {
 		t.Parallel()
@@ -304,7 +356,7 @@ func TestClient_Query(t *testing.T) {
 		)
 		selectRand := Query{
 			Body: fmt.Sprintf("SELECT rand() as v FROM numbers(%d)", numbers),
-			OnData: func(ctx context.Context) error {
+			OnResult: func(ctx context.Context, b proto.Block) error {
 				total += len(data)
 				return nil
 			},

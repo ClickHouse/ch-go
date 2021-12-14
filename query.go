@@ -2,6 +2,7 @@ package ch
 
 import (
 	"context"
+	"io"
 
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
@@ -72,15 +73,34 @@ type Query struct {
 
 	// Input columns for INSERT operations.
 	Input []proto.InputColumn
+	// OnInput is called to allow ingesting more data to Input.
+	//
+	// The io.EOF reports that no more input should be ingested.
+	//
+	// Optional, single block is ingested from Input if not provided,
+	// but query will fail if Input is set but has zero rows.
+	OnInput func(ctx context.Context) error
+
 	// Result columns for SELECT operations.
 	Result []proto.ResultColumn
+	// OnResult is called when Result is filled with result block.
+	//
+	// Optional, but query will fail of more than one block is received
+	// and no OnResult is provided.
+	OnResult func(ctx context.Context, block proto.Block) error
 
-	OnData     func(ctx context.Context) error
+	// OnProgress is optional progress handler. The progress value contain
+	// difference, so progress should be accumulated if needed.
 	OnProgress func(ctx context.Context, p proto.Progress) error
-	OnProfile  func(ctx context.Context, p proto.Profile) error
+	// OnProfile is optional handler for profiling data.
+	OnProfile func(ctx context.Context, p proto.Profile) error
 }
 
-func (c *Client) decodeBlock(ctx context.Context, q Query) error {
+func (c *Client) decodeBlock(
+	ctx context.Context,
+	handler func(ctx context.Context, b proto.Block) error,
+	result []proto.ResultColumn,
+) error {
 	if proto.FeatureTempTables.In(c.info.ProtocolVersion) {
 		v, err := c.reader.Str()
 		if err != nil {
@@ -95,16 +115,20 @@ func (c *Client) decodeBlock(ctx context.Context, q Query) error {
 		c.reader.EnableCompression()
 		defer c.reader.DisableCompression()
 	}
-	if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, q.Result); err != nil {
+	if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, result); err != nil {
 		return errors.Wrap(err, "decode block")
+	}
+	if ce := c.lg.Check(zap.DebugLevel, "Block"); ce != nil {
+		ce.Write(
+			zap.Int("rows", block.Rows),
+			zap.Int("columns", block.Columns),
+		)
 	}
 	if block.End() {
 		return nil
 	}
-	if f := q.OnData; f != nil {
-		if err := f(ctx); err != nil {
-			return errors.Wrap(err, "data")
-		}
+	if err := handler(ctx, block); err != nil {
+		return errors.Wrap(err, "handler")
 	}
 	return nil
 }
@@ -158,6 +182,73 @@ func (c *Client) encodeBlankBlock() error {
 	return c.encodeBlock(nil)
 }
 
+func (c *Client) sendInput(ctx context.Context, q Query) error {
+	if len(q.Input) == 0 {
+		return nil
+	}
+	var (
+		rows = q.Input[0].Data.Rows()
+		f    = q.OnInput
+	)
+	if f != nil && rows == 0 {
+		// Fetching initial input if no rows provided.
+		if err := f(ctx); err != nil {
+			// Not handling io.EOF here because input is expected.
+			return errors.Wrap(err, "input")
+		}
+	}
+	// Streaming input to ClickHouse server.
+	//
+	// NB: atomicity is guaranteed only within single block.
+	for {
+		if err := c.encodeBlock(q.Input); err != nil {
+			return errors.Wrap(err, "write block")
+		}
+		if f == nil {
+			// No callback, single block.
+			break
+		}
+		// Flushing the buffer to prevent high memory consumption.
+		if err := c.flush(ctx); err != nil {
+			return errors.Wrap(err, "flush")
+		}
+		if err := f(ctx); err != nil {
+			if errors.Is(err, io.EOF) {
+				// No more data.
+				break
+			}
+			// ClickHouse server persists blocks after receive.
+			return errors.Wrap(err, "next input (server already persisted previous blocks)")
+		}
+	}
+	// End of input stream.
+	//
+	// Encoding that there are no more data.
+	if err := c.encodeBlankBlock(); err != nil {
+		return errors.Wrap(err, "write end of data")
+	}
+
+	return nil
+}
+
+func (c *Client) resultHandler(q Query) func(ctx context.Context, b proto.Block) error {
+	if q.OnResult != nil {
+		return q.OnResult
+	}
+	first := true
+	return func(ctx context.Context, block proto.Block) error {
+		if !first {
+			return errors.New("no OnResult provided")
+		}
+		if block.Rows > 0 {
+			// Server can send block with zero rows on start,
+			// providing a way to check column metadata.
+			first = false
+		}
+		return nil
+	}
+}
+
 // Query performs Query on ClickHouse server.
 func (c *Client) Query(ctx context.Context, q Query) error {
 	if q.QueryID == "" {
@@ -166,18 +257,13 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 	if err := c.sendQuery(ctx, q.Body, q.QueryID); err != nil {
 		return errors.Wrap(err, "send query")
 	}
-	if len(q.Input) > 0 {
-		if err := c.encodeBlock(q.Input); err != nil {
-			return errors.Wrap(err, "write block")
-		}
-		// Encoding that there is no more data.
-		if err := c.encodeBlankBlock(); err != nil {
-			return errors.Wrap(err, "write end of data")
-		}
+	if err := c.sendInput(ctx, q); err != nil {
+		return errors.Wrap(err, "send input")
 	}
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
 	}
+	onResult := c.resultHandler(q)
 	for {
 		if ctx.Err() != nil {
 			_ = c.cancelQuery(context.Background())
@@ -190,7 +276,7 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 
 		switch code {
 		case proto.ServerCodeData:
-			if err := c.decodeBlock(ctx, q); err != nil {
+			if err := c.decodeBlock(ctx, onResult, q.Result); err != nil {
 				return errors.Wrap(err, "decode block")
 			}
 		case proto.ServerCodeException:

@@ -20,7 +20,7 @@ func main() {
 	)
 	if err := c.Query(ctx, ch.Query{
 		Body: "SELECT number FROM system.numbers LIMIT 500000000",
-		OnData: func(ctx context.Context) error {
+		OnResult: func(ctx context.Context, b proto.Block) error {
 			numbers += len(data)
 			return nil
 		},

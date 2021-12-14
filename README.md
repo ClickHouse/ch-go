@@ -56,6 +56,7 @@ func main() {
   * Up to 40x faster than row-first design around `sql`
   * Up to 500x faster than HTTP API
   * Low memory overhead (column blocks are slices, i.e. continuous memory)
+  * Highly efficient input and output streaming
   * As close to ClickHouse as possible
 * Rigorously tested
   * **ARM**64, Windows, Mac, Linux (also x86)
@@ -87,7 +88,6 @@ func main() {
 - [ ] LowCardinality
 - [ ] Map(K, V)
 - [ ] Nullable
-- [ ] Input rows auto batching
 - [ ] External tables
 - [ ] Server in Go for tests
 - [ ] Pooling
