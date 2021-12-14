@@ -14,6 +14,7 @@ type ColFloat64 []float64
 var (
 	_ Input  = ColFloat64{}
 	_ Result = (*ColFloat64)(nil)
+	_ Column = (*ColFloat64)(nil)
 )
 
 // Type returns ColumnType of Float64.

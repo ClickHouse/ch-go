@@ -15,6 +15,13 @@ type ColArr struct {
 	Data    Column
 }
 
+// Compile-time assertions for ColArr.
+var (
+	_ Input  = ColArr{}
+	_ Result = (*ColArr)(nil)
+	_ Column = (*ColArr)(nil)
+)
+
 func (c ColArr) EncodeColumn(b *Buffer) {
 	c.Offsets.EncodeColumn(b)
 	c.Data.EncodeColumn(b)

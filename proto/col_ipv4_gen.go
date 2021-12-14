@@ -13,6 +13,7 @@ type ColIPv4 []IPv4
 var (
 	_ Input  = ColIPv4{}
 	_ Result = (*ColIPv4)(nil)
+	_ Column = (*ColIPv4)(nil)
 )
 
 // Type returns ColumnType of IPv4.

@@ -39,6 +39,7 @@ func (ColStr) ArrAppend(arr *ColArr, data []string) {
 var (
 	_ Input  = ColStr{}
 	_ Result = (*ColStr)(nil)
+	_ Column = (*ColStr)(nil)
 )
 
 // Type returns ColumnType of String.

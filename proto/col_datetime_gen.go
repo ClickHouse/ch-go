@@ -13,6 +13,7 @@ type ColDateTime []DateTime
 var (
 	_ Input  = ColDateTime{}
 	_ Result = (*ColDateTime)(nil)
+	_ Column = (*ColDateTime)(nil)
 )
 
 // Type returns ColumnType of DateTime.

@@ -19,6 +19,7 @@ type ColFixedStr struct {
 var (
 	_ Input  = ColFixedStr{}
 	_ Result = (*ColFixedStr)(nil)
+	_ Column = (*ColFixedStr)(nil)
 )
 
 // Type returns ColumnType of FixedString.

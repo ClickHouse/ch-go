@@ -14,6 +14,7 @@ type ColFloat32 []float32
 var (
 	_ Input  = ColFloat32{}
 	_ Result = (*ColFloat32)(nil)
+	_ Column = (*ColFloat32)(nil)
 )
 
 // Type returns ColumnType of Float32.

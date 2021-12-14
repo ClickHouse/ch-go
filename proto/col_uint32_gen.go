@@ -13,6 +13,7 @@ type ColUInt32 []uint32
 var (
 	_ Input  = ColUInt32{}
 	_ Result = (*ColUInt32)(nil)
+	_ Column = (*ColUInt32)(nil)
 )
 
 // Type returns ColumnType of UInt32.

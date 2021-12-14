@@ -17,6 +17,7 @@ type {{ .Type }} []{{ .ElemType }}
 var (
   _ Input  = {{ .Type }}{}
   _ Result = (*{{ .Type }})(nil)
+  _ Column = (*{{ .Type }})(nil)
 )
 
 // Type returns ColumnType of {{ .Name }}.

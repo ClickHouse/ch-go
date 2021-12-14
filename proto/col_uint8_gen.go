@@ -13,6 +13,7 @@ type ColUInt8 []uint8
 var (
 	_ Input  = ColUInt8{}
 	_ Result = (*ColUInt8)(nil)
+	_ Column = (*ColUInt8)(nil)
 )
 
 // Type returns ColumnType of UInt8.

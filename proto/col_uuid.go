@@ -8,6 +8,13 @@ import (
 // ColUUID is UUID column.
 type ColUUID []uuid.UUID
 
+// Compile-time assertions for ColUUID.
+var (
+	_ Input  = ColUUID{}
+	_ Result = (*ColUUID)(nil)
+	_ Column = (*ColUUID)(nil)
+)
+
 func (c ColUUID) Type() ColumnType {
 	return ColumnTypeUUID
 }

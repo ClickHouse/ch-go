@@ -13,6 +13,7 @@ type ColInt64 []int64
 var (
 	_ Input  = ColInt64{}
 	_ Result = (*ColInt64)(nil)
+	_ Column = (*ColInt64)(nil)
 )
 
 // Type returns ColumnType of Int64.

@@ -13,6 +13,7 @@ type ColDate32 []Date32
 var (
 	_ Input  = ColDate32{}
 	_ Result = (*ColDate32)(nil)
+	_ Column = (*ColDate32)(nil)
 )
 
 // Type returns ColumnType of Date32.

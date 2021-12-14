@@ -13,6 +13,7 @@ type ColInt16 []int16
 var (
 	_ Input  = ColInt16{}
 	_ Result = (*ColInt16)(nil)
+	_ Column = (*ColInt16)(nil)
 )
 
 // Type returns ColumnType of Int16.

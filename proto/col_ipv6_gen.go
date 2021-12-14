@@ -13,6 +13,7 @@ type ColIPv6 []IPv6
 var (
 	_ Input  = ColIPv6{}
 	_ Result = (*ColIPv6)(nil)
+	_ Column = (*ColIPv6)(nil)
 )
 
 // Type returns ColumnType of IPv6.

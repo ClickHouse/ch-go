@@ -13,6 +13,7 @@ type ColUInt128 []UInt128
 var (
 	_ Input  = ColUInt128{}
 	_ Result = (*ColUInt128)(nil)
+	_ Column = (*ColUInt128)(nil)
 )
 
 // Type returns ColumnType of UInt128.

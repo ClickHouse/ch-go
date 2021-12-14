@@ -13,6 +13,7 @@ type ColUInt16 []uint16
 var (
 	_ Input  = ColUInt16{}
 	_ Result = (*ColUInt16)(nil)
+	_ Column = (*ColUInt16)(nil)
 )
 
 // Type returns ColumnType of UInt16.
