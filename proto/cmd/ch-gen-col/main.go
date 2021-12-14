@@ -21,6 +21,7 @@ const (
 	KindIP
 	KindDateTime
 	KindDate
+	KindEnum
 )
 
 type Variant struct {
@@ -138,6 +139,9 @@ func (v Variant) ElemLower() string {
 }
 
 func (v Variant) ElemType() string {
+	if v.Kind == KindEnum {
+		return fmt.Sprintf("Enum%d", v.Bits)
+	}
 	if v.IPv4() {
 		return "IPv4"
 	}
@@ -242,6 +246,16 @@ func run() error {
 			Bits:   32,
 			Signed: true,
 			Kind:   KindDate,
+		},
+		{ // Enum8
+			Bits:   8,
+			Signed: true,
+			Kind:   KindEnum,
+		},
+		{ // Enum16
+			Bits:   16,
+			Signed: true,
+			Kind:   KindEnum,
 		},
 	}
 	for _, bits := range []int{

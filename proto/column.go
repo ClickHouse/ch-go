@@ -116,6 +116,8 @@ const (
 	ColumnTypeDate        ColumnType = "Date"
 	ColumnTypeDate32      ColumnType = "Date32"
 	ColumnTypeUUID        ColumnType = "UUID"
+	ColumnTypeEnum8       ColumnType = "Enum8"
+	ColumnTypeEnum16      ColumnType = "Enum16"
 )
 
 // colWrap wraps Column with type t.
