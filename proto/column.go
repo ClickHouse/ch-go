@@ -113,6 +113,8 @@ const (
 	ColumnTypeIPv6        ColumnType = "IPv6"
 	ColumnTypeDateTime    ColumnType = "DateTime"
 	ColumnTypeDateTime64  ColumnType = "DateTime64"
+	ColumnTypeDate        ColumnType = "Date"
+	ColumnTypeDate32      ColumnType = "Date32"
 )
 
 // colWrap wraps Column with type t.

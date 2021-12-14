@@ -20,6 +20,7 @@ const (
 	KindFloat
 	KindIP
 	KindDateTime
+	KindDate
 )
 
 type Variant struct {
@@ -149,6 +150,12 @@ func (v Variant) ElemType() string {
 		}
 		return "DateTime"
 	}
+	if v.Kind == KindDate {
+		if v.Bits == 32 {
+			return "Date32"
+		}
+		return "Date"
+	}
 	var b strings.Builder
 	var (
 		unsigned = "u"
@@ -225,6 +232,16 @@ func run() error {
 			Bits:   64,
 			Signed: true,
 			Kind:   KindDateTime,
+		},
+		{ // Date
+			Bits:   16,
+			Signed: true,
+			Kind:   KindDate,
+		},
+		{ // Date32
+			Bits:   32,
+			Signed: true,
+			Kind:   KindDate,
 		},
 	}
 	for _, bits := range []int{

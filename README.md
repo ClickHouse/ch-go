@@ -74,13 +74,11 @@ func main() {
 * LZ4 compression
 
 ## Supported types
-* UInt8, UInt16, UInt32, UInt64
-* Int8, Int16, Int32, Int64
-* UInt128, Int128
+* UInt8, UInt16, UInt32, UInt64, UInt128
+* Int8, Int16, Int32, Int64, Int128
+* Date, Date32, DateTime, DateTime64
 * IPv4, IPv6
-* DateTime, DateTime64
-* String
-* FixedString(N)
+* String, FixedString(N)
 * Array(T)
 
 ## TODO
