@@ -112,4 +112,5 @@ const (
 	ColumnTypeIPv4        ColumnType = "IPv4"
 	ColumnTypeIPv6        ColumnType = "IPv6"
 	ColumnTypeDateTime    ColumnType = "DateTime"
+	ColumnTypeDateTime64  ColumnType = "DateTime64"
 )

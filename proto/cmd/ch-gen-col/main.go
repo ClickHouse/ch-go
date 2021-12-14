@@ -216,8 +216,13 @@ func run() error {
 			Bits: 128,
 			Kind: KindIP,
 		},
-		{ // DateTIme
+		{ // DateTime
 			Bits:   32,
+			Signed: true,
+			Kind:   KindDateTime,
+		},
+		{ // DateTime64
+			Bits:   64,
 			Signed: true,
 			Kind:   KindDateTime,
 		},
