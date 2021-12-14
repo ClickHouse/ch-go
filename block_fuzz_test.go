@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"inet.af/netaddr"
+
 	"github.com/go-faster/ch/internal/gold"
 	"github.com/go-faster/ch/proto"
 )
@@ -47,16 +49,19 @@ func encodeTestStrBlock() []byte {
 
 func encodeTestIPv6Block() []byte {
 	b := &proto.Buffer{}
-	d := &proto.ColIPv6{}
-	arr := &proto.ColArr{
-		Data: d,
-	}
+
+	arr := proto.NewArrIPv6()
 	for _, v := range [][]string{
-		{"foo", "bar"},
-		{"1", "2", "3", "4"},
-		{"", strings.Repeat("123", 3)},
+		{"100::", "200::"},
+		{"300::", "400::", "500::", "600::"},
+		{"2001:db8::", "2002::"},
 	} {
-		d.ArrAppend(arr, v)
+		var values []proto.IPv6
+		for _, s := range v {
+			ip := netaddr.MustParseIP(s)
+			values = append(values, proto.ToIPv6(ip))
+		}
+		arr.AppendIPv6(values)
 	}
 	input := []proto.InputColumn{
 		{
@@ -77,6 +82,34 @@ func encodeTestIPv6Block() []byte {
 	}
 
 	return b.Buf
+}
+
+func TestEncodeIPv6Block(t *testing.T) {
+	data := encodeTestIPv6Block()
+	gold.Bytes(t, data, "test_arr_ipv6_block")
+
+	r := proto.NewReader(bytes.NewReader(data))
+	v := proto.Version
+	a := proto.NewArrIPv6()
+	d := []proto.ResultColumn{
+		{
+			Name: "foo",
+			Data: a,
+		},
+	}
+
+	// Skip table name.
+	if _, err := r.Str(); err != nil {
+		t.Fatal(err)
+	}
+
+	var block proto.Block
+	if err := block.DecodeBlock(r, v, d); err != nil {
+		t.Fatal(err)
+	}
+	if block.End() {
+		return
+	}
 }
 
 func TestEncodeBlock(t *testing.T) {
@@ -120,6 +153,31 @@ func FuzzDecodeBlock(f *testing.F) {
 				Data: &proto.ColArr{
 					Data: &proto.ColStr{},
 				},
+			},
+		}
+
+		// Skip table name.
+		if _, err := r.Str(); err != nil {
+			t.Skip()
+		}
+
+		var block proto.Block
+		if err := block.DecodeBlock(r, v, d); err != nil {
+			t.Skip()
+		}
+	})
+}
+
+func FuzzDecodeArrayIPv6ArrayBlock(f *testing.F) {
+	f.Add(encodeTestStrBlock())
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		r := proto.NewReader(bytes.NewReader(data))
+		v := proto.Version
+		d := []proto.ResultColumn{
+			{
+				Name: "foo",
+				Data: proto.NewArrIPv6(),
 			},
 		}
 
