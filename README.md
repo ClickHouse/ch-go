@@ -88,6 +88,7 @@ func main() {
 - [ ] LowCardinality
 - [ ] Map(K, V)
 - [ ] Nullable
+- [ ] Input rows auto batching
 - [ ] External tables
 - [ ] Server in Go for tests
 - [ ] Pooling
