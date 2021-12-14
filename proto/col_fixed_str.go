@@ -21,7 +21,7 @@ var (
 	_ Result = (*ColFixedStr)(nil)
 )
 
-// Type returns ColumnType of String.
+// Type returns ColumnType of FixedString.
 func (c ColFixedStr) Type() ColumnType {
 	return ColumnTypeFixedString.With(strconv.Itoa(c.Size))
 }
