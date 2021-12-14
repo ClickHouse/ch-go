@@ -1,6 +1,9 @@
 package proto
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 // Precision of DateTime64.
 //
@@ -75,4 +78,9 @@ func (d DateTime64) Time(p Precision) time.Time {
 		// TODO(ernado): support all precisions
 		panic("precision not supported")
 	}
+}
+
+// Wrap column with explicit precision.
+func (c *ColDateTime64) Wrap(p Precision) Column {
+	return Wrap(c, strconv.FormatInt(int64(p), 10))
 }

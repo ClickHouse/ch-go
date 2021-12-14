@@ -263,6 +263,38 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 1)
 		require.Equal(t, data, gotData)
 	})
+	t.Run("InsertDateTime64", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		p := proto.PrecisionNano
+		createTable := Query{
+			Body: fmt.Sprintf("CREATE TABLE test_table (d DateTime64(%d)) ENGINE = MergeTree ORDER BY d", p),
+		}
+		require.NoError(t, conn.Query(ctx, createTable), "create table")
+
+		data := proto.ColDateTime64{
+			proto.DateTime64(time.Unix(1546290000, 0).UnixNano()),
+		}
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "d", Data: data.Wrap(p)},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		var gotData proto.ColDateTime64
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: []proto.ResultColumn{
+				{Name: "d", Data: &gotData},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.Len(t, data, 1)
+		require.Equal(t, data, gotData)
+	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611

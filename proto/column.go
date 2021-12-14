@@ -35,8 +35,8 @@ func (c ColumnType) Conflicts(b ColumnType) bool {
 	if c.Base() != b.Base() {
 		return true
 	}
-	if c.Base() == ColumnTypeDateTime {
-		// Timezone metadata is only for view, so no conflict.
+	switch c.Base() {
+	case ColumnTypeDateTime, ColumnTypeDateTime64:
 		return false
 	}
 	return true
@@ -114,3 +114,26 @@ const (
 	ColumnTypeDateTime    ColumnType = "DateTime"
 	ColumnTypeDateTime64  ColumnType = "DateTime64"
 )
+
+// colWrap wraps Column with type t.
+type colWrap struct {
+	Column
+	t ColumnType
+}
+
+func (c colWrap) Type() ColumnType { return c.t }
+
+// Wrap Column with type parameters.
+//
+// So if c type is T, result type will be T(arg0, arg1, ...).
+func Wrap(c Column, args ...interface{}) Column {
+	var params []string
+	for _, a := range args {
+		params = append(params, fmt.Sprint(a))
+	}
+	t := c.Type().With(params...)
+	return colWrap{
+		Column: c,
+		t:      t,
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDateTime64_Time(t *testing.T) {
@@ -25,4 +26,10 @@ func TestDateTime64_Time(t *testing.T) {
 		assert.Equal(t, time.Second, PrecisionSecond.Duration(), "sec")
 		assert.Equal(t, time.Nanosecond, PrecisionNano.Duration(), "ns")
 	})
+}
+
+func TestColDateTime64_Wrap(t *testing.T) {
+	var data ColDateTime64
+	w := data.Wrap(PrecisionMilli)
+	require.Equal(t, ColumnTypeDateTime64.With("3"), w.Type())
 }
