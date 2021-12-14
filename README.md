@@ -30,7 +30,7 @@ func main() {
   )
   if err := c.Query(ctx, ch.Query{
     Body: "SELECT number FROM system.numbers LIMIT 500000000",
-    OnData: func(ctx context.Context) error {
+    OnResult: func(ctx context.Context, b proto.Block) error {
       numbers += len(data)
       return nil
     },
@@ -45,14 +45,15 @@ func main() {
 ```
 
 ```
-750ms  50B rows  4GB 5.3GB/s 1 job
+750ms 0.5B rows  4GB 5.3GB/s 1 job
  1.3s 2.5B rows 20GB  15GB/s 5 jobs
 ```
 
 ## Features
 * OpenTelemetry support
 * No reflection or `interface{}`
-* Column-first design that is [dramatically more efficient](https://github.com/go-faster/ch-bench)
+* **Column**-first design
+  * [Dramatically more efficient](https://github.com/go-faster/ch-bench)
   * Up to 40x faster than row-first design around `sql`
   * Up to 500x faster than HTTP API
   * Low memory overhead (column blocks are slices, i.e. continuous memory)
