@@ -79,6 +79,7 @@ func main() {
 * Date, Date32, DateTime, DateTime64
 * IPv4, IPv6
 * String, FixedString(N)
+* UUID
 * Array(T)
 
 ## TODO
