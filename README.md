@@ -88,6 +88,7 @@ func main() {
 - [ ] LowCardinality
 - [ ] Map(K, V)
 - [ ] Nullable
+- [ ] Read packets from server while sending input
 - [ ] External tables
 - [ ] Server in Go for tests
 - [ ] Pooling
