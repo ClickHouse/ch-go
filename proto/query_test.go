@@ -82,5 +82,47 @@ func TestQuery_EncodeAware(t *testing.T) {
 	assert.Equal(t, dec.Body, "CREATE DATABASE test;")
 	assert.Equal(t, queryCreateDatabase, dec)
 
-	requireNoShortRead(t, buf.Buf, aware(&dec))
+	b := skipCode(t, buf.Buf, int(ClientCodeQuery))
+	requireNoShortRead(t, b, aware(&dec))
+}
+
+func TestQuery_EncodeAwareOTEL(t *testing.T) {
+	buf := new(Buffer)
+	q := Query{
+		ID:          "a7e4c890-df21-4cea-b4a1-9b868e514366",
+		Body:        "CREATE DATABASE test;",
+		Secret:      "secret",
+		Stage:       StageComplete,
+		Compression: CompressionEnabled,
+		Info: ClientInfo{
+			ProtocolVersion: 52451,
+			Major:           21,
+			Minor:           14,
+			Patch:           10688,
+			Interface:       InterfaceTCP,
+			Query:           ClientQueryInitial,
+
+			InitialUser:    "neo",
+			InitialQueryID: "68f607fb-59e4-4cc7-b55d-70e6dc4e7c93",
+			InitialAddress: "1.1.1.1:1448",
+			OSUser:         "agent",
+			ClientHostname: "nexus",
+			ClientName:     "Matrix",
+			Span: trace.NewSpanContext(trace.SpanContextConfig{
+				TraceID:    [16]byte{1, 2, 3, 4},
+				SpanID:     [8]byte{6, 7, 8, 9, 10},
+				TraceFlags: 1,
+			}),
+			QuotaKey: "u-97dc",
+		},
+	}
+	q.EncodeAware(buf, Version)
+	gold.Bytes(t, buf.Buf, "query_otel")
+
+	b := skipCode(t, buf.Buf, int(ClientCodeQuery))
+
+	var dec Query
+	requireDecode(t, b, aware(&dec))
+	assert.Equal(t, q, dec)
+	requireNoShortRead(t, b, aware(&dec))
 }
