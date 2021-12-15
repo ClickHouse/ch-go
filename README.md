@@ -88,6 +88,7 @@ func main() {
 - [ ] Enum8, Enum16
 - [ ] LowCardinality
 - [ ] Map(K, V)
+- [ ] Decimal(P, S), Decimal32(S), Decimal64(S), Decimal128(S), Decimal256(S)
 - [ ] Nullable
 - [ ] Read packets from server while sending input
 - [ ] External tables
