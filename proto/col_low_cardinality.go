@@ -52,6 +52,9 @@ const (
 	cardinalityUpdateAll = cardinalityUpdateIndex | cardinalityHasAdditionalKeys
 )
 
+// cardinalityVersion is version of serialization of keys and indexes.
+const cardinalityVersion = 1
+
 func (c *ColLowCardinality) AppendKey(i int) {
 	switch c.Key {
 	case KeyUInt8:
@@ -91,6 +94,15 @@ func (c ColLowCardinality) Rows() int {
 }
 
 func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
+	keyVer, err := r.Int64()
+	if err != nil {
+		return errors.Wrap(err, "version")
+	}
+	if keyVer != cardinalityVersion {
+		return errors.Errorf("got version %d, expected %d",
+			keyVer, cardinalityVersion,
+		)
+	}
 	meta, err := r.Int64()
 	if err != nil {
 		return errors.Wrap(err, "meta")
@@ -132,6 +144,8 @@ func (c *ColLowCardinality) Reset() {
 }
 
 func (c ColLowCardinality) EncodeColumn(b *Buffer) {
+	b.PutUInt64(cardinalityVersion)
+
 	// Meta encodes whether reader should update
 	// low cardinality metadata and keys column type.
 	meta := cardinalityUpdateAll | int64(c.Key)
