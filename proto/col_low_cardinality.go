@@ -46,7 +46,7 @@ type ColLowCardinality struct {
 const (
 	cardinalityHasAdditionalKeys int64 = 0b0010_0000_0000 // bitflag
 	cardinalityUpdateIndex       int64 = 0b0100_0000_0000 // bitflag
-	cardinalityKeyMask           int64 = 0b0000_0000_1111 // last 4 bytes
+	cardinalityKeyMask           int64 = 0b0000_0000_1111 // last 4 bits
 
 	// cardinalityUpdateAll sets both flags (update index, has additional keys)
 	cardinalityUpdateAll = cardinalityUpdateIndex | cardinalityHasAdditionalKeys
