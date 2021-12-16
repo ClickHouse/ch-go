@@ -10,13 +10,20 @@ type Date32 uint32
 // date32Epoch is unix time of 1925-01-01.
 const date32Epoch = -1420070400
 
-// Time returns starting time.Time of Date32.
+// Unix returns unix timestamp of Date32.
+//
+// You can use time.Unix(d.Unix(), 0) to get Time in time.Local location.
+func (d Date32) Unix() int64 {
+	return secInDay*int64(d) + date32Epoch
+}
+
+// Time returns UTC starting time.Time of Date32.
 func (d Date32) Time() time.Time {
-	return time.Unix(secInDay*int64(d)+date32Epoch, 0)
+	return time.Unix(d.Unix(), 0).UTC()
 }
 
 func (d Date32) String() string {
-	return d.Time().UTC().Format(DateLayout)
+	return d.Time().Format(DateLayout)
 }
 
 // TimeToDate32 returns Date32 of time.Time in UTC.

@@ -15,9 +15,16 @@ const DateLayout = "2006-01-02"
 // NB: works only on UTC, use time.Date, time.Time.AddDate.
 const secInDay = 24 * 60 * 60
 
-// Time returns starting time.Time of Date.
+// Unix returns unix timestamp of Date.
+func (d Date) Unix() int64 {
+	return secInDay * int64(d)
+}
+
+// Time returns UTC starting time.Time of Date.
+//
+// You can use time.Unix(d.Unix(), 0) to get Time in time.Local location.
 func (d Date) Time() time.Time {
-	return time.Unix(secInDay*int64(d), 0)
+	return time.Unix(d.Unix(), 0).UTC()
 }
 
 func (d Date) String() string {
