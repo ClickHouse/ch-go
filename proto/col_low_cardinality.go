@@ -41,10 +41,15 @@ type ColLowCardinality struct {
 	Keys64 ColUInt64
 }
 
+// Constants for low cardinality metadata value that is represented as int64
+// consisted of bitflags and key type.
 const (
-	cardinalityHasAdditionalKeys = 1 << 9
-	cardinalityUpdateIndex       = 1 << 10
-	cardinalityUpdateAll         = cardinalityUpdateIndex | cardinalityHasAdditionalKeys
+	cardinalityHasAdditionalKeys int64 = 0b0010_0000_0000 // bitflag
+	cardinalityUpdateIndex       int64 = 0b0100_0000_0000 // bitflag
+	cardinalityKeyMask           int64 = 0b0000_0000_1111 // last 4 bytes
+
+	// cardinalityUpdateAll sets both flags (update index, has additional keys)
+	cardinalityUpdateAll = cardinalityUpdateIndex | cardinalityHasAdditionalKeys
 )
 
 func (c *ColLowCardinality) AppendKey(i int) {
@@ -90,7 +95,7 @@ func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
 	if err != nil {
 		return errors.Wrap(err, "meta")
 	}
-	key := CardinalityKey(meta & 0xf)
+	key := CardinalityKey(meta & cardinalityKeyMask)
 	if !key.IsACardinalityKey() {
 		return errors.Errorf("invalid low cardinality keys type %d", key)
 	}
@@ -129,8 +134,8 @@ func (c *ColLowCardinality) Reset() {
 func (c ColLowCardinality) EncodeColumn(b *Buffer) {
 	// Meta encodes whether reader should update
 	// low cardinality metadata and keys column type.
-	meta := cardinalityUpdateAll | int(c.Key)
-	b.PutInt64(int64(meta))
+	meta := cardinalityUpdateAll | int64(c.Key)
+	b.PutInt64(meta)
 	b.PutInt64(int64(c.Index.Rows()))
 	c.Index.EncodeColumn(b)
 
