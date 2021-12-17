@@ -88,7 +88,6 @@ func main() {
 * LowCardinality(T)
 
 ## TODO
-- [ ] LowCardinality
 - [ ] Convenience wrappers for Enum8, Enum16
 - [ ] Map(K, V)
 - [ ] Decimal(P, S), Decimal32(S), Decimal64(S), Decimal128(S), Decimal256(S)
