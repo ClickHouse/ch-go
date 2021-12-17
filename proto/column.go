@@ -35,11 +35,25 @@ func (c ColumnType) Conflicts(b ColumnType) bool {
 	if c.Base() != b.Base() {
 		return true
 	}
+	if c.normalizeCommas() == b.normalizeCommas() {
+		return false
+	}
 	switch c.Base() {
 	case ColumnTypeDateTime, ColumnTypeDateTime64:
+		// TODO(ernado): improve check
 		return false
 	}
 	return true
+}
+
+func (c ColumnType) normalizeCommas() ColumnType {
+	// Should we check for escaped commas in enums here?
+	const sep = ","
+	var elems []string
+	for _, e := range strings.Split(string(c), sep) {
+		elems = append(elems, strings.TrimSpace(e))
+	}
+	return ColumnType(strings.Join(elems, sep))
 }
 
 // With returns ColumnType(p1, p2, ...) from ColumnType.

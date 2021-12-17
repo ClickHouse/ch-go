@@ -28,6 +28,7 @@ func TestColumnType_Elem(t *testing.T) {
 				{A: ColumnTypeArray.Sub(ColumnTypeInt32), B: ColumnTypeArray.Sub(ColumnTypeInt32)},
 				{A: ColumnTypeDateTime.With("Europe/Moscow"), B: ColumnTypeDateTime.With("UTC")},
 				{A: ColumnTypeDateTime.With("Europe/Moscow"), B: ColumnTypeDateTime},
+				{A: "Map(String,String)", B: "Map(String, String)"},
 			} {
 				assert.False(t, tt.A.Conflicts(tt.B),
 					"%s ~ %s", tt.A, tt.B,
@@ -42,6 +43,7 @@ func TestColumnType_Elem(t *testing.T) {
 				{A: ColumnTypeInt32, B: ColumnTypeInt64},
 				{A: ColumnTypeDateTime, B: ColumnTypeInt32},
 				{A: ColumnTypeArray.Sub(ColumnTypeInt32), B: ColumnTypeArray.Sub(ColumnTypeInt64)},
+				{A: "Map(String,String)", B: "Map(String,Int32)"},
 			} {
 				assert.True(t, tt.A.Conflicts(tt.B),
 					"%s !~ %s", tt.A, tt.B,
