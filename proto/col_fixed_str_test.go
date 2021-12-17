@@ -34,6 +34,9 @@ func TestColFixedStr_EncodeColumn(t *testing.T) {
 	t.Run("Golden", func(t *testing.T) {
 		gold.Bytes(t, buf.Buf, "col_fixed_str")
 	})
+	t.Run("Type", func(t *testing.T) {
+		require.Equal(t, ColumnType("FixedString(32)"), data.Type())
+	})
 	t.Run("Ok", func(t *testing.T) {
 		br := bytes.NewReader(buf.Buf)
 		r := NewReader(br)
