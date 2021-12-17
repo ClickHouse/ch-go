@@ -66,11 +66,12 @@ func main() {
     * Both server and client structures
     * Ensuring that partial read leads to failure
   * End-to-end [tests](.github/workflows/e2e.yml)
-    * 21.8.11.4-lts
-    * 21.9.6.24-stable
-    * 21.10.4.26-stable
-    * 21.11.4.14-stable
-    * 21.12.1.8691-testing
+    - 21.8.11.4-lts
+    - 21.9.6.24-stable
+    - 21.10.4.26-stable
+    - 21.11.4.14-stable
+    - 21.11.7.9-stable
+    - 21.12.2.17-stable
   * Fuzzing
 * Int128 and UInt128
 * LZ4 compression
