@@ -12,7 +12,7 @@ var (
 	_ Column = (*ColBool)(nil)
 )
 
-// Type returns ColumnType of Int8.
+// Type returns ColumnType of Bool.
 func (ColBool) Type() ColumnType {
 	return ColumnTypeBool
 }
@@ -27,7 +27,7 @@ func (c *ColBool) Reset() {
 	*c = (*c)[:0]
 }
 
-// EncodeColumn encodes Int8 rows to *Buffer.
+// EncodeColumn encodes Bool rows to *Buffer.
 func (c ColBool) EncodeColumn(b *Buffer) {
 	start := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, len(c))...)
@@ -40,7 +40,7 @@ func (c ColBool) EncodeColumn(b *Buffer) {
 	}
 }
 
-// DecodeColumn decodes Int8 rows from *Reader.
+// DecodeColumn decodes Bool rows from *Reader.
 func (c *ColBool) DecodeColumn(r *Reader, rows int) error {
 	data, err := r.ReadRaw(rows)
 	if err != nil {
