@@ -91,6 +91,10 @@ func main() {
 ## TODO
 - [ ] Nullable
 - [ ] Decimal(P, S), Decimal32(S), Decimal64(S), Decimal128(S), Decimal256(S)
+- [ ] Read packets from server while sending input
+- [ ] External tables
+- [ ] Server in Go for tests
+- [ ] Pooling
 - [ ] API UX Improvements (with 1.18 generics?)
     - [ ] Enum
     - [ ] LowCardinality
@@ -102,10 +106,6 @@ func main() {
   - [ ] Code generator for SELECT/INSERT
   - [ ] Query builder
 - [ ] DSL for DDL
-- [ ] Read packets from server while sending input
-- [ ] External tables
-- [ ] Server in Go for tests
-- [ ] Pooling
 - [ ] ZSTD Compression
 
 ## Reference
