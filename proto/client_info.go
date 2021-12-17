@@ -5,7 +5,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-//go:generate go run github.com/dmarkham/enumer -type Interface -trimprefix Interface -output client_info_interface.go
+//go:generate go run github.com/dmarkham/enumer -type Interface -trimprefix Interface -output client_info_interface_enum.go
 
 // Interface is interface of client.
 type Interface byte
@@ -16,7 +16,7 @@ const (
 	InterfaceHTTP Interface = 2
 )
 
-//go:generate go run github.com/dmarkham/enumer -type ClientQueryKind -trimprefix ClientQueryKind -output client_info_query.go
+//go:generate go run github.com/dmarkham/enumer -type ClientQueryKind -trimprefix ClientQueryKind -output client_info_query_enum.go
 
 // ClientQueryKind is kind of query.
 type ClientQueryKind byte
