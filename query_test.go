@@ -347,6 +347,50 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 1)
 		require.Equal(t, data, gotData)
 	})
+	t.Run("InsertLowCardinalityString", func(t *testing.T) {
+		t.Skip()
+		t.Parallel()
+		conn := Conn(t)
+
+		// Create table, no data fetch.
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v LowCardinality(String)) ENGINE = TinyLog",
+		}
+		require.NoError(t, conn.Query(ctx, createTable), "create table")
+
+		s := &proto.ColStr{}
+		data := proto.ColLowCardinality{
+			Key:   proto.KeyUInt8,
+			Keys8: proto.ColUInt8{0, 1, 0, 1, 0, 1, 1, 1, 0, 0},
+			Index: s,
+		}
+		s.Append("One")
+		s.Append("Two")
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: &data},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		var (
+			gotIndex = &proto.ColStr{}
+			gotData  = &proto.ColLowCardinality{
+				Index: gotIndex,
+			}
+		)
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: []proto.ResultColumn{
+				{Name: "v", Data: gotData},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.Len(t, data, 1)
+		require.Equal(t, data, gotData)
+	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611

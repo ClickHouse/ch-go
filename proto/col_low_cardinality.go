@@ -17,9 +17,8 @@ const (
 
 // ColLowCardinality contains index and keys columns.
 //
-// Index column contains unique values, Keys column contains
-// sequence of indexes in Index colum that represent actual
-// values.
+// Index (i.e. dictionary) column contains unique values, Keys column contains
+// sequence of indexes in Index column that represent actual values.
 //
 // For example, ["Eko", "Eko", "Amadela", "Amadela", "Amadela", "Amadela"] can
 // be encoded as:
@@ -29,7 +28,7 @@ const (
 // The CardinalityKey is chosen depending on Index size, i.e. maximum value
 // of chosen type should be able to represent any index of Index element.
 type ColLowCardinality struct {
-	Index Column
+	Index Column // dictionary
 	Key   CardinalityKey
 
 	// Keeping all key column variants as fields to reuse
@@ -43,17 +42,31 @@ type ColLowCardinality struct {
 
 // Constants for low cardinality metadata value that is represented as int64
 // consisted of bitflags and key type.
+//
+// https://github.com/ClickHouse/clickhouse-cpp/blob/b10d71eed0532405dfb4dd03aabce869ba68f581/clickhouse/columns/lowcardinality.cpp
+//
+// NB: shared dictionaries and on-the-fly dictionary update is not supported,
+// because it is not currently used in client protocol.
 const (
-	cardinalityHasAdditionalKeys int64 = 0b0010_0000_0000 // bitflag
-	cardinalityUpdateIndex       int64 = 0b0100_0000_0000 // bitflag
-	cardinalityKeyMask           int64 = 0b0000_0000_1111 // last 4 bits
+	cardinalityKeyMask = 0b0000_1111_1111 // last byte
+
+	// Need to read dictionary if it wasn't.
+	cardinalityNeedGlobalDictionaryBit = 1 << 8
+	// Need to read additional keys.
+	// Additional keys are stored before indexes as value N and N keys
+	// after them.
+	cardinalityHasAdditionalKeysBit = 1 << 9
+	// Need to update dictionary. It means that previous granule has different dictionary.
+	cardinalityNeedUpdateDictionary = 1 << 10
 
 	// cardinalityUpdateAll sets both flags (update index, has additional keys)
-	cardinalityUpdateAll = cardinalityUpdateIndex | cardinalityHasAdditionalKeys
+	cardinalityUpdateAll = cardinalityHasAdditionalKeysBit | cardinalityNeedUpdateDictionary
 )
 
-// cardinalityVersion is version of serialization of keys and indexes.
-const cardinalityVersion = 1
+type keySerializationVersion byte
+
+// sharedDictionariesWithAdditionalKeys is default key serialization.
+const sharedDictionariesWithAdditionalKeys keySerializationVersion = 1
 
 func (c *ColLowCardinality) AppendKey(i int) {
 	switch c.Key {
@@ -94,24 +107,32 @@ func (c ColLowCardinality) Rows() int {
 }
 
 func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
-	keyVer, err := r.Int64()
+	keySerialization, err := r.Int64()
 	if err != nil {
 		return errors.Wrap(err, "version")
 	}
-	if keyVer != cardinalityVersion {
+	if keySerialization != int64(sharedDictionariesWithAdditionalKeys) {
 		return errors.Errorf("got version %d, expected %d",
-			keyVer, cardinalityVersion,
+			keySerialization, sharedDictionariesWithAdditionalKeys,
 		)
 	}
 	meta, err := r.Int64()
 	if err != nil {
 		return errors.Wrap(err, "meta")
 	}
+	if (meta & cardinalityNeedGlobalDictionaryBit) == 1 {
+		return errors.New("global dictionary is not supported")
+	}
+	if (meta & cardinalityHasAdditionalKeysBit) == 0 {
+		return errors.New("additional keys bit is missing")
+	}
+
 	key := CardinalityKey(meta & cardinalityKeyMask)
 	if !key.IsACardinalityKey() {
 		return errors.Errorf("invalid low cardinality keys type %d", key)
 	}
 	c.Key = key
+
 	indexRows, err := r.Int64()
 	if err != nil {
 		return errors.Wrap(err, "index size")
@@ -144,7 +165,7 @@ func (c *ColLowCardinality) Reset() {
 }
 
 func (c ColLowCardinality) EncodeColumn(b *Buffer) {
-	b.PutUInt64(cardinalityVersion)
+	b.PutInt64(int64(sharedDictionariesWithAdditionalKeys))
 
 	// Meta encodes whether reader should update
 	// low cardinality metadata and keys column type.
