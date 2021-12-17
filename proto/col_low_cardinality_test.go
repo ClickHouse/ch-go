@@ -12,7 +12,7 @@ import (
 
 func TestColLowCardinality_DecodeColumn(t *testing.T) {
 	t.Run("Str", func(t *testing.T) {
-		const rows = 50
+		const rows = 25
 		var data ColStr
 		for _, v := range []string{
 			"neo",
