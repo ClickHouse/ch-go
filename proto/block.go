@@ -112,6 +112,15 @@ const (
 	maxRowsInBlock    = 1_000_000
 )
 
+func checkRows(n int) error {
+	if n < 0 || n > maxRowsInBlock {
+		return errors.Errorf("invalid: %d < %d < %d",
+			0, n, maxRowsInBlock,
+		)
+	}
+	return nil
+}
+
 func (b *Block) End() bool {
 	return b.Columns == 0 && b.Rows == 0
 }
@@ -137,8 +146,8 @@ func (b *Block) DecodeBlock(r *Reader, version int, target []ResultColumn) error
 		if err != nil {
 			return errors.Wrap(err, "rows")
 		}
-		if v > maxRowsInBlock || v < 0 {
-			return errors.Errorf("invalid columns number %d", v)
+		if err := checkRows(v); err != nil {
+			return errors.Wrap(err, "rows count")
 		}
 		b.Rows = v
 	}

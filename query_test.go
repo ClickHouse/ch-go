@@ -399,6 +399,66 @@ func TestClient_Query(t *testing.T) {
 			assert.Equal(t, expected[i], got, "[%d]", i)
 		}
 	})
+	t.Run("InsertMapStringString", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		// Create table, no data fetch.
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v Map(String, String)) ENGINE = TinyLog",
+		}
+		require.NoError(t, conn.Query(ctx, createTable), "create table")
+
+		var (
+			keys   = &proto.ColStr{}
+			values = &proto.ColStr{}
+			data   = &proto.ColMap{
+				Keys:   keys,
+				Values: values,
+			}
+		)
+
+		for _, v := range []struct {
+			Key, Value string
+		}{
+			{Key: "key1", Value: "value1"},
+			{Key: "key2", Value: "value2"},
+			{Key: "key3", Value: "value3"},
+		} {
+			keys.Append(v.Key)
+			values.Append(v.Value)
+		}
+		data.Offsets = proto.ColUInt64{
+			2, // [0:2]
+			3, // [2:3]
+		}
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		var (
+			gotKeys   = &proto.ColStr{}
+			gotValues = &proto.ColStr{}
+			gotData   = &proto.ColMap{
+				Keys:   gotKeys,
+				Values: gotValues,
+			}
+		)
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: []proto.ResultColumn{
+				{Name: "v", Data: gotData},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.Equal(t, data.Rows(), gotData.Rows())
+		require.Equal(t, data, gotData)
+	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611

@@ -141,10 +141,8 @@ func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
 	if err != nil {
 		return errors.Wrap(err, "index size")
 	}
-	if indexRows < 0 || indexRows > maxRowsInBlock {
-		return errors.Errorf("index size invalid: %d < %d < %d",
-			0, indexRows, maxRowsInBlock,
-		)
+	if err := checkRows(int(indexRows)); err != nil {
+		return errors.Wrap(err, "index size")
 	}
 	if err := c.Index.DecodeColumn(r, int(indexRows)); err != nil {
 		return errors.Wrap(err, "index column")
@@ -154,10 +152,8 @@ func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
 	if err != nil {
 		return errors.Wrap(err, "keys size")
 	}
-	if keyRows < 0 || keyRows > maxRowsInBlock {
-		return errors.Errorf("keys size invalid: %d < %d < %d",
-			0, keyRows, maxRowsInBlock,
-		)
+	if err := checkRows(int(keyRows)); err != nil {
+		return errors.Wrap(err, "index size")
 	}
 	if err := c.Keys().DecodeColumn(r, int(keyRows)); err != nil {
 		return errors.Wrap(err, "keys column")

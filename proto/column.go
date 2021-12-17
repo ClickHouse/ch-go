@@ -48,7 +48,7 @@ func (c ColumnType) With(params ...string) ColumnType {
 		return c
 	}
 	s := fmt.Sprintf("%s(%s)",
-		c, strings.Join(params, ","),
+		c, strings.Join(params, ", "),
 	)
 	return ColumnType(s)
 }
@@ -119,6 +119,7 @@ const (
 	ColumnTypeEnum8          ColumnType = "Enum8"
 	ColumnTypeEnum16         ColumnType = "Enum16"
 	ColumnTypeLowCardinality ColumnType = "LowCardinality"
+	ColumnTypeMap            ColumnType = "Map"
 )
 
 // colWrap wraps Column with type t.

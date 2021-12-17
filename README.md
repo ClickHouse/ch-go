@@ -86,16 +86,17 @@ func main() {
 * Array(T)
 * Enum8, Enum16
 * LowCardinality(T)
+* Map(K, V)
 
 ## TODO
-- [ ] Map(K, V)
 - [ ] Nullable
 - [ ] Decimal(P, S), Decimal32(S), Decimal64(S), Decimal128(S), Decimal256(S)
-- [ ] API UX Improvements
+- [ ] API UX Improvements (with 1.18 generics?)
     - [ ] Enum
     - [ ] LowCardinality
     - [ ] Array(T)
     - [ ] FixedString(N)
+    - [ ] Map(K, V)
 - [ ] Read packets from server while sending input
 - [ ] External tables
 - [ ] Server in Go for tests
