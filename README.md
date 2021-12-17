@@ -85,6 +85,7 @@ func main() {
 * UUID
 * Array(T)
 * Enum8, Enum16
+* LowCardinality(T)
 
 ## TODO
 - [ ] LowCardinality

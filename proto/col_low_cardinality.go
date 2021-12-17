@@ -107,6 +107,10 @@ func (c ColLowCardinality) Rows() int {
 }
 
 func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
+	if rows == 0 {
+		// Skipping entirely of no rows.
+		return nil
+	}
 	keySerialization, err := r.Int64()
 	if err != nil {
 		return errors.Wrap(err, "version")
@@ -145,11 +149,17 @@ func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
 	if err := c.Index.DecodeColumn(r, int(indexRows)); err != nil {
 		return errors.Wrap(err, "index column")
 	}
-	keysRow, err := r.Int64()
+
+	keyRows, err := r.Int64()
 	if err != nil {
 		return errors.Wrap(err, "keys size")
 	}
-	if err := c.Keys().DecodeColumn(r, int(keysRow)); err != nil {
+	if keyRows < 0 || keyRows > maxRowsInBlock {
+		return errors.Errorf("keys size invalid: %d < %d < %d",
+			0, keyRows, maxRowsInBlock,
+		)
+	}
+	if err := c.Keys().DecodeColumn(r, int(keyRows)); err != nil {
 		return errors.Wrap(err, "keys column")
 	}
 
@@ -165,15 +175,24 @@ func (c *ColLowCardinality) Reset() {
 }
 
 func (c ColLowCardinality) EncodeColumn(b *Buffer) {
+	if c.Rows() == 0 {
+		// Skipping encoding entirely.
+		return
+	}
+
+	// Writing key serialization version.
 	b.PutInt64(int64(sharedDictionariesWithAdditionalKeys))
 
 	// Meta encodes whether reader should update
 	// low cardinality metadata and keys column type.
 	meta := cardinalityUpdateAll | int64(c.Key)
 	b.PutInt64(meta)
+
+	// Writing index (dictionary).
 	b.PutInt64(int64(c.Index.Rows()))
 	c.Index.EncodeColumn(b)
 
+	// Sequence of values as indexes in dictionary.
 	k := c.Keys()
 	b.PutInt64(int64(k.Rows()))
 	k.EncodeColumn(b)

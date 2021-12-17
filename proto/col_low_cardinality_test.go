@@ -54,3 +54,17 @@ func TestColLowCardinality_DecodeColumn(t *testing.T) {
 		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 	})
 }
+
+func TestColLowCardinality_BlankColumn(t *testing.T) {
+	// Blank columns (i.e. row count is zero) are not encoded.
+	var data ColStr
+	col := &ColLowCardinality{
+		Index: &data,
+		Key:   KeyUInt8,
+	}
+	var buf Buffer
+	col.EncodeColumn(&buf)
+
+	var dec ColLowCardinality
+	require.NoError(t, dec.DecodeColumn(buf.Reader(), col.Rows()))
+}

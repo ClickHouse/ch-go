@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"inet.af/netaddr"
 
@@ -348,7 +349,6 @@ func TestClient_Query(t *testing.T) {
 		require.Equal(t, data, gotData)
 	})
 	t.Run("InsertLowCardinalityString", func(t *testing.T) {
-		t.Skip()
 		t.Parallel()
 		conn := Conn(t)
 
@@ -388,8 +388,16 @@ func TestClient_Query(t *testing.T) {
 			},
 		}
 		require.NoError(t, conn.Query(ctx, selectData), "select")
-		require.Len(t, data, 1)
-		require.Equal(t, data, gotData)
+		require.Equal(t, data.Rows(), gotData.Rows())
+		require.Equal(t, data.Key, gotData.Key)
+
+		expected := []string{
+			"One", "Two", "One", "Two", "One", "Two", "Two", "Two", "One", "One",
+		}
+		for i, j := range gotData.Keys8 {
+			got := gotIndex.Row(int(j))
+			assert.Equal(t, expected[i], got, "[%d]", i)
+		}
 	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
