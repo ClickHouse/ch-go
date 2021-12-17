@@ -88,10 +88,14 @@ func main() {
 * LowCardinality(T)
 
 ## TODO
-- [ ] Convenience wrappers for Enum8, Enum16
 - [ ] Map(K, V)
-- [ ] Decimal(P, S), Decimal32(S), Decimal64(S), Decimal128(S), Decimal256(S)
 - [ ] Nullable
+- [ ] Decimal(P, S), Decimal32(S), Decimal64(S), Decimal128(S), Decimal256(S)
+- [ ] API UX Improvements
+    - [ ] Enum
+    - [ ] LowCardinality
+    - [ ] Array(T)
+    - [ ] FixedString(N)
 - [ ] Read packets from server while sending input
 - [ ] External tables
 - [ ] Server in Go for tests
