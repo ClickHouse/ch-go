@@ -134,6 +134,7 @@ const (
 	ColumnTypeEnum16         ColumnType = "Enum16"
 	ColumnTypeLowCardinality ColumnType = "LowCardinality"
 	ColumnTypeMap            ColumnType = "Map"
+	ColumnTypeBool           ColumnType = "Bool"
 )
 
 // colWrap wraps Column with type t.

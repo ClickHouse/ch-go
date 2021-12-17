@@ -87,6 +87,7 @@ func main() {
 * Enum8, Enum16
 * LowCardinality(T)
 * Map(K, V)
+* Bool
 
 ## TODO
 - [ ] Nullable
