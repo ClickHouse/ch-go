@@ -42,6 +42,10 @@ func TestColDateTime_DecodeColumn(t *testing.T) {
 		var dec ColDateTime
 		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		var dec ColDateTime
+		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
+	})
 }
 
 func TestColDateTimeArray(t *testing.T) {

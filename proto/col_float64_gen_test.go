@@ -42,6 +42,10 @@ func TestColFloat64_DecodeColumn(t *testing.T) {
 		var dec ColFloat64
 		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		var dec ColFloat64
+		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
+	})
 }
 
 func TestColFloat64Array(t *testing.T) {

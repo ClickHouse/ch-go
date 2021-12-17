@@ -43,6 +43,10 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
     var dec {{ .Type }}
     require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
   })
+  t.Run("NoShortRead", func(t *testing.T) {
+    var dec {{ .Type }}
+    requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
+  })
 }
 
 func Test{{ .Type }}Array(t *testing.T) {

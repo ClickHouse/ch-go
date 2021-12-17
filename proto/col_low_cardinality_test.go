@@ -54,7 +54,7 @@ func TestColLowCardinality_DecodeColumn(t *testing.T) {
 			}
 			require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 		})
-		t.Run("PartialRead", func(t *testing.T) {
+		t.Run("NoShortRead", func(t *testing.T) {
 			dec := &ColLowCardinality{
 				Index: &data,
 			}

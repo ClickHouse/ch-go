@@ -42,6 +42,10 @@ func TestColEnum8_DecodeColumn(t *testing.T) {
 		var dec ColEnum8
 		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		var dec ColEnum8
+		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
+	})
 }
 
 func TestColEnum8Array(t *testing.T) {

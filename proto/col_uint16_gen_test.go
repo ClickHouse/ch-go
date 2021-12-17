@@ -42,6 +42,10 @@ func TestColUInt16_DecodeColumn(t *testing.T) {
 		var dec ColUInt16
 		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		var dec ColUInt16
+		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
+	})
 }
 
 func TestColUInt16Array(t *testing.T) {

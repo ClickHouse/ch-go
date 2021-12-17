@@ -36,7 +36,7 @@ type columnAware struct {
 }
 
 func (c columnAware) Decode(r *Reader) error {
-	return c.DecodeColumn(r, 10)
+	return c.DecodeColumn(r, c.rows)
 }
 
 func colAware(v Column, rows int) Decoder {
