@@ -97,6 +97,11 @@ func main() {
     - [ ] Array(T)
     - [ ] FixedString(N)
     - [ ] Map(K, V)
+- [ ] Code generation from DDL
+  - [ ] Parser
+  - [ ] Code generator for SELECT/INSERT
+  - [ ] Query builder
+- [ ] DSL for DDL
 - [ ] Read packets from server while sending input
 - [ ] External tables
 - [ ] Server in Go for tests
