@@ -30,6 +30,22 @@ func aware(v AwareDecoder) Decoder {
 	return staticAware{AwareDecoder: v}
 }
 
+type columnAware struct {
+	Column
+	rows int
+}
+
+func (c columnAware) Decode(r *Reader) error {
+	return c.DecodeColumn(r, 10)
+}
+
+func colAware(v Column, rows int) Decoder {
+	return columnAware{
+		Column: v,
+		rows:   rows,
+	}
+}
+
 func requireNoShortRead(t testing.TB, buf []byte, v Decoder) {
 	t.Helper()
 
