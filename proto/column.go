@@ -154,6 +154,13 @@ func Wrap(c Column, args ...interface{}) Column {
 		params = append(params, fmt.Sprint(a))
 	}
 	t := c.Type().With(params...)
+	return Alias(c, t)
+}
+
+// Alias column as other type.
+//
+// E.g. Bool is domain of UInt8, so can be aliased from UInt8.
+func Alias(c Column, t ColumnType) Column {
 	return colWrap{
 		Column: c,
 		t:      t,
