@@ -77,10 +77,10 @@ func main() {
   * Fuzzing
 
 ## Supported types
-* UInt8, UInt16, UInt32, UInt64, UInt128
-* Int8, Int16, Int32, Int64, Int128
+* UInt8, UInt16, UInt32, UInt64, UInt128, UInt256
+* Int8, Int16, Int32, Int64, Int128, Int256
 * Date, Date32, DateTime, DateTime64
-* Decimal32, Decimal64, Decimal128
+* Decimal32, Decimal64, Decimal128, Decimal256
 * IPv4, IPv6
 * String, FixedString(N)
 * UUID
@@ -97,7 +97,6 @@ func main() {
 - [ ] External tables
 - [ ] Server in Go for tests
 - [ ] Pooling
-- [ ] 256-bit numerics
 - [ ] API UX Improvements (with 1.18 generics?)
     - [ ] Enum
     - [ ] LowCardinality

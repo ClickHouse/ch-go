@@ -113,11 +113,13 @@ const (
 	ColumnTypeInt32          ColumnType = "Int32"
 	ColumnTypeInt64          ColumnType = "Int64"
 	ColumnTypeInt128         ColumnType = "Int128"
+	ColumnTypeInt256         ColumnType = "Int256"
 	ColumnTypeUInt8          ColumnType = "UInt8"
 	ColumnTypeUInt16         ColumnType = "UInt16"
 	ColumnTypeUInt32         ColumnType = "UInt32"
 	ColumnTypeUInt64         ColumnType = "UInt64"
 	ColumnTypeUInt128        ColumnType = "UInt128"
+	ColumnTypeUInt256        ColumnType = "UInt256"
 	ColumnTypeFloat32        ColumnType = "Float32"
 	ColumnTypeFloat64        ColumnType = "Float64"
 	ColumnTypeString         ColumnType = "String"
@@ -140,6 +142,7 @@ const (
 	ColumnTypeDecimal32      ColumnType = "Decimal32"
 	ColumnTypeDecimal64      ColumnType = "Decimal64"
 	ColumnTypeDecimal128     ColumnType = "Decimal128"
+	ColumnTypeDecimal256     ColumnType = "Decimal256"
 )
 
 // colWrap wraps Column with type t.

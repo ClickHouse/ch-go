@@ -276,6 +276,11 @@ func run() error {
 			Signed: true,
 			Kind:   KindDecimal,
 		},
+		{ // Decimal256
+			Bits:   256,
+			Signed: true,
+			Kind:   KindDecimal,
+		},
 	}
 	for _, bits := range []int{
 		8,
@@ -283,6 +288,7 @@ func run() error {
 		32,
 		64,
 		128,
+		256,
 	} {
 		for _, signed := range []bool{true, false} {
 			variants = append(variants, Variant{
