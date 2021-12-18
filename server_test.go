@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"testing"
-	"time"
 
 	"github.com/go-faster/errors"
 	"github.com/stretchr/testify/require"
@@ -17,15 +16,16 @@ func TestServer_Serve(t *testing.T) {
 	require.NoError(t, err)
 
 	lg := zaptest.NewLogger(t)
-	s := &Server{
-		lg: lg.Named("srv"),
-		tz: time.UTC,
-	}
+	s := NewServer(ServerOptions{
+		Logger: lg.Named("srv"),
+	})
 	done := make(chan struct{})
 	g, ctx := errgroup.WithContext(context.Background())
 	g.Go(func() error {
 		defer close(done)
-		c, err := Dial(ctx, ln.Addr().String(), Options{Logger: lg.Named("usr")})
+		c, err := Dial(ctx, ln.Addr().String(), Options{
+			Logger: lg.Named("usr"),
+		})
 		if err != nil {
 			return errors.Wrap(err, "dial")
 		}
