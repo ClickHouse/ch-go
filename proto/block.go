@@ -137,12 +137,7 @@ func (b *Block) End() bool {
 	return b.Columns == 0 && b.Rows == 0
 }
 
-func (b *Block) DecodeBlock(r *Reader, version int, target []ResultColumn) error {
-	if FeatureBlockInfo.In(version) {
-		if err := b.Info.Decode(r); err != nil {
-			return errors.Wrap(err, "info")
-		}
-	}
+func (b *Block) DecodeRawBlock(r *Reader, target []ResultColumn) error {
 	{
 		v, err := r.Int()
 		if err != nil {
@@ -210,6 +205,18 @@ func (b *Block) DecodeBlock(r *Reader, version int, target []ResultColumn) error
 		if err := t.Data.DecodeColumn(r, b.Rows); err != nil {
 			return errors.Wrap(err, columnName)
 		}
+	}
+	return nil
+}
+
+func (b *Block) DecodeBlock(r *Reader, version int, target []ResultColumn) error {
+	if FeatureBlockInfo.In(version) {
+		if err := b.Info.Decode(r); err != nil {
+			return errors.Wrap(err, "info")
+		}
+	}
+	if err := b.DecodeRawBlock(r, target); err != nil {
+		return err
 	}
 
 	return nil
