@@ -47,6 +47,45 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 4)
 		require.Equal(t, data, gotData)
 	})
+	t.Run("InsertTuple", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v Tuple(String, Int64)) ENGINE = TinyLog",
+		}
+		require.NoError(t, conn.Query(ctx, createTable), "create table")
+
+		const rows = 50
+		var (
+			dataStr proto.ColStr
+			dataInt proto.ColInt64
+		)
+		for i := 0; i < rows; i++ {
+			dataStr.Append(fmt.Sprintf("<%d>", i))
+			dataInt = append(dataInt, int64(i))
+		}
+
+		data := proto.ColTuple{&dataStr, &dataInt}
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: &data},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		gotData := proto.ColTuple{new(proto.ColStr), new(proto.ColInt64)}
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: []proto.ResultColumn{
+				{Name: "v", Data: gotData},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.Equal(t, rows, gotData.Rows())
+		require.Equal(t, data, gotData)
+	})
 	t.Run("InsertStream", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)

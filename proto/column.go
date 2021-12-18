@@ -135,6 +135,7 @@ const (
 	ColumnTypeLowCardinality ColumnType = "LowCardinality"
 	ColumnTypeMap            ColumnType = "Map"
 	ColumnTypeBool           ColumnType = "Bool"
+	ColumnTypeTuple          ColumnType = "Tuple"
 )
 
 // colWrap wraps Column with type t.

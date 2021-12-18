@@ -88,6 +88,7 @@ func main() {
 * LowCardinality(T)
 * Map(K, V)
 * Bool
+* Tuple(T1, T2, ..., Tn)
 
 ## TODO
 - [ ] Nullable
