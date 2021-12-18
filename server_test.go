@@ -17,8 +17,7 @@ func TestServer_Serve(t *testing.T) {
 
 	lg := zaptest.NewLogger(t)
 	s := NewServer(ServerOptions{
-		Logger:  lg.Named("srv"),
-		Workers: 1,
+		Logger: lg.Named("srv"),
 	})
 	done := make(chan struct{})
 	g, ctx := errgroup.WithContext(context.Background())

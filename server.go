@@ -1,15 +1,14 @@
 package ch
 
 import (
-	"context"
 	"io"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/go-faster/errors"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/go-faster/ch/internal/compress"
 	"github.com/go-faster/ch/proto"
@@ -17,17 +16,15 @@ import (
 
 // Server is basic ClickHouse server.
 type Server struct {
-	lg      *zap.Logger
-	tz      *time.Location
-	workers int
-	conn    atomic.Uint64
+	lg   *zap.Logger
+	tz   *time.Location
+	conn atomic.Uint64
 }
 
 // ServerOptions wraps possible Server configuration.
 type ServerOptions struct {
 	Logger   *zap.Logger
 	Timezone *time.Location
-	Workers  int
 }
 
 // NewServer returns new ClickHouse Server.
@@ -38,13 +35,9 @@ func NewServer(opt ServerOptions) *Server {
 	if opt.Timezone == nil {
 		opt.Timezone = time.UTC
 	}
-	if opt.Workers == 0 {
-		opt.Workers = 100
-	}
 	return &Server{
-		lg:      opt.Logger,
-		tz:      opt.Timezone,
-		workers: opt.Workers,
+		lg: opt.Logger,
+		tz: opt.Timezone,
 	}
 }
 
@@ -175,31 +168,21 @@ func (s *Server) handle(conn net.Conn) error {
 	return sConn.Handle()
 }
 
-func (s *Server) serve(ctx context.Context, ln net.Listener) error {
+// Serve connections on net.Listener.
+func (s *Server) Serve(ln net.Listener) error {
+	var wg sync.WaitGroup
+	defer wg.Wait()
 	for {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
 		c, err := ln.Accept()
 		if err != nil {
 			return errors.Wrap(err, "accept")
 		}
-		if err := s.handle(c); err != nil {
-			if errors.Is(err, io.ErrUnexpectedEOF) {
-				continue
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := s.handle(c); err != nil && !errors.Is(err, io.ErrUnexpectedEOF) {
+				s.lg.Error("Handle", zap.Error(err))
 			}
-			s.lg.Error("Handle", zap.Error(err))
-		}
+		}()
 	}
-}
-
-// Serve connections on net.Listener.
-func (s *Server) Serve(ln net.Listener) error {
-	g, ctx := errgroup.WithContext(context.Background())
-	for i := 0; i < s.workers; i++ {
-		g.Go(func() error {
-			return s.serve(ctx, ln)
-		})
-	}
-	return g.Wait()
 }
