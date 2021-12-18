@@ -107,6 +107,18 @@ func (b Block) EncodeAware(buf *Buffer, version int) {
 	buf.PutInt(b.Rows)
 }
 
+func (b Block) EncodeBlock(buf *Buffer, version int, input []InputColumn) error {
+	b.EncodeAware(buf, version)
+	for _, col := range input {
+		if r := col.Data.Rows(); r != b.Rows {
+			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
+		}
+		col.EncodeStart(buf)
+		col.Data.EncodeColumn(buf)
+	}
+	return nil
+}
+
 const (
 	maxColumnsInBlock = 1_000_000
 	maxRowsInBlock    = 1_000_000

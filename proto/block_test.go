@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-faster/ch/internal/gold"
 )
 
 func TestBlockInfo_Encode(t *testing.T) {
@@ -30,5 +32,82 @@ func TestBlock_EncodeAware(t *testing.T) {
 		},
 		Columns: 15,
 		Rows:    10,
+	})
+}
+
+type resultAware struct {
+	*Block
+	out []ResultColumn
+}
+
+func (c resultAware) Decode(r *Reader) error {
+	return c.DecodeBlock(r, Version, c.out)
+}
+
+func resAware(v *Block, out []ResultColumn) Decoder {
+	return resultAware{
+		Block: v,
+		out:   out,
+	}
+}
+
+func TestBlock_EncodeBlock(t *testing.T) {
+	v := Block{
+		Info: BlockInfo{
+			BucketNum: -1,
+		},
+		Columns: 2,
+		Rows:    5,
+	}
+	var b Buffer
+	require.NoError(t, v.EncodeBlock(&b, Version, []InputColumn{
+		{Name: "count", Data: ColInt8{1, 2, 3, 4, 5}},
+		{Name: "users", Data: ColUInt64{5467267, 175676, 956105, 18347896, 554714}},
+	}))
+	gold.Bytes(t, b.Buf, "block_int8_uint64")
+	t.Run("Ok", func(t *testing.T) {
+		var dec Block
+		var (
+			countRes ColInt8
+			usersRes ColUInt64
+		)
+		requireDecode(t, b.Buf, resAware(&dec, []ResultColumn{
+			{Name: "count", Data: &countRes},
+			{Name: "users", Data: &usersRes},
+		}))
+		require.Equal(t, dec, v)
+	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		var dec Block
+		var (
+			countRes ColInt8
+			usersRes ColUInt64
+		)
+		requireNoShortRead(t, b.Buf, resAware(&dec, []ResultColumn{
+			{Name: "count", Data: &countRes},
+			{Name: "users", Data: &usersRes},
+		}))
+	})
+	t.Run("BadColumn", func(t *testing.T) {
+		var dec Block
+		var (
+			countRes ColInt8
+			usersRes ColUInt64
+		)
+		for _, res := range [][]ResultColumn{
+			{}, // No columns.
+			{
+				// Bad name.
+				{Name: "counts", Data: &countRes},
+				{Name: "users", Data: &usersRes},
+			},
+			{
+				// Bad type.
+				{Name: "count", Data: &countRes},
+				{Name: "users", Data: new(ColStr)},
+			},
+		} {
+			require.Error(t, dec.DecodeBlock(b.Reader(), Version, res))
+		}
 	})
 }

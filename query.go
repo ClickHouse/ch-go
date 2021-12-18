@@ -140,6 +140,7 @@ func (c *Client) decodeBlock(
 func (c *Client) encodeBlock(input []proto.InputColumn) error {
 	proto.ClientCodeData.Encode(c.buf)
 	proto.ClientData{}.EncodeAware(c.buf, c.info.ProtocolVersion)
+
 	// Saving offset of compressible data.
 	start := len(c.buf.Buf)
 	b := proto.Block{
@@ -152,13 +153,8 @@ func (c *Client) encodeBlock(input []proto.InputColumn) error {
 			BucketNum: -1,
 		}
 	}
-	b.EncodeAware(c.buf, c.info.ProtocolVersion)
-	for _, col := range input {
-		if r := col.Data.Rows(); r != b.Rows {
-			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
-		}
-		col.EncodeStart(c.buf)
-		col.Data.EncodeColumn(c.buf)
+	if err := b.EncodeBlock(c.buf, c.info.ProtocolVersion, input); err != nil {
+		return errors.Wrap(err, "encode")
 	}
 
 	// Performing compression.
