@@ -195,8 +195,8 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 	code := proto.ServerCode(n)
 	if ce := c.lg.Check(zap.DebugLevel, "Packet"); ce != nil {
 		ce.Write(
-			zap.Uint64("packet_code_raw", n),
-			zap.Stringer("packet_code", code),
+			zap.Uint64("packet_code", n),
+			zap.Stringer("packet", code),
 		)
 	}
 	if !code.IsAServerCode() {

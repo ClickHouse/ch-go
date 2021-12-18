@@ -25,9 +25,12 @@ func TestServer_Serve(t *testing.T) {
 	g, ctx := errgroup.WithContext(context.Background())
 	g.Go(func() error {
 		defer close(done)
-		c, err := Dial(ctx, ln.Addr().String(), Options{Logger: lg})
+		c, err := Dial(ctx, ln.Addr().String(), Options{Logger: lg.Named("usr")})
 		if err != nil {
 			return errors.Wrap(err, "dial")
+		}
+		if err := c.Ping(ctx); err != nil {
+			return errors.Wrap(err, "ping")
 		}
 		return c.Close()
 	})

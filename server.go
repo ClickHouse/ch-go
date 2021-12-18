@@ -112,6 +112,20 @@ func (c *ServerConn) flush() error {
 	return nil
 }
 
+func (c *ServerConn) handlePacket(p proto.ClientCode) error {
+	switch p {
+	case proto.ClientCodePing:
+		return c.handlePing()
+	default:
+		return errors.Errorf("%q not implemented", p)
+	}
+}
+
+func (c *ServerConn) handlePing() error {
+	proto.ServerCodePong.Encode(c.buf)
+	return c.flush()
+}
+
 // Handle connection.
 func (c *ServerConn) Handle() error {
 	if err := c.handshake(); err != nil {
@@ -122,7 +136,10 @@ func (c *ServerConn) Handle() error {
 		if err != nil {
 			return errors.Wrap(err, "packet")
 		}
-		c.lg.Info("Packet", zap.String("packet", p.String()))
+		c.lg.Debug("Packet", zap.String("packet", p.String()))
+		if err := c.handlePacket(p); err != nil {
+			return errors.Wrapf(err, "handle %q", p)
+		}
 	}
 }
 
