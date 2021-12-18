@@ -2,6 +2,9 @@ package proto
 
 import "github.com/go-faster/errors"
 
+// ColTuple is Tuple column.
+//
+// Basically it is just a group of columns.
 type ColTuple []Column
 
 func (c ColTuple) Type() ColumnType {

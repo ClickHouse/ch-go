@@ -11,6 +11,10 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestColTuple_Rows(t *testing.T) {
+	require.Equal(t, 0, ColTuple(nil).Rows())
+}
+
 func TestColTuple_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var (
