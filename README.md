@@ -104,6 +104,9 @@ func main() {
     - [ ] Array(T)
     - [ ] FixedString(N)
     - [ ] Map(K, V)
+    - [ ] [Decimal(P, S)](https://clickhouse.com/docs/en/sql-reference/data-types/decimal/)
+    - [ ] Nullable(T)
+    - [ ] Tuple?
 - [ ] Code generation from DDL
   - [ ] Parser
   - [ ] Code generator for SELECT/INSERT
