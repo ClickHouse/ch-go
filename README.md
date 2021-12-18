@@ -89,9 +89,9 @@ func main() {
 * Map(K, V)
 * Bool
 * Tuple(T1, T2, ..., Tn)
+* Nullable(T)
 
 ## TODO
-- [ ] Nullable
 - [ ] Decimal(P, S), Decimal32(S), Decimal64(S), Decimal128(S), Decimal256(S)
 - [ ] Read packets from server while sending input
 - [ ] External tables

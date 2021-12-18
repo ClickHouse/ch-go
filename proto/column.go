@@ -136,6 +136,7 @@ const (
 	ColumnTypeMap            ColumnType = "Map"
 	ColumnTypeBool           ColumnType = "Bool"
 	ColumnTypeTuple          ColumnType = "Tuple"
+	ColumnTypeNullable       ColumnType = "Nullable"
 )
 
 // colWrap wraps Column with type t.
