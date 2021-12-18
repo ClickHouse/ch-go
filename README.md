@@ -118,3 +118,6 @@ func main() {
 * [clickhouse-cpp](https://github.com/ClickHouse/clickhouse-cpp)
 * [clickhouse-go](https://github.com/ClickHouse/clickhouse-go)
 * [python driver](https://github.com/mymarilyn/clickhouse-driver)
+
+## License
+Apache License 2.0
