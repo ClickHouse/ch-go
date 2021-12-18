@@ -59,6 +59,8 @@ func main() {
   * Low memory overhead (column blocks are slices, i.e. continuous memory)
   * Highly efficient input and output streaming
   * As close to ClickHouse as possible
+* Query progress and profiling
+* LZ4 compression
 * Rigorously tested
   * **ARM**64, Windows, Mac, Linux (also x86)
   * Unit tests for encoding and decoding
@@ -73,8 +75,6 @@ func main() {
     - 21.11.7.9-stable
     - 21.12.2.17-stable
   * Fuzzing
-* Int128 and UInt128
-* LZ4 compression
 
 ## Supported types
 * UInt8, UInt16, UInt32, UInt64, UInt128
