@@ -22,6 +22,7 @@ const (
 	KindDateTime
 	KindDate
 	KindEnum
+	KindDecimal
 )
 
 type Variant struct {
@@ -148,6 +149,9 @@ func (v Variant) ElemType() string {
 	if v.IPv6() {
 		return "IPv6"
 	}
+	if v.Kind == KindDecimal {
+		return fmt.Sprintf("Decimal%d", v.Bits)
+	}
 	if v.Kind == KindDateTime {
 		if v.Bits == 64 {
 			return "DateTime64"
@@ -256,6 +260,21 @@ func run() error {
 			Bits:   16,
 			Signed: true,
 			Kind:   KindEnum,
+		},
+		{ // Decimal32
+			Bits:   32,
+			Signed: true,
+			Kind:   KindDecimal,
+		},
+		{ // Decimal64
+			Bits:   64,
+			Signed: true,
+			Kind:   KindDecimal,
+		},
+		{ // Decimal128
+			Bits:   128,
+			Signed: true,
+			Kind:   KindDecimal,
 		},
 	}
 	for _, bits := range []int{

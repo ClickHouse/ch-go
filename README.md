@@ -80,6 +80,7 @@ func main() {
 * UInt8, UInt16, UInt32, UInt64, UInt128
 * Int8, Int16, Int32, Int64, Int128
 * Date, Date32, DateTime, DateTime64
+* Decimal32, Decimal64, Decimal128
 * IPv4, IPv6
 * String, FixedString(N)
 * UUID
@@ -92,11 +93,11 @@ func main() {
 * Nullable(T)
 
 ## TODO
-- [ ] Decimal(P, S), Decimal32(S), Decimal64(S), Decimal128(S), Decimal256(S)
 - [ ] Read packets from server while sending input
 - [ ] External tables
 - [ ] Server in Go for tests
 - [ ] Pooling
+- [ ] 256-bit numerics
 - [ ] API UX Improvements (with 1.18 generics?)
     - [ ] Enum
     - [ ] LowCardinality
