@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-faster/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 	"golang.org/x/sync/errgroup"
@@ -16,11 +17,18 @@ func TestServer_Serve(t *testing.T) {
 	require.NoError(t, err)
 
 	lg := zaptest.NewLogger(t)
+
+	done := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
 	s := NewServer(ServerOptions{
 		Logger: lg.Named("srv"),
+		OnError: func(err error) {
+			assert.NoError(t, err, "server error")
+			cancel()
+		},
 	})
-	done := make(chan struct{})
-	g, ctx := errgroup.WithContext(context.Background())
 	g.Go(func() error {
 		defer close(done)
 		c, err := Dial(ctx, ln.Addr().String(), Options{
@@ -31,6 +39,9 @@ func TestServer_Serve(t *testing.T) {
 		}
 		if err := c.Ping(ctx); err != nil {
 			return errors.Wrap(err, "ping")
+		}
+		if err := c.Query(ctx, Query{Body: "HELLO"}); err != nil {
+			return errors.Wrap(err, "query")
 		}
 		return c.Close()
 	})
