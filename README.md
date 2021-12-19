@@ -59,7 +59,10 @@ func main() {
   * Low memory overhead (column blocks are slices, i.e. continuous memory)
   * Highly efficient input and output streaming
   * As close to ClickHouse as possible
-* Structured query progress, profiling and query logs streaming from server during query execution
+* Structured query telemetry streaming
+  * Query progress
+  * Profiling
+  * Logs
 * LZ4 compression
 * Rigorously tested
   * **ARM**64, Windows, Mac, Linux (also x86)
