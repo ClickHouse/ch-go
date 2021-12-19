@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-faster/errors"
@@ -20,6 +21,7 @@ import (
 type Client struct {
 	lg     *zap.Logger
 	conn   net.Conn
+	mux    sync.Mutex
 	buf    *proto.Buffer
 	reader *proto.Reader
 	info   proto.ClientHello
@@ -205,7 +207,9 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 	return code, nil
 }
 
-func (c *Client) flush(ctx context.Context) error {
+func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	if err := ctx.Err(); err != nil {
 		return errors.Wrap(err, "context")
 	}
@@ -214,18 +218,22 @@ func (c *Client) flush(ctx context.Context) error {
 			return errors.Wrap(err, "set write deadline")
 		}
 	}
-	n, err := c.conn.Write(c.buf.Buf)
+	n, err := c.conn.Write(b.Buf)
 	if err != nil {
 		return errors.Wrap(err, "write")
 	}
-	if n != len(c.buf.Buf) {
+	if n != len(b.Buf) {
 		return errors.Wrap(io.ErrShortWrite, "wrote less than expected")
 	}
 	if ce := c.lg.Check(zap.DebugLevel, "Flush"); ce != nil {
 		ce.Write(zap.Int("bytes", n))
 	}
-	c.buf.Reset()
+	b.Reset()
 	return nil
+}
+
+func (c *Client) flush(ctx context.Context) error {
+	return c.flushBuf(ctx, c.buf)
 }
 
 func (c *Client) encode(v proto.AwareEncoder) {

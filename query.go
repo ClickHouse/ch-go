@@ -23,8 +23,12 @@ func (c *Client) cancelQuery() error {
 	ctx, cancel := context.WithTimeout(context.Background(), cancelDeadline)
 	defer cancel()
 
-	proto.ClientCodeCancel.Encode(c.buf)
-	if err := c.flush(ctx); err != nil {
+	// Not using c.buf to prevent data race.
+	b := proto.Buffer{
+		Buf: make([]byte, 1),
+	}
+	proto.ClientCodeCancel.Encode(&b)
+	if err := c.flushBuf(ctx, &b); err != nil {
 		return errors.Wrap(err, "flush")
 	}
 
