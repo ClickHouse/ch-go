@@ -596,3 +596,39 @@ func TestClient_ServerLog(t *testing.T) {
 		}
 	})
 }
+
+func TestClient_ExternalData(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	t.Run("Named", func(t *testing.T) {
+		t.Parallel()
+		var data proto.ColInt64
+		selectStr := Query{
+			Body:          "SELECT * FROM external",
+			ExternalTable: "external",
+			ExternalData: []proto.InputColumn{
+				{Name: "v", Data: proto.ColInt64{1, 2, 3}},
+			},
+			Result: []proto.ResultColumn{
+				{Name: "v", Data: &data},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectStr))
+		require.Equal(t, 3, data.Rows())
+	})
+	t.Run("Default", func(t *testing.T) {
+		t.Parallel()
+		var data proto.ColInt64
+		selectStr := Query{
+			Body: "SELECT * FROM _data",
+			ExternalData: []proto.InputColumn{
+				{Name: "v", Data: proto.ColInt64{1, 2, 3}},
+			},
+			Result: []proto.ResultColumn{
+				{Name: "v", Data: &data},
+			},
+		}
+		require.NoError(t, Conn(t).Query(ctx, selectStr))
+		require.Equal(t, 3, data.Rows())
+	})
+}
