@@ -549,3 +549,50 @@ func TestClientCompression(t *testing.T) {
 		require.Equal(t, "foo", data.First())
 	})
 }
+
+func TestClient_ServerLog(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := func(t *testing.T) *Client {
+		return ConnOpt(t, Options{
+			Settings: []Setting{
+				{
+					Key:       "send_logs_level",
+					Value:     "trace",
+					Important: true,
+				},
+			},
+		})
+	}
+	t.Run("Log", func(t *testing.T) {
+		t.Parallel()
+		// Select single string row.
+		var (
+			data proto.ColStr
+			logs int
+		)
+		qID := "expected-query-id"
+		selectStr := Query{
+			Body:    "SELECT 'foo' as s",
+			QueryID: qID,
+			OnLog: func(ctx context.Context, l Log) error {
+				t.Logf("Log: %s", l.Text)
+				logs++
+				assert.Equal(t, qID, l.QueryID)
+				return nil
+			},
+			Result: []proto.ResultColumn{
+				{
+					Name: "s",
+					Data: &data,
+				},
+			},
+		}
+		require.NoError(t, conn(t).Query(ctx, selectStr))
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, "foo", data.First())
+		if logs == 0 {
+			t.Fatal("No log entries received")
+		}
+	})
+}

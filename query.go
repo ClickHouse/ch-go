@@ -17,7 +17,7 @@ import (
 
 // cancelQuery cancels current query.
 func (c *Client) cancelQuery() error {
-	c.lg.Warn("Canceling query")
+	c.lg.Warn("Cancel query")
 
 	const cancelDeadline = time.Second * 1
 	ctx, cancel := context.WithTimeout(context.Background(), cancelDeadline)
@@ -35,6 +35,18 @@ func (c *Client) cancelQuery() error {
 	return nil
 }
 
+func (c *Client) querySettings() []proto.Setting {
+	var result []proto.Setting
+	for _, s := range c.settings {
+		result = append(result, proto.Setting{
+			Key:       s.Key,
+			Value:     s.Value,
+			Important: s.Important,
+		})
+	}
+	return result
+}
+
 // sendQuery starts query.
 func (c *Client) sendQuery(ctx context.Context, query, queryID string) error {
 	if ce := c.lg.Check(zap.DebugLevel, "sendQuery"); ce != nil {
@@ -49,6 +61,7 @@ func (c *Client) sendQuery(ctx context.Context, query, queryID string) error {
 		Secret:      "",
 		Stage:       proto.StageComplete,
 		Compression: c.compression,
+		Settings:    c.querySettings(),
 		Info: proto.ClientInfo{
 			ProtocolVersion: c.info.ProtocolVersion,
 			Major:           c.info.Major,
@@ -107,6 +120,8 @@ type Query struct {
 	OnProgress func(ctx context.Context, p proto.Progress) error
 	// OnProfile is optional handler for profiling data.
 	OnProfile func(ctx context.Context, p proto.Profile) error
+	// OnLog is optional handler for server log entry.
+	OnLog func(ctx context.Context, l Log) error
 }
 
 func (c *Client) decodeBlock(
@@ -261,6 +276,17 @@ func (c *Client) resultHandler(q Query) func(ctx context.Context, b proto.Block)
 	}
 }
 
+// Log from server.
+type Log struct {
+	Time     time.Time
+	Host     string
+	QueryID  string
+	ThreadID uint64
+	Priority int8
+	Source   string
+	Text     string
+}
+
 func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) error {
 	switch p {
 	case proto.ServerCodeException:
@@ -311,6 +337,61 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 		if err := c.decode(&info); err != nil {
 			return errors.Wrap(err, "table columns")
 		}
+	case proto.ServerCodeLog:
+		var (
+			eventTime      proto.ColDateTime
+			eventTimeMicro proto.ColUInt32
+			eventHostName  proto.ColStr
+			eventQueryID   proto.ColStr
+			eventThreadID  proto.ColUInt64
+			eventPriority  proto.ColInt8
+			eventSource    proto.ColStr
+			eventText      proto.ColStr
+		)
+		result := []proto.ResultColumn{
+			{Name: "event_time", Data: &eventTime},
+			{Name: "event_time_microseconds", Data: &eventTimeMicro},
+			{Name: "host_name", Data: &eventHostName},
+			{Name: "query_id", Data: &eventQueryID},
+			{Name: "thread_id", Data: &eventThreadID},
+			{Name: "priority", Data: &eventPriority},
+			{Name: "source", Data: &eventSource},
+			{Name: "text", Data: &eventText},
+		}
+		onResult := func(ctx context.Context, b proto.Block) error {
+			for i := range eventTime {
+				l := Log{
+					Time:     eventTime[i].Time(),
+					Host:     eventHostName.Row(i),
+					QueryID:  eventQueryID.Row(i),
+					ThreadID: eventThreadID[i],
+					Priority: eventPriority[i],
+					Source:   eventSource.Row(i),
+					Text:     eventText.Row(i),
+				}
+				if ce := c.lg.Check(zap.DebugLevel, "Log"); ce != nil {
+					ce.Write(
+						zap.Time("event_time", l.Time),
+						zap.String("host", l.Host),
+						zap.String("query_id", l.QueryID),
+						zap.Uint64("thread_id", l.ThreadID),
+						zap.Int8("priority", l.Priority),
+						zap.String("source", l.Source),
+						zap.String("text", l.Text),
+					)
+				}
+				if f := q.OnLog; f != nil {
+					if err := f(ctx, l); err != nil {
+						return errors.Wrap(err, "log")
+					}
+				}
+			}
+			return nil
+		}
+		if err := c.decodeBlock(ctx, onResult, result); err != nil {
+			return errors.Wrap(err, "decode block")
+		}
+		return nil
 	default:
 		return errors.Errorf("unexpected packet %q", p)
 	}

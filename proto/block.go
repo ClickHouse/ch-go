@@ -72,6 +72,14 @@ type ResultColumn struct {
 	Data Result
 }
 
+// AutoResult is ResultColumn with type inference.
+func AutoResult(name string) ResultColumn {
+	return ResultColumn{
+		Name: name,
+		Data: &ColAuto{},
+	}
+}
+
 func (c InputColumn) EncodeStart(buf *Buffer) {
 	buf.PutString(c.Name)
 	buf.PutString(string(c.Data.Type()))
@@ -187,15 +195,18 @@ func (b *Block) DecodeRawBlock(r *Reader, target []ResultColumn) error {
 			continue
 		}
 
-		t := target[i]
 		// Checking column name and type.
+		t := target[i]
 		if t.Name != columnName {
 			return errors.Errorf("[%d]: unexpected column %q (%q expected)", i, columnName, t.Name)
 		}
-		var (
-			gotType = ColumnType(columnType)
-			hasType = t.Data.Type()
-		)
+		gotType := ColumnType(columnType)
+		if infer, ok := t.Data.(InferColumn); ok {
+			if err := infer.Infer(gotType); err != nil {
+				return errors.Wrap(err, "infer")
+			}
+		}
+		hasType := t.Data.Type()
 		if gotType.Conflicts(hasType) {
 			return errors.Errorf("[%d]: %s: unexpected type %q (got) instead of %q (has)",
 				i, columnName, gotType, hasType,
