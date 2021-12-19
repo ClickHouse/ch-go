@@ -17,7 +17,7 @@ import (
 
 // cancelQuery cancels current query.
 func (c *Client) cancelQuery() error {
-	c.lg.Warn("Cancelling query")
+	c.lg.Warn("Canceling query")
 
 	const cancelDeadline = time.Second * 1
 	ctx, cancel := context.WithTimeout(context.Background(), cancelDeadline)
