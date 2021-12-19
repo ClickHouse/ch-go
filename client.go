@@ -28,6 +28,9 @@ type Client struct {
 	server proto.ServerHello
 	tz     *time.Location
 
+	// TCP Binary protocol version.
+	protocolVersion int
+
 	// compressor performs block compression,
 	// see encodeBlock.
 	compressor        *compress.Writer
@@ -147,7 +150,7 @@ func (c *Client) exception() (*Exception, error) {
 }
 
 func (c *Client) decode(v proto.AwareDecoder) error {
-	return v.DecodeAware(c.reader, c.info.ProtocolVersion)
+	return v.DecodeAware(c.reader, c.protocolVersion)
 }
 
 func (c *Client) progress() (proto.Progress, error) {
@@ -237,7 +240,7 @@ func (c *Client) flush(ctx context.Context) error {
 }
 
 func (c *Client) encode(v proto.AwareEncoder) {
-	v.EncodeAware(c.buf, c.info.ProtocolVersion)
+	v.EncodeAware(c.buf, c.protocolVersion)
 }
 
 //go:generate go run github.com/dmarkham/enumer -transform snake_upper -type Compression -trimprefix Compression -output compression_enum.go
@@ -290,6 +293,7 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 
 		compressor: compress.NewWriter(),
 
+		protocolVersion: proto.Version,
 		info: proto.ClientHello{
 			Name:  proto.Name,
 			Major: proto.Major,

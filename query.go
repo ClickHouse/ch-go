@@ -72,7 +72,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 		Compression: c.compression,
 		Settings:    c.querySettings(q),
 		Info: proto.ClientInfo{
-			ProtocolVersion: c.info.ProtocolVersion,
+			ProtocolVersion: c.protocolVersion,
 			Major:           c.info.Major,
 			Minor:           c.info.Minor,
 			Patch:           0,
@@ -159,7 +159,7 @@ func (c *Client) decodeBlock(
 	handler func(ctx context.Context, b proto.Block) error,
 	result []proto.ResultColumn,
 ) error {
-	if proto.FeatureTempTables.In(c.info.ProtocolVersion) {
+	if proto.FeatureTempTables.In(c.protocolVersion) {
 		v, err := c.reader.Str()
 		if err != nil {
 			return errors.Wrap(err, "temp table")
@@ -173,7 +173,7 @@ func (c *Client) decodeBlock(
 		c.reader.EnableCompression()
 		defer c.reader.DisableCompression()
 	}
-	if err := block.DecodeBlock(c.reader, c.info.ProtocolVersion, result); err != nil {
+	if err := block.DecodeBlock(c.reader, c.protocolVersion, result); err != nil {
 		return errors.Wrap(err, "decode block")
 	}
 	if ce := c.lg.Check(zap.DebugLevel, "Block"); ce != nil {
@@ -202,7 +202,7 @@ func (c *Client) encodeBlock(tableName string, input []proto.InputColumn) error 
 		// https://clickhouse.com/docs/en/engines/table-engines/special/external-data/
 		TableName: tableName,
 	}
-	clientData.EncodeAware(c.buf, c.info.ProtocolVersion)
+	clientData.EncodeAware(c.buf, c.protocolVersion)
 
 	// Saving offset of compressible data.
 	start := len(c.buf.Buf)
@@ -216,7 +216,7 @@ func (c *Client) encodeBlock(tableName string, input []proto.InputColumn) error 
 			BucketNum: -1,
 		}
 	}
-	if err := b.EncodeBlock(c.buf, c.info.ProtocolVersion, input); err != nil {
+	if err := b.EncodeBlock(c.buf, c.protocolVersion, input); err != nil {
 		return errors.Wrap(err, "encode")
 	}
 

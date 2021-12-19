@@ -54,6 +54,11 @@ func (c *Client) handshake(ctx context.Context) error {
 			return errors.Wrap(err, "decode server info")
 		}
 
+		if c.protocolVersion > c.server.Revision {
+			// Downgrade to server version.
+			c.protocolVersion = c.server.Revision
+		}
+
 		return nil
 	})
 

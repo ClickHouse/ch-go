@@ -12,6 +12,7 @@ func TestColAuto_Infer(t *testing.T) {
 		ColumnTypeString,
 		ColumnTypeDateTime,
 		ColumnTypeInt8,
+		ColumnTypeUInt8,
 		ColumnTypeUInt32,
 		ColumnTypeUInt64,
 	} {

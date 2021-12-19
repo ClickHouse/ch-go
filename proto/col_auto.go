@@ -21,6 +21,8 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		c.Data = new(ColDateTime)
 	case ColumnTypeInt8:
 		c.Data = new(ColInt8)
+	case ColumnTypeUInt8:
+		c.Data = new(ColUInt8)
 	case ColumnTypeUInt32:
 		c.Data = new(ColUInt32)
 	case ColumnTypeUInt64:

@@ -632,3 +632,28 @@ func TestClient_ExternalData(t *testing.T) {
 		require.Equal(t, 3, data.Rows())
 	})
 }
+
+func TestClient_ServerProfile(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := Conn(t)
+	if !conn.serverInfo().Has(proto.FeatureProfileEvents) {
+		t.Skip("Profile events not supported")
+	}
+	var profiles int
+	selectStr := Query{
+		Body: "SELECT 1",
+		OnProfile: func(ctx context.Context, p proto.Profile) error {
+			profiles++
+			return nil
+		},
+		Result: []proto.ResultColumn{
+			proto.AutoResult("1"),
+		},
+	}
+	require.NoError(t, conn.Query(ctx, selectStr))
+	t.Logf("%d profile(s)", profiles)
+	if profiles == 0 {
+		t.Fatal("No profiles")
+	}
+}
