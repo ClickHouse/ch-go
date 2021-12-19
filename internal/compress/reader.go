@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-faster/city"
 	"github.com/go-faster/errors"
+	"github.com/klauspost/compress/zstd"
 	"github.com/pierrec/lz4/v4"
 )
 
@@ -16,6 +17,7 @@ type Reader struct {
 	pos    int64
 	raw    []byte
 	header []byte
+	zstd   *zstd.Decoder
 }
 
 func formatU128(v city.U128) string {
@@ -71,6 +73,19 @@ func (r *Reader) readBlock() error {
 				n, dataSize,
 			)
 		}
+	case ZSTD:
+		data, err := r.zstd.DecodeAll(r.raw[headerSize:], r.data[:0])
+		if err != nil {
+			return errors.Wrap(err, "uncompress")
+		}
+		if len(data) != dataSize {
+			return errors.Errorf("unexpected uncompressed data size: %d (actual) != %d (got in header)",
+				len(data), dataSize,
+			)
+		}
+		r.data = data
+	case None:
+		copy(r.data, r.raw[headerSize:])
 	default:
 		return errors.Errorf("compression 0x%02x not implemented", m)
 	}
@@ -92,8 +107,13 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 
 // NewReader returns new *Reader from r.
 func NewReader(r io.Reader) *Reader {
+	zstdReader, err := zstd.NewReader(nil)
+	if err != nil {
+		panic(err)
+	}
 	return &Reader{
 		reader: r,
+		zstd:   zstdReader,
 		header: make([]byte, headerSize),
 	}
 }

@@ -3,6 +3,7 @@ package compress
 import (
 	"github.com/go-faster/city"
 	"github.com/go-faster/errors"
+	"github.com/klauspost/compress/zstd"
 	"github.com/pierrec/lz4/v4"
 )
 
@@ -10,11 +11,12 @@ import (
 type Writer struct {
 	Data []byte
 
-	c *lz4.Compressor
+	lz4  *lz4.Compressor
+	zstd *zstd.Encoder
 }
 
 // Compress buf into Data.
-func (w *Writer) Compress(buf []byte) error {
+func (w *Writer) Compress(m Method, buf []byte) error {
 	if len(buf) > maxBlockSize {
 		return errors.Errorf("buf size %d > %d (multiple block encoding not implemented)", len(buf), maxBlockSize)
 	}
@@ -22,11 +24,22 @@ func (w *Writer) Compress(buf []byte) error {
 	maxSize := lz4.CompressBlockBound(len(buf))
 	w.Data = append(w.Data[:0], make([]byte, maxSize+headerSize)...)
 	_ = w.Data[:headerSize]
-	w.Data[hMethod] = byte(LZ4)
+	w.Data[hMethod] = byte(m)
 
-	n, err := w.c.CompressBlock(buf, w.Data[headerSize:])
-	if err != nil {
-		return errors.Wrap(err, "block")
+	var n int
+
+	switch m {
+	case LZ4:
+		compressedSize, err := w.lz4.CompressBlock(buf, w.Data[headerSize:])
+		if err != nil {
+			return errors.Wrap(err, "block")
+		}
+		n = compressedSize
+	case ZSTD:
+		w.Data = w.zstd.EncodeAll(buf, w.Data[:headerSize])
+		n = len(w.Data) - headerSize
+	case None:
+		n = copy(w.Data[headerSize:], buf)
 	}
 
 	w.Data = w.Data[:n+headerSize]
@@ -42,6 +55,7 @@ func (w *Writer) Compress(buf []byte) error {
 
 func NewWriter() *Writer {
 	return &Writer{
-		c: &lz4.Compressor{},
+		lz4:  &lz4.Compressor{},
+		zstd: &zstd.Encoder{},
 	}
 }

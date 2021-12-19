@@ -17,7 +17,7 @@ func FuzzWriter_Compress(f *testing.F) {
 	f.Add([]byte{1, 2, 3, 4, 5})
 	f.Fuzz(func(t *testing.T, data []byte) {
 		w := NewWriter()
-		require.NoError(t, w.Compress(data))
+		require.NoError(t, w.Compress(LZ4, data))
 
 		r := NewReader(bytes.NewReader(w.Data))
 		out := make([]byte, len(data))
@@ -34,7 +34,7 @@ func FuzzReader_Read(f *testing.F) {
 		{1, 2, 3, 4, 5},
 	} {
 		w := NewWriter()
-		require.NoError(f, w.Compress(data))
+		require.NoError(f, w.Compress(LZ4, data))
 		f.Add(w.Data)
 	}
 

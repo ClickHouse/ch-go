@@ -526,28 +526,67 @@ func TestClient_Query(t *testing.T) {
 func TestClientCompression(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	conn := func(t *testing.T) *Client {
-		return ConnOpt(t, Options{
-			Compression: CompressionLZ4,
-		})
-	}
-	t.Run("SelectStr", func(t *testing.T) {
-		t.Parallel()
-		// Select single string row.
-		var data proto.ColStr
-		selectStr := Query{
-			Body: "SELECT 'foo' AS s",
-			Result: []proto.ResultColumn{
-				{
-					Name: "s",
-					Data: &data,
-				},
-			},
+
+	testCompression := func(c Compression) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+			conn := func(t *testing.T) *Client {
+				return ConnOpt(t, Options{
+					Compression: c,
+				})
+			}
+			t.Run("SelectStr", func(t *testing.T) {
+				t.Parallel()
+				// Select single string row.
+				var data proto.ColStr
+				selectStr := Query{
+					Body: "SELECT 'foo' AS s",
+					Result: []proto.ResultColumn{
+						{
+							Name: "s",
+							Data: &data,
+						},
+					},
+				}
+				require.NoError(t, conn(t).Query(ctx, selectStr))
+				require.Equal(t, 1, data.Rows())
+				require.Equal(t, "foo", data.First())
+			})
+			t.Run("Insert", func(t *testing.T) {
+				// Create table, no data fetch.
+				t.Parallel()
+				client := conn(t)
+				createTable := Query{
+					Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
+				}
+				require.NoError(t, client.Query(ctx, createTable), "create table")
+
+				data := proto.ColUInt8{1, 2, 3, 4}
+				insertQuery := Query{
+					Body: "INSERT INTO test_table VALUES",
+					Input: []proto.InputColumn{
+						{Name: "id", Data: &data},
+					},
+				}
+				require.NoError(t, client.Query(ctx, insertQuery), "insert")
+
+				var gotData proto.ColUInt8
+				selectData := Query{
+					Body: "SELECT * FROM test_table",
+					Result: []proto.ResultColumn{
+						{Name: "id", Data: &gotData},
+					},
+				}
+				require.NoError(t, client.Query(ctx, selectData), "select")
+				require.Len(t, data, 4)
+				require.Equal(t, data, gotData)
+			})
 		}
-		require.NoError(t, conn(t).Query(ctx, selectStr))
-		require.Equal(t, 1, data.Rows())
-		require.Equal(t, "foo", data.First())
-	})
+	}
+	t.Run("LZ4", testCompression(CompressionLZ4))
+	t.Run("ZSTD", testCompression(CompressionZSTD))
+	t.Run("None", testCompression(CompressionNone))
+	t.Run("Disabled", testCompression(CompressionDisabled))
 }
 
 func TestClient_ServerLog(t *testing.T) {

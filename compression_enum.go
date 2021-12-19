@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _CompressionName = "DISABLEDLZ4"
+const _CompressionName = "DISABLEDLZ4ZSTDNONE"
 
-var _CompressionIndex = [...]uint8{0, 8, 11}
+var _CompressionIndex = [...]uint8{0, 8, 11, 15, 19}
 
-const _CompressionLowerName = "disabledlz4"
+const _CompressionLowerName = "disabledlz4zstdnone"
 
 func (i Compression) String() string {
 	if i >= Compression(len(_CompressionIndex)-1) {
@@ -26,20 +26,28 @@ func _CompressionNoOp() {
 	var x [1]struct{}
 	_ = x[CompressionDisabled-(0)]
 	_ = x[CompressionLZ4-(1)]
+	_ = x[CompressionZSTD-(2)]
+	_ = x[CompressionNone-(3)]
 }
 
-var _CompressionValues = []Compression{CompressionDisabled, CompressionLZ4}
+var _CompressionValues = []Compression{CompressionDisabled, CompressionLZ4, CompressionZSTD, CompressionNone}
 
 var _CompressionNameToValueMap = map[string]Compression{
-	_CompressionName[0:8]:       CompressionDisabled,
-	_CompressionLowerName[0:8]:  CompressionDisabled,
-	_CompressionName[8:11]:      CompressionLZ4,
-	_CompressionLowerName[8:11]: CompressionLZ4,
+	_CompressionName[0:8]:        CompressionDisabled,
+	_CompressionLowerName[0:8]:   CompressionDisabled,
+	_CompressionName[8:11]:       CompressionLZ4,
+	_CompressionLowerName[8:11]:  CompressionLZ4,
+	_CompressionName[11:15]:      CompressionZSTD,
+	_CompressionLowerName[11:15]: CompressionZSTD,
+	_CompressionName[15:19]:      CompressionNone,
+	_CompressionLowerName[15:19]: CompressionNone,
 }
 
 var _CompressionNames = []string{
 	_CompressionName[0:8],
 	_CompressionName[8:11],
+	_CompressionName[11:15],
+	_CompressionName[15:19],
 }
 
 // CompressionString retrieves an enum value from the enum constants string name.

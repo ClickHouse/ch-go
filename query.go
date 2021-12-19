@@ -226,7 +226,7 @@ func (c *Client) encodeBlock(tableName string, input []proto.InputColumn) error 
 	// See "Compressible" method of server or client code for reference.
 	if c.compression == proto.CompressionEnabled {
 		data := c.buf.Buf[start:]
-		if err := c.compressor.Compress(data); err != nil {
+		if err := c.compressor.Compress(c.compressionMethod, data); err != nil {
 			return errors.Wrap(err, "compress")
 		}
 		c.buf.Buf = append(c.buf.Buf[:start], c.compressor.Data...)

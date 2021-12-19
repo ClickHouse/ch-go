@@ -255,6 +255,10 @@ const (
 	CompressionDisabled Compression = iota
 	// CompressionLZ4 enables LZ4 compression for data. Medium CPU overhead.
 	CompressionLZ4
+	// CompressionZSTD enables ZStandard compression. High CPU overhead.
+	CompressionZSTD
+	// CompressionNone uses no compression but data has checksums.
+	CompressionNone
 )
 
 // Options for Client.
@@ -310,6 +314,12 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	case CompressionLZ4:
 		c.compression = proto.CompressionEnabled
 		c.compressionMethod = compress.LZ4
+	case CompressionZSTD:
+		c.compression = proto.CompressionEnabled
+		c.compressionMethod = compress.ZSTD
+	case CompressionNone:
+		c.compression = proto.CompressionEnabled
+		c.compressionMethod = compress.None
 	default:
 		c.compression = proto.CompressionDisabled
 	}

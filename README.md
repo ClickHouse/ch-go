@@ -63,7 +63,7 @@ func main() {
   * Query progress
   * Profiling
   * Logs
-* LZ4 compression
+* LZ4, ZSTD or *None* (just checksums) compression
 * [External data](https://clickhouse.com/docs/en/engines/table-engines/special/external-data/) support
 * Rigorously tested
   * **ARM**64, Windows, Mac, Linux (also x86)
@@ -113,7 +113,6 @@ func main() {
   - [ ] Code generator for SELECT/INSERT
   - [ ] Query builder
 - [ ] DSL for DDL
-- [ ] ZSTD Compression
 
 ## Reference
 
