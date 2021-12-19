@@ -64,6 +64,7 @@ func main() {
 * Rigorously tested
   * **ARM**64, Windows, Mac, Linux (also x86)
   * Unit tests for encoding and decoding
+    * ClickHouse **Server** in **Go** for faster tests
     * Golden files for all packets, columns
     * Both server and client structures
     * Ensuring that partial read leads to failure
@@ -94,7 +95,6 @@ func main() {
 
 ## TODO
 - [ ] External tables
-- [ ] Server in Go for tests
 - [ ] Pooling
 - [ ] API UX Improvements (with 1.18 generics?)
     - [ ] Enum
