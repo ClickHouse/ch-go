@@ -93,7 +93,6 @@ func main() {
 * Nullable(T)
 
 ## TODO
-- [ ] Read packets from server while sending input
 - [ ] External tables
 - [ ] Server in Go for tests
 - [ ] Pooling

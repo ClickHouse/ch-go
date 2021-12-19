@@ -3,17 +3,26 @@ package ch
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/go-faster/ch/proto"
 )
 
-// cancelQuery cancels query.
-func (c *Client) cancelQuery(ctx context.Context) error {
+// cancelQuery cancels current query.
+func (c *Client) cancelQuery() error {
+	c.lg.Warn("Cancelling query")
+
+	const cancelDeadline = time.Second * 1
+	ctx, cancel := context.WithTimeout(context.Background(), cancelDeadline)
+	defer cancel()
+
 	proto.ClientCodeCancel.Encode(c.buf)
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
@@ -248,88 +257,117 @@ func (c *Client) resultHandler(q Query) func(ctx context.Context, b proto.Block)
 	}
 }
 
+func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) error {
+	switch p {
+	case proto.ServerCodeException:
+		e, err := c.exception()
+		if err != nil {
+			return errors.Wrap(err, "decode exception")
+		}
+		return e
+	case proto.ServerCodeProgress:
+		p, err := c.progress()
+		if err != nil {
+			return errors.Wrap(err, "progress")
+		}
+		if ce := c.lg.Check(zap.DebugLevel, "Progress"); ce != nil {
+			ce.Write(
+				zap.Uint64("rows", p.Rows),
+				zap.Uint64("total_rows", p.TotalRows),
+				zap.Uint64("bytes", p.Bytes),
+				zap.Uint64("wrote_bytes", p.WroteBytes),
+				zap.Uint64("wrote_rows", p.WroteRows),
+			)
+		}
+		if f := q.OnProgress; f != nil {
+			if err := f(ctx, p); err != nil {
+				return errors.Wrap(err, "progress")
+			}
+		}
+	case proto.ServerCodeProfile:
+		p, err := c.profile()
+		if err != nil {
+			return errors.Wrap(err, "profile")
+		}
+		if ce := c.lg.Check(zap.DebugLevel, "Profile"); ce != nil {
+			ce.Write(
+				zap.Uint64("rows", p.Rows),
+				zap.Uint64("bytes", p.Bytes),
+				zap.Uint64("blocks", p.Blocks),
+			)
+		}
+		if f := q.OnProfile; f != nil {
+			if err := f(ctx, p); err != nil {
+				return errors.Wrap(err, "profile")
+			}
+		}
+	case proto.ServerCodeTableColumns:
+		// Ignoring for now.
+		var info proto.TableColumns
+		if err := c.decode(&info); err != nil {
+			return errors.Wrap(err, "table columns")
+		}
+	default:
+		return errors.Errorf("unexpected packet %q", p)
+	}
+
+	return nil
+}
+
 // Query performs Query on ClickHouse server.
 func (c *Client) Query(ctx context.Context, q Query) error {
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
 	}
-	if err := c.sendQuery(ctx, q.Body, q.QueryID); err != nil {
-		return errors.Wrap(err, "send query")
-	}
-	if err := c.sendInput(ctx, q); err != nil {
-		return errors.Wrap(err, "send input")
-	}
-	if err := c.flush(ctx); err != nil {
-		return errors.Wrap(err, "flush")
-	}
-	onResult := c.resultHandler(q)
-	for {
+	g, ctx := errgroup.WithContext(ctx)
+	done := make(chan struct{})
+	g.Go(func() error {
+		// Sending data.
+		if err := c.sendQuery(ctx, q.Body, q.QueryID); err != nil {
+			return errors.Wrap(err, "send query")
+		}
+		if err := c.sendInput(ctx, q); err != nil {
+			return errors.Wrap(err, "send input")
+		}
+		if err := c.flush(ctx); err != nil {
+			return errors.Wrap(err, "flush")
+		}
+		return nil
+	})
+	g.Go(func() error {
+		// Receiving query result, data and telemetry.
+		defer close(done)
+		onResult := c.resultHandler(q)
+		for {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			code, err := c.packet(ctx)
+			if err != nil {
+				return errors.Wrap(err, "packet")
+			}
+			switch code {
+			case proto.ServerCodeData:
+				if err := c.decodeBlock(ctx, onResult, q.Result); err != nil {
+					return errors.Wrap(err, "decode block")
+				}
+			case proto.ServerCodeEndOfStream:
+				return nil
+			default:
+				if err := c.handlePacket(ctx, code, q); err != nil {
+					return errors.Wrap(err, "handle packet")
+				}
+			}
+		}
+	})
+	g.Go(func() error {
+		// Handling query cancellation.
+		<-done
 		if ctx.Err() != nil {
-			_ = c.cancelQuery(context.Background())
-			return errors.Wrap(ctx.Err(), "canceled")
+			err := multierr.Append(ctx.Err(), c.cancelQuery())
+			return errors.Wrap(err, "canceled")
 		}
-		code, err := c.packet(ctx)
-		if err != nil {
-			return errors.Wrap(err, "packet")
-		}
-
-		switch code {
-		case proto.ServerCodeData:
-			if err := c.decodeBlock(ctx, onResult, q.Result); err != nil {
-				return errors.Wrap(err, "decode block")
-			}
-		case proto.ServerCodeException:
-			e, err := c.exception()
-			if err != nil {
-				return errors.Wrap(err, "decode exception")
-			}
-			return e
-		case proto.ServerCodeProgress:
-			p, err := c.progress()
-			if err != nil {
-				return errors.Wrap(err, "progress")
-			}
-			if ce := c.lg.Check(zap.DebugLevel, "Progress"); ce != nil {
-				ce.Write(
-					zap.Uint64("rows", p.Rows),
-					zap.Uint64("total_rows", p.TotalRows),
-					zap.Uint64("bytes", p.Bytes),
-					zap.Uint64("wrote_bytes", p.WroteBytes),
-					zap.Uint64("wrote_rows", p.WroteRows),
-				)
-			}
-			if f := q.OnProgress; f != nil {
-				if err := f(ctx, p); err != nil {
-					return errors.Wrap(err, "progress")
-				}
-			}
-		case proto.ServerCodeProfile:
-			p, err := c.profile()
-			if err != nil {
-				return errors.Wrap(err, "profile")
-			}
-			if ce := c.lg.Check(zap.DebugLevel, "Profile"); ce != nil {
-				ce.Write(
-					zap.Uint64("rows", p.Rows),
-					zap.Uint64("bytes", p.Bytes),
-					zap.Uint64("blocks", p.Blocks),
-				)
-			}
-			if f := q.OnProfile; f != nil {
-				if err := f(ctx, p); err != nil {
-					return errors.Wrap(err, "profile")
-				}
-			}
-		case proto.ServerCodeTableColumns:
-			// Ignoring for now.
-			var info proto.TableColumns
-			if err := c.decode(&info); err != nil {
-				return errors.Wrap(err, "table columns")
-			}
-		case proto.ServerCodeEndOfStream:
-			return nil
-		default:
-			return errors.Errorf("unexpected code %s", code)
-		}
-	}
+		return nil
+	})
+	return g.Wait()
 }
