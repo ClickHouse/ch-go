@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-faster/city"
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-faster/ch/internal/gold"
@@ -53,12 +54,23 @@ func TestCompress(t *testing.T) {
 			})
 			t.Run("CheckHash", func(t *testing.T) {
 				// Corrupt bytes of data or checksum.
+				var ref city.U128
 				for i := 0; i < len(w.Data); i++ {
 					b := append([]byte{}, w.Data...) // clone
 					b[i]++
 					r := NewReader(bytes.NewReader(b))
 					_, err := io.ReadFull(r, out)
 					require.Error(t, err)
+					if i > headerSize {
+						var badData *CorruptedDataErr
+						require.ErrorAs(t, err, &badData)
+						if ref.High == 0 && ref.Low == 0 {
+							// Pick first reference.
+							ref = badData.Reference
+						}
+						require.Equal(t, FormatU128(ref), FormatU128(badData.Reference))
+						require.Equal(t, ref, badData.Reference)
+					}
 				}
 			})
 		})

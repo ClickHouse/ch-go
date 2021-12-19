@@ -2,10 +2,12 @@ package ch
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"time"
 
+	"github.com/go-faster/city"
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
@@ -14,6 +16,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/go-faster/ch/internal/compress"
 	"github.com/go-faster/ch/proto"
 )
 
@@ -154,6 +157,20 @@ type Query struct {
 	ExternalTable string
 }
 
+// CorruptedDataErr means that provided hash mismatch with calculated.
+type CorruptedDataErr struct {
+	Actual    city.U128
+	Reference city.U128
+	RawSize   int
+	DataSize  int
+}
+
+func (c *CorruptedDataErr) Error() string {
+	return fmt.Sprintf("corrupted data: %s (actual), %s (reference), compressed size: %d, data size: %d",
+		compress.FormatU128(c.Actual), compress.FormatU128(c.Reference), c.RawSize, c.DataSize,
+	)
+}
+
 func (c *Client) decodeBlock(
 	ctx context.Context,
 	handler func(ctx context.Context, b proto.Block) error,
@@ -174,6 +191,12 @@ func (c *Client) decodeBlock(
 		defer c.reader.DisableCompression()
 	}
 	if err := block.DecodeBlock(c.reader, c.protocolVersion, result); err != nil {
+		var badData *compress.CorruptedDataErr
+		if errors.As(err, &badData) {
+			// Returning wrapped exported error to allow user matching.
+			exportedErr := CorruptedDataErr(*badData)
+			return errors.Wrap(&exportedErr, "bad block")
+		}
 		return errors.Wrap(err, "decode block")
 	}
 	if ce := c.lg.Check(zap.DebugLevel, "Block"); ce != nil {

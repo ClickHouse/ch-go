@@ -1,7 +1,12 @@
 // Package compress implements compression support.
 package compress
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"fmt"
+
+	"github.com/go-faster/city"
+)
 
 //go:generate go run github.com/dmarkham/enumer -transform snake_upper -type Method -output method_enum.go
 
@@ -30,3 +35,17 @@ const (
 )
 
 var bin = binary.LittleEndian
+
+// CorruptedDataErr means that provided hash mismatch with calculated.
+type CorruptedDataErr struct {
+	Actual    city.U128
+	Reference city.U128
+	RawSize   int
+	DataSize  int
+}
+
+func (c *CorruptedDataErr) Error() string {
+	return fmt.Sprintf("corrupted data: %s (actual), %s (reference), compressed size: %d, data size: %d",
+		FormatU128(c.Actual), FormatU128(c.Reference), c.RawSize, c.DataSize,
+	)
+}

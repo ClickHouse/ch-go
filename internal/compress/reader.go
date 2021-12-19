@@ -20,8 +20,12 @@ type Reader struct {
 	zstd   *zstd.Decoder
 }
 
-func formatU128(v city.U128) string {
-	return fmt.Sprintf("0x%x%x", v.Low, v.High)
+// FormatU128 formats city.U128 as hex.
+func FormatU128(v city.U128) string {
+	var buf [16]byte
+	bin.PutUint64(buf[:8], v.Low)
+	bin.PutUint64(buf[8:], v.High)
+	return fmt.Sprintf("%x", buf)
 }
 
 // readBlock reads next compressed data into raw and decompresses into data.
@@ -58,9 +62,12 @@ func (r *Reader) readBlock() error {
 	}
 	h := city.CH128(r.raw[hMethod:])
 	if hGot != h {
-		return errors.Errorf("data corrupted: hash mismatch: %v (actual) != %v (got in header)",
-			formatU128(h), formatU128(hGot),
-		)
+		return errors.Wrap(&CorruptedDataErr{
+			Actual:    h,
+			Reference: hGot,
+			RawSize:   rawSize,
+			DataSize:  dataSize,
+		}, "mismatch")
 	}
 	switch m := Method(r.header[hMethod]); m {
 	case LZ4:
