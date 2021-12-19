@@ -94,7 +94,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 	// Encoding external data if provided.
 	if len(q.ExternalData) > 0 {
 		if q.ExternalTable == "" {
-			// Resembling behaviour of clickhouse-client.
+			// Resembling behavior of clickhouse-client.
 			q.ExternalTable = "_data"
 		}
 		if err := c.encodeBlock(q.ExternalTable, q.ExternalData); err != nil {
