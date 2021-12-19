@@ -533,6 +533,13 @@ func TestClientCompression(t *testing.T) {
 			conn := func(t *testing.T) *Client {
 				return ConnOpt(t, Options{
 					Compression: c,
+					Settings: []Setting{
+						{
+							Important: true,
+							Key:       "network_compression_method",
+							Value:     c.String(),
+						},
+					},
 				})
 			}
 			t.Run("SelectStr", func(t *testing.T) {
