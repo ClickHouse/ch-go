@@ -125,12 +125,13 @@ func (q Query) EncodeAware(b *Buffer, version int) {
 	if FeatureClientWriteInfo.In(version) {
 		q.Info.EncodeAware(b, version)
 	}
+
 	if FeatureSettingsSerializedAsStrings.In(version) {
 		for _, s := range q.Settings {
 			s.Encode(b)
 		}
 	}
-	b.PutString("")
+	b.PutString("") // end of settings
 
 	if FeatureInterServerSecret.In(version) {
 		b.PutString(q.Secret)

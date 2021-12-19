@@ -64,6 +64,7 @@ func main() {
   * Profiling
   * Logs
 * LZ4 compression
+* [External data](https://clickhouse.com/docs/en/engines/table-engines/special/external-data/) support
 * Rigorously tested
   * **ARM**64, Windows, Mac, Linux (also x86)
   * Unit tests for encoding and decoding
@@ -97,7 +98,6 @@ func main() {
 * Nullable(T)
 
 ## TODO
-- [ ] External tables
 - [ ] Pooling
 - [ ] API UX Improvements (with 1.18 generics?)
     - [ ] Enum

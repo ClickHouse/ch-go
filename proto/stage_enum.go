@@ -7,16 +7,15 @@ import (
 	"strings"
 )
 
-const _StageName = "Complete"
+const _StageName = "FetchColumnsWithMergeableStateComplete"
 
-var _StageIndex = [...]uint8{0, 8}
+var _StageIndex = [...]uint8{0, 12, 30, 38}
 
-const _StageLowerName = "complete"
+const _StageLowerName = "fetchcolumnswithmergeablestatecomplete"
 
 func (i Stage) String() string {
-	i -= 2
 	if i >= Stage(len(_StageIndex)-1) {
-		return fmt.Sprintf("Stage(%d)", i+2)
+		return fmt.Sprintf("Stage(%d)", i)
 	}
 	return _StageName[_StageIndex[i]:_StageIndex[i+1]]
 }
@@ -25,18 +24,26 @@ func (i Stage) String() string {
 // Re-run the stringer command to generate them again.
 func _StageNoOp() {
 	var x [1]struct{}
+	_ = x[StageFetchColumns-(0)]
+	_ = x[StageWithMergeableState-(1)]
 	_ = x[StageComplete-(2)]
 }
 
-var _StageValues = []Stage{StageComplete}
+var _StageValues = []Stage{StageFetchColumns, StageWithMergeableState, StageComplete}
 
 var _StageNameToValueMap = map[string]Stage{
-	_StageName[0:8]:      StageComplete,
-	_StageLowerName[0:8]: StageComplete,
+	_StageName[0:12]:       StageFetchColumns,
+	_StageLowerName[0:12]:  StageFetchColumns,
+	_StageName[12:30]:      StageWithMergeableState,
+	_StageLowerName[12:30]: StageWithMergeableState,
+	_StageName[30:38]:      StageComplete,
+	_StageLowerName[30:38]: StageComplete,
 }
 
 var _StageNames = []string{
-	_StageName[0:8],
+	_StageName[0:12],
+	_StageName[12:30],
+	_StageName[30:38],
 }
 
 // StageString retrieves an enum value from the enum constants string name.

@@ -3,11 +3,13 @@ package ch
 import (
 	"context"
 	"io"
+	"net"
 	"time"
 
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/atomic"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -35,9 +37,16 @@ func (c *Client) cancelQuery() error {
 	return nil
 }
 
-func (c *Client) querySettings() []proto.Setting {
+func (c *Client) querySettings(q Query) []proto.Setting {
 	var result []proto.Setting
 	for _, s := range c.settings {
+		result = append(result, proto.Setting{
+			Key:       s.Key,
+			Value:     s.Value,
+			Important: s.Important,
+		})
+	}
+	for _, s := range q.Settings {
 		result = append(result, proto.Setting{
 			Key:       s.Key,
 			Value:     s.Value,
@@ -48,20 +57,20 @@ func (c *Client) querySettings() []proto.Setting {
 }
 
 // sendQuery starts query.
-func (c *Client) sendQuery(ctx context.Context, query, queryID string) error {
+func (c *Client) sendQuery(ctx context.Context, q Query) error {
 	if ce := c.lg.Check(zap.DebugLevel, "sendQuery"); ce != nil {
 		ce.Write(
-			zap.String("query", query),
-			zap.String("query_id", queryID),
+			zap.String("query", q.Body),
+			zap.String("query_id", q.QueryID),
 		)
 	}
 	c.encode(proto.Query{
-		ID:          queryID,
-		Body:        query,
+		ID:          q.QueryID,
+		Body:        q.Body,
 		Secret:      "",
 		Stage:       proto.StageComplete,
 		Compression: c.compression,
-		Settings:    c.querySettings(),
+		Settings:    c.querySettings(q),
 		Info: proto.ClientInfo{
 			ProtocolVersion: c.info.ProtocolVersion,
 			Major:           c.info.Major,
@@ -71,20 +80,20 @@ func (c *Client) sendQuery(ctx context.Context, query, queryID string) error {
 			Query:           proto.ClientQueryInitial,
 
 			InitialUser:    "",
-			InitialQueryID: "",
+			InitialQueryID: q.QueryID,
 			InitialAddress: c.conn.LocalAddr().String(),
 			OSUser:         "",
 			ClientHostname: "",
 			ClientName:     c.info.Name,
 
 			Span:     trace.SpanContextFromContext(ctx),
-			QuotaKey: "",
+			QuotaKey: q.QuotaKey,
 		},
 	})
 
-	// Encoding that there are no external tables.
-	if err := c.encodeBlankBlock(); err != nil {
-		return errors.Wrap(err, "external tables end")
+	// Encoding external data if provided.
+	if err := c.encodeBlock(q.ExternalTable, q.ExternalData); err != nil {
+		return errors.Wrap(err, "external data")
 	}
 
 	return nil
@@ -96,6 +105,8 @@ type Query struct {
 	Body string
 	// QueryID is ID of query, defaults to new UUIDv4.
 	QueryID string
+	// QuotaKey of query, optional.
+	QuotaKey string
 
 	// Input columns for INSERT operations.
 	Input []proto.InputColumn
@@ -122,6 +133,16 @@ type Query struct {
 	OnProfile func(ctx context.Context, p proto.Profile) error
 	// OnLog is optional handler for server log entry.
 	OnLog func(ctx context.Context, l Log) error
+
+	// Settings are optional query-scoped settings. Can override client settings.
+	Settings []Setting
+
+	// ExternalData is optional data for server to load.
+	//
+	// https://clickhouse.com/docs/en/engines/table-engines/special/external-data/
+	ExternalData []proto.InputColumn
+	// ExternalTable name. Defaults to _data.
+	ExternalTable string
 }
 
 func (c *Client) decodeBlock(
@@ -165,9 +186,14 @@ func (c *Client) decodeBlock(
 //
 // If input length is zero, blank block will be encoded, which is special case
 // for "end of data".
-func (c *Client) encodeBlock(input []proto.InputColumn) error {
+func (c *Client) encodeBlock(tableName string, input []proto.InputColumn) error {
 	proto.ClientCodeData.Encode(c.buf)
-	proto.ClientData{}.EncodeAware(c.buf, c.info.ProtocolVersion)
+	clientData := proto.ClientData{
+		// External data table name.
+		// https://clickhouse.com/docs/en/engines/table-engines/special/external-data/
+		TableName: tableName,
+	}
+	clientData.EncodeAware(c.buf, c.info.ProtocolVersion)
 
 	// Saving offset of compressible data.
 	start := len(c.buf.Buf)
@@ -203,7 +229,7 @@ func (c *Client) encodeBlock(input []proto.InputColumn) error {
 // encodeBlankBlock encodes block with zero columns and rows which is special
 // case for "end of data".
 func (c *Client) encodeBlankBlock() error {
-	return c.encodeBlock(nil)
+	return c.encodeBlock("", nil)
 }
 
 func (c *Client) sendInput(ctx context.Context, q Query) error {
@@ -228,7 +254,7 @@ func (c *Client) sendInput(ctx context.Context, q Query) error {
 		if err := ctx.Err(); err != nil {
 			return errors.Wrap(err, "context")
 		}
-		if err := c.encodeBlock(q.Input); err != nil {
+		if err := c.encodeBlock("", q.Input); err != nil {
 			return errors.Wrap(err, "write block")
 		}
 		if f == nil {
@@ -406,9 +432,10 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 	}
 	g, ctx := errgroup.WithContext(ctx)
 	done := make(chan struct{})
+	var gotException atomic.Bool
 	g.Go(func() error {
 		// Sending data.
-		if err := c.sendQuery(ctx, q.Body, q.QueryID); err != nil {
+		if err := c.sendQuery(ctx, q); err != nil {
 			return errors.Wrap(err, "send query")
 		}
 		if err := c.sendInput(ctx, q); err != nil {
@@ -429,6 +456,10 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 			}
 			code, err := c.packet(ctx)
 			if err != nil {
+				var opErr *net.OpError
+				if errors.As(err, &opErr) && opErr.Timeout() {
+					continue
+				}
 				return errors.Wrap(err, "packet")
 			}
 			switch code {
@@ -440,15 +471,19 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 				return nil
 			default:
 				if err := c.handlePacket(ctx, code, q); err != nil {
+					if IsException(err) {
+						// Prevent query cancellation on exception.
+						gotException.Store(true)
+					}
 					return errors.Wrap(err, "handle packet")
 				}
 			}
 		}
 	})
 	g.Go(func() error {
-		// Handling query cancellation.
 		<-done
-		if ctx.Err() != nil {
+		// Handling query cancellation if needed.
+		if ctx.Err() != nil && !gotException.Load() {
 			err := multierr.Append(ctx.Err(), c.cancelQuery())
 			return errors.Wrap(err, "canceled")
 		}
