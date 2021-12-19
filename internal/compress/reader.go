@@ -74,6 +74,15 @@ func (r *Reader) readBlock() error {
 			)
 		}
 	case ZSTD:
+		if r.zstd == nil {
+			// Lazily initializing to prevent spawning goroutines in NewReader.
+			// See https://github.com/golang/go/issues/47056#issuecomment-997436820
+			zstdReader, err := zstd.NewReader(nil, zstd.WithDecoderConcurrency(1))
+			if err != nil {
+				return errors.Wrap(err, "zstd")
+			}
+			r.zstd = zstdReader
+		}
 		data, err := r.zstd.DecodeAll(r.raw[headerSize:], r.data[:0])
 		if err != nil {
 			return errors.Wrap(err, "uncompress")
@@ -107,13 +116,9 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 
 // NewReader returns new *Reader from r.
 func NewReader(r io.Reader) *Reader {
-	zstdReader, err := zstd.NewReader(nil)
-	if err != nil {
-		panic(err)
-	}
 	return &Reader{
+		zstd:   nil, // lazily initialized
 		reader: r,
-		zstd:   zstdReader,
 		header: make([]byte, headerSize),
 	}
 }
