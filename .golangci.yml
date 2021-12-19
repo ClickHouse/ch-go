@@ -109,7 +109,7 @@ issues:
 
     # Ignore shadowing of err.
     - linters: [ govet ]
-      text: 'declaration of "(err|ctx|log|c)"'
+      text: 'declaration of "(err|ctx|log|lg|c)"'
 
     # Ignore linters in main packages.
     - path: main\.go

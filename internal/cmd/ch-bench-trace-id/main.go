@@ -74,7 +74,6 @@ func run(ctx context.Context) error {
 			return &d
 		},
 	} {
-
 		if err := c.Query(ctx, ch.Query{
 			Body: "DROP TABLE bench_trace_id",
 		}); err != nil && !ch.IsErr(err, proto.ErrUnknownTable) {
