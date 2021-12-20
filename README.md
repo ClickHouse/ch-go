@@ -56,7 +56,7 @@ func main() {
 * No reflection or `interface{}`
 * **Column**-first design
   * [Dramatically more efficient](https://github.com/go-faster/ch-bench)
-  * Up to 40x faster than row-first design around `sql`
+  * Up to 50x faster than row-first design around `sql`
   * Up to 500x faster than HTTP API
   * Low memory overhead (column blocks are slices, i.e. continuous memory)
   * Highly efficient input and output streaming
