@@ -1,6 +1,8 @@
 # ch [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/go-faster/ch#section-documentation) [![](https://img.shields.io/codecov/c/github/go-faster/ch?label=cover)](https://codecov.io/gh/go-faster/ch) [![experimental](https://img.shields.io/badge/-experimental-blueviolet)](https://go-faster.org/docs/projects/status#experimental)
 
-WIP TCP ClickHouse client in Go.
+TCP ClickHouse client in Go. Designed for very fast data streaming with low network, cpu and memory overhead.
+
+Work in progress, please [leave feedback](https://github.com/go-faster/ch/discussions/6) on package API or features.
 
 ```console
 go get github.com/go-faster/ch
