@@ -11,9 +11,9 @@ type ColDecimal64 []Decimal64
 
 // Compile-time assertions for ColDecimal64.
 var (
-	_ Input  = ColDecimal64{}
-	_ Result = (*ColDecimal64)(nil)
-	_ Column = (*ColDecimal64)(nil)
+	_ ColInput  = ColDecimal64{}
+	_ ColResult = (*ColDecimal64)(nil)
+	_ Column    = (*ColDecimal64)(nil)
 )
 
 // Type returns ColumnType of Decimal64.

@@ -11,9 +11,9 @@ type ColDecimal32 []Decimal32
 
 // Compile-time assertions for ColDecimal32.
 var (
-	_ Input  = ColDecimal32{}
-	_ Result = (*ColDecimal32)(nil)
-	_ Column = (*ColDecimal32)(nil)
+	_ ColInput  = ColDecimal32{}
+	_ ColResult = (*ColDecimal32)(nil)
+	_ Column    = (*ColDecimal32)(nil)
 )
 
 // Type returns ColumnType of Decimal32.

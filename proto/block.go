@@ -64,12 +64,12 @@ func (i *BlockInfo) Decode(r *Reader) error {
 
 type InputColumn struct {
 	Name string
-	Data Input
+	Data ColInput
 }
 
 type ResultColumn struct {
 	Name string
-	Data Result
+	Data ColResult
 }
 
 // AutoResult is ResultColumn with type inference.
@@ -85,15 +85,15 @@ func (c InputColumn) EncodeStart(buf *Buffer) {
 	buf.PutString(string(c.Data.Type()))
 }
 
-// Input column.
-type Input interface {
+// ColInput column.
+type ColInput interface {
 	Type() ColumnType
 	Rows() int
 	EncodeColumn(b *Buffer)
 }
 
-// Result column.
-type Result interface {
+// ColResult column.
+type ColResult interface {
 	Type() ColumnType
 	Rows() int
 	DecodeColumn(r *Reader, rows int) error
@@ -145,7 +145,7 @@ func (b *Block) End() bool {
 	return b.Columns == 0 && b.Rows == 0
 }
 
-func (b *Block) DecodeRawBlock(r *Reader, target []ResultColumn) error {
+func (b *Block) DecodeRawBlock(r *Reader, target Result) error {
 	{
 		v, err := r.Int()
 		if err != nil {
@@ -166,61 +166,33 @@ func (b *Block) DecodeRawBlock(r *Reader, target []ResultColumn) error {
 		}
 		b.Rows = v
 	}
-
 	if b.End() {
 		// End of data, special case.
 		return nil
 	}
-
-	var (
-		noTarget        = len(target) == 0
-		noRows          = b.Rows == 0
-		columnsMismatch = b.Columns != len(target)
-		allowMismatch   = noTarget && noRows
-	)
-	if columnsMismatch && !allowMismatch {
-		return errors.Errorf("%d (columns) != %d (target)", b.Columns, len(target))
+	if target == nil && b.Rows > 0 {
+		return errors.New("got rows without target")
 	}
-	for i := 0; i < b.Columns; i++ {
-		columnName, err := r.Str()
-		if err != nil {
-			return errors.Wrapf(err, "column [%d] name", i)
-		}
-		columnType, err := r.Str()
-		if err != nil {
-			return errors.Wrapf(err, "column [%d] type", i)
-		}
-		if noTarget {
-			// Just reading types and names.
-			continue
-		}
-
-		// Checking column name and type.
-		t := target[i]
-		if t.Name != columnName {
-			return errors.Errorf("[%d]: unexpected column %q (%q expected)", i, columnName, t.Name)
-		}
-		gotType := ColumnType(columnType)
-		if infer, ok := t.Data.(InferColumn); ok {
-			if err := infer.Infer(gotType); err != nil {
-				return errors.Wrap(err, "infer")
+	if target == nil {
+		// Just skipping rows and types.
+		for i := 0; i < b.Columns; i++ {
+			if _, err := r.Str(); err != nil {
+				return errors.Wrapf(err, "column [%d] name", i)
+			}
+			if _, err := r.Str(); err != nil {
+				return errors.Wrapf(err, "column [%d] type", i)
 			}
 		}
-		hasType := t.Data.Type()
-		if gotType.Conflicts(hasType) {
-			return errors.Errorf("[%d]: %s: unexpected type %q (got) instead of %q (has)",
-				i, columnName, gotType, hasType,
-			)
-		}
-		t.Data.Reset()
-		if err := t.Data.DecodeColumn(r, b.Rows); err != nil {
-			return errors.Wrap(err, columnName)
-		}
+		return nil
 	}
+	if err := target.DecodeResult(r, *b); err != nil {
+		return errors.Wrap(err, "target")
+	}
+
 	return nil
 }
 
-func (b *Block) DecodeBlock(r *Reader, version int, target []ResultColumn) error {
+func (b *Block) DecodeBlock(r *Reader, version int, target Result) error {
 	if FeatureBlockInfo.In(version) {
 		if err := b.Info.Decode(r); err != nil {
 			return errors.Wrap(err, "info")

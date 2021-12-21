@@ -37,14 +37,14 @@ func TestBlock_EncodeAware(t *testing.T) {
 
 type resultAware struct {
 	*Block
-	out []ResultColumn
+	out Result
 }
 
 func (c resultAware) Decode(r *Reader) error {
 	return c.DecodeBlock(r, Version, c.out)
 }
 
-func resAware(v *Block, out []ResultColumn) Decoder {
+func resAware(v *Block, out Results) Decoder {
 	return resultAware{
 		Block: v,
 		out:   out,
@@ -94,7 +94,7 @@ func TestBlock_EncodeBlock(t *testing.T) {
 			countRes ColInt8
 			usersRes ColUInt64
 		)
-		for _, res := range [][]ResultColumn{
+		for _, res := range []Results{
 			{}, // No columns.
 			{
 				// Bad name.

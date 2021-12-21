@@ -24,7 +24,7 @@ func main() {
 			numbers += len(data)
 			return nil
 		},
-		Result: []proto.ResultColumn{
+		Result: proto.Results{
 			{Name: "number", Data: &data},
 		},
 	}); err != nil {

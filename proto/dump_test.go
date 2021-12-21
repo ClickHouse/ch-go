@@ -28,7 +28,7 @@ func TestDump(t *testing.T) {
 	)
 	require.NoError(t, dec.DecodeRawBlock(
 		NewReader(bytes.NewReader(data)),
-		[]ResultColumn{
+		Results{
 			{Name: "id", Data: &ids},
 			{Name: "v", Data: &values},
 		}),

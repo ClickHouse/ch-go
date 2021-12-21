@@ -50,7 +50,7 @@ func run(ctx context.Context) error {
 	}
 	if err := c.Query(ctx, ch.Query{
 		Body: "SELECT * FROM test_cardinality_table VALUES",
-		Result: []proto.ResultColumn{
+		Result: proto.Results{
 			{Name: "v", Data: &data},
 		},
 	}); err != nil {

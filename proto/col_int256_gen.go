@@ -11,9 +11,9 @@ type ColInt256 []Int256
 
 // Compile-time assertions for ColInt256.
 var (
-	_ Input  = ColInt256{}
-	_ Result = (*ColInt256)(nil)
-	_ Column = (*ColInt256)(nil)
+	_ ColInput  = ColInt256{}
+	_ ColResult = (*ColInt256)(nil)
+	_ Column    = (*ColInt256)(nil)
 )
 
 // Type returns ColumnType of Int256.

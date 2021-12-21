@@ -11,9 +11,9 @@ type ColDateTime []DateTime
 
 // Compile-time assertions for ColDateTime.
 var (
-	_ Input  = ColDateTime{}
-	_ Result = (*ColDateTime)(nil)
-	_ Column = (*ColDateTime)(nil)
+	_ ColInput  = ColDateTime{}
+	_ ColResult = (*ColDateTime)(nil)
+	_ Column    = (*ColDateTime)(nil)
 )
 
 // Type returns ColumnType of DateTime.

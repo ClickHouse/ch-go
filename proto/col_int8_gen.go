@@ -11,9 +11,9 @@ type ColInt8 []int8
 
 // Compile-time assertions for ColInt8.
 var (
-	_ Input  = ColInt8{}
-	_ Result = (*ColInt8)(nil)
-	_ Column = (*ColInt8)(nil)
+	_ ColInput  = ColInt8{}
+	_ ColResult = (*ColInt8)(nil)
+	_ Column    = (*ColInt8)(nil)
 )
 
 // Type returns ColumnType of Int8.

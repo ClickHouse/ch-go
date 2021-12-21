@@ -11,9 +11,9 @@ type ColEnum8 []Enum8
 
 // Compile-time assertions for ColEnum8.
 var (
-	_ Input  = ColEnum8{}
-	_ Result = (*ColEnum8)(nil)
-	_ Column = (*ColEnum8)(nil)
+	_ ColInput  = ColEnum8{}
+	_ ColResult = (*ColEnum8)(nil)
+	_ Column    = (*ColEnum8)(nil)
 )
 
 // Type returns ColumnType of Enum8.

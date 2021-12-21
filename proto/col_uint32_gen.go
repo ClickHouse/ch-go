@@ -11,9 +11,9 @@ type ColUInt32 []uint32
 
 // Compile-time assertions for ColUInt32.
 var (
-	_ Input  = ColUInt32{}
-	_ Result = (*ColUInt32)(nil)
-	_ Column = (*ColUInt32)(nil)
+	_ ColInput  = ColUInt32{}
+	_ ColResult = (*ColUInt32)(nil)
+	_ Column    = (*ColUInt32)(nil)
 )
 
 // Type returns ColumnType of UInt32.

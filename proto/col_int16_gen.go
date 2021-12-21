@@ -11,9 +11,9 @@ type ColInt16 []int16
 
 // Compile-time assertions for ColInt16.
 var (
-	_ Input  = ColInt16{}
-	_ Result = (*ColInt16)(nil)
-	_ Column = (*ColInt16)(nil)
+	_ ColInput  = ColInt16{}
+	_ ColResult = (*ColInt16)(nil)
+	_ Column    = (*ColInt16)(nil)
 )
 
 // Type returns ColumnType of Int16.

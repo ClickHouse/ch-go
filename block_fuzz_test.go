@@ -91,7 +91,7 @@ func TestEncodeIPv6Block(t *testing.T) {
 	r := proto.NewReader(bytes.NewReader(data))
 	v := proto.Version
 	a := proto.NewArrIPv6()
-	d := []proto.ResultColumn{
+	d := proto.Results{
 		{
 			Name: "foo",
 			Data: a,
@@ -118,7 +118,7 @@ func TestEncodeBlock(t *testing.T) {
 
 	r := proto.NewReader(bytes.NewReader(data))
 	v := proto.Version
-	d := []proto.ResultColumn{
+	d := proto.Results{
 		{
 			Name: "foo",
 			Data: &proto.ColArr{
@@ -147,7 +147,7 @@ func FuzzDecodeBlock(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		r := proto.NewReader(bytes.NewReader(data))
 		v := proto.Version
-		d := []proto.ResultColumn{
+		d := proto.Results{
 			{
 				Name: "foo",
 				Data: &proto.ColArr{
@@ -174,7 +174,7 @@ func FuzzDecodeArrayIPv6ArrayBlock(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		r := proto.NewReader(bytes.NewReader(data))
 		v := proto.Version
-		d := []proto.ResultColumn{
+		d := proto.Results{
 			{
 				Name: "foo",
 				Data: proto.NewArrIPv6(),

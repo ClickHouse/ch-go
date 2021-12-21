@@ -12,9 +12,9 @@ type ColFloat64 []float64
 
 // Compile-time assertions for ColFloat64.
 var (
-	_ Input  = ColFloat64{}
-	_ Result = (*ColFloat64)(nil)
-	_ Column = (*ColFloat64)(nil)
+	_ ColInput  = ColFloat64{}
+	_ ColResult = (*ColFloat64)(nil)
+	_ Column    = (*ColFloat64)(nil)
 )
 
 // Type returns ColumnType of Float64.

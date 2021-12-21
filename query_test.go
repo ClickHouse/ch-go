@@ -39,7 +39,7 @@ func TestClient_Query(t *testing.T) {
 		var gotData proto.ColUInt8
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "id", Data: &gotData},
 			},
 		}
@@ -78,7 +78,7 @@ func TestClient_Query(t *testing.T) {
 		gotData := proto.ColTuple{new(proto.ColStr), new(proto.ColInt64)}
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "v", Data: gotData},
 			},
 		}
@@ -126,7 +126,7 @@ func TestClient_Query(t *testing.T) {
 		)
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "id", Data: &gotData},
 			},
 			OnResult: func(ctx context.Context, b proto.Block) error {
@@ -170,7 +170,7 @@ func TestClient_Query(t *testing.T) {
 		gotArr := proto.ColArr{Data: &gotData}
 		selectArr := Query{
 			Body: "SELECT v FROM test_array_table",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "v", Data: &gotArr},
 			},
 		}
@@ -184,7 +184,7 @@ func TestClient_Query(t *testing.T) {
 		var data proto.ColUInt8
 		selectOne := Query{
 			Body: "SELECT 1 AS one",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{
 					Name: "one",
 					Data: &data,
@@ -203,7 +203,7 @@ func TestClient_Query(t *testing.T) {
 		)
 		selectOne := Query{
 			Body: "SELECT toInt128(-109331) as signed, toUInt128(4012) as unsigned",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "signed", Data: &signed},
 				{Name: "unsigned", Data: &unsigned},
 			},
@@ -233,7 +233,7 @@ func TestClient_Query(t *testing.T) {
 		var data proto.ColStr
 		selectStr := Query{
 			Body: "SELECT 'foo' AS s",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{
 					Name: "s",
 					Data: &data,
@@ -252,7 +252,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		selectArr := Query{
 			Body: "SELECT [1, 2, 3] AS arr",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{
 					Name: "arr",
 					Data: &arr,
@@ -269,7 +269,7 @@ func TestClient_Query(t *testing.T) {
 		var data proto.ColIPv4
 		selectArr := Query{
 			Body: "SELECT toIPv4('127.1.1.5') AS ip",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{
 					Name: "ip",
 					Data: &data,
@@ -286,7 +286,7 @@ func TestClient_Query(t *testing.T) {
 		var data proto.ColIPv6
 		selectArr := Query{
 			Body: "SELECT toIPv6('2001:0DB8:AC10:FE01:FEED:BABE:CAFE:F00D') AS ip",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{
 					Name: "ip",
 					Data: &data,
@@ -308,7 +308,7 @@ func TestClient_Query(t *testing.T) {
 		var data proto.ColDateTime
 		selectArr := Query{
 			Body: fmt.Sprintf("SELECT toDateTime('%s', '%s') as time", dt, tz),
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{
 					Name: "time",
 					Data: &data,
@@ -347,7 +347,7 @@ func TestClient_Query(t *testing.T) {
 		var gotData proto.ColDateTime
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "d", Data: &gotData},
 			},
 		}
@@ -379,7 +379,7 @@ func TestClient_Query(t *testing.T) {
 		var gotData proto.ColDateTime64
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "d", Data: &gotData},
 			},
 		}
@@ -422,7 +422,7 @@ func TestClient_Query(t *testing.T) {
 		)
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "v", Data: gotData},
 			},
 		}
@@ -490,7 +490,7 @@ func TestClient_Query(t *testing.T) {
 		)
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "v", Data: gotData},
 			},
 		}
@@ -511,7 +511,7 @@ func TestClient_Query(t *testing.T) {
 				total += len(data)
 				return nil
 			},
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{
 					Name: "v",
 					Data: &data,
@@ -548,7 +548,7 @@ func TestClientCompression(t *testing.T) {
 				var data proto.ColStr
 				selectStr := Query{
 					Body: "SELECT 'foo' AS s",
-					Result: []proto.ResultColumn{
+					Result: proto.Results{
 						{
 							Name: "s",
 							Data: &data,
@@ -580,7 +580,7 @@ func TestClientCompression(t *testing.T) {
 				var gotData proto.ColUInt8
 				selectData := Query{
 					Body: "SELECT * FROM test_table",
-					Result: []proto.ResultColumn{
+					Result: proto.Results{
 						{Name: "id", Data: &gotData},
 					},
 				}
@@ -627,7 +627,7 @@ func TestClient_ServerLog(t *testing.T) {
 				assert.Equal(t, qID, l.QueryID)
 				return nil
 			},
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{
 					Name: "s",
 					Data: &data,
@@ -655,7 +655,7 @@ func TestClient_ExternalData(t *testing.T) {
 			ExternalData: []proto.InputColumn{
 				{Name: "v", Data: proto.ColInt64{1, 2, 3}},
 			},
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "v", Data: &data},
 			},
 		}
@@ -670,7 +670,7 @@ func TestClient_ExternalData(t *testing.T) {
 			ExternalData: []proto.InputColumn{
 				{Name: "v", Data: proto.ColInt64{1, 2, 3}},
 			},
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "v", Data: &data},
 			},
 		}
@@ -693,7 +693,7 @@ func TestClient_ServerProfile(t *testing.T) {
 			profiles++
 			return nil
 		},
-		Result: []proto.ResultColumn{
+		Result: proto.Results{
 			proto.AutoResult("1"),
 		},
 	}

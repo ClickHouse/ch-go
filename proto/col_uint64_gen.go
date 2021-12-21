@@ -11,9 +11,9 @@ type ColUInt64 []uint64
 
 // Compile-time assertions for ColUInt64.
 var (
-	_ Input  = ColUInt64{}
-	_ Result = (*ColUInt64)(nil)
-	_ Column = (*ColUInt64)(nil)
+	_ ColInput  = ColUInt64{}
+	_ ColResult = (*ColUInt64)(nil)
+	_ Column    = (*ColUInt64)(nil)
 )
 
 // Type returns ColumnType of UInt64.

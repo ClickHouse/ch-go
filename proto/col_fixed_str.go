@@ -17,9 +17,9 @@ type ColFixedStr struct {
 
 // Compile-time assertions for ColFixedStr.
 var (
-	_ Input  = ColFixedStr{}
-	_ Result = (*ColFixedStr)(nil)
-	_ Column = (*ColFixedStr)(nil)
+	_ ColInput  = ColFixedStr{}
+	_ ColResult = (*ColFixedStr)(nil)
+	_ Column    = (*ColFixedStr)(nil)
 )
 
 // Type returns ColumnType of FixedString.

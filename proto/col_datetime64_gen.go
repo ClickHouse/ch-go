@@ -11,9 +11,9 @@ type ColDateTime64 []DateTime64
 
 // Compile-time assertions for ColDateTime64.
 var (
-	_ Input  = ColDateTime64{}
-	_ Result = (*ColDateTime64)(nil)
-	_ Column = (*ColDateTime64)(nil)
+	_ ColInput  = ColDateTime64{}
+	_ ColResult = (*ColDateTime64)(nil)
+	_ Column    = (*ColDateTime64)(nil)
 )
 
 // Type returns ColumnType of DateTime64.

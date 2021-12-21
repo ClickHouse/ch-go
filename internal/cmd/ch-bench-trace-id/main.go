@@ -164,7 +164,7 @@ func run(ctx context.Context) error {
 				)
 				return nil
 			},
-			Result: []proto.ResultColumn{
+			Result: proto.Results{
 				{Name: "trace_id", Data: data},
 			},
 		}); err != nil {

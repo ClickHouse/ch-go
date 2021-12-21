@@ -131,7 +131,7 @@ type Query struct {
 	OnInput func(ctx context.Context) error
 
 	// Result columns for SELECT operations.
-	Result []proto.ResultColumn
+	Result proto.Result
 	// OnResult is called when Result is filled with result block.
 	//
 	// Optional, but query will fail of more than one block is received
@@ -174,7 +174,7 @@ func (c *CorruptedDataErr) Error() string {
 func (c *Client) decodeBlock(
 	ctx context.Context,
 	handler func(ctx context.Context, b proto.Block) error,
-	result []proto.ResultColumn,
+	result proto.Result,
 ) error {
 	if proto.FeatureTempTables.In(c.protocolVersion) {
 		v, err := c.reader.Str()
@@ -406,7 +406,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			eventSource    proto.ColStr
 			eventText      proto.ColStr
 		)
-		result := []proto.ResultColumn{
+		result := proto.Results{
 			{Name: "event_time", Data: &eventTime},
 			{Name: "event_time_microseconds", Data: &eventTimeMicro},
 			{Name: "host_name", Data: &eventHostName},

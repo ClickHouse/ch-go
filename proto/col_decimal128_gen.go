@@ -11,9 +11,9 @@ type ColDecimal128 []Decimal128
 
 // Compile-time assertions for ColDecimal128.
 var (
-	_ Input  = ColDecimal128{}
-	_ Result = (*ColDecimal128)(nil)
-	_ Column = (*ColDecimal128)(nil)
+	_ ColInput  = ColDecimal128{}
+	_ ColResult = (*ColDecimal128)(nil)
+	_ Column    = (*ColDecimal128)(nil)
 )
 
 // Type returns ColumnType of Decimal128.

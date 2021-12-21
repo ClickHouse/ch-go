@@ -11,9 +11,9 @@ type ColInt128 []Int128
 
 // Compile-time assertions for ColInt128.
 var (
-	_ Input  = ColInt128{}
-	_ Result = (*ColInt128)(nil)
-	_ Column = (*ColInt128)(nil)
+	_ ColInput  = ColInt128{}
+	_ ColResult = (*ColInt128)(nil)
+	_ Column    = (*ColInt128)(nil)
 )
 
 // Type returns ColumnType of Int128.

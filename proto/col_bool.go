@@ -7,9 +7,9 @@ type ColBool []bool
 
 // Compile-time assertions for ColBool.
 var (
-	_ Input  = ColBool{}
-	_ Result = (*ColBool)(nil)
-	_ Column = (*ColBool)(nil)
+	_ ColInput  = ColBool{}
+	_ ColResult = (*ColBool)(nil)
+	_ Column    = (*ColBool)(nil)
 )
 
 // Type returns ColumnType of Bool.

@@ -43,9 +43,9 @@ func (ColStr) ArrAppend(arr *ColArr, data []string) {
 
 // Compile-time assertions for ColStr.
 var (
-	_ Input  = ColStr{}
-	_ Result = (*ColStr)(nil)
-	_ Column = (*ColStr)(nil)
+	_ ColInput  = ColStr{}
+	_ ColResult = (*ColStr)(nil)
+	_ Column    = (*ColStr)(nil)
 )
 
 // Type returns ColumnType of String.

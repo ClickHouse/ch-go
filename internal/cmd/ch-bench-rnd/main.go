@@ -55,7 +55,7 @@ func run(ctx context.Context) error {
 			totalBytes += p.Bytes
 			return nil
 		},
-		Result: []proto.ResultColumn{
+		Result: proto.Results{
 			{Name: "v", Data: &data},
 		},
 	}); err != nil {

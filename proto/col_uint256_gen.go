@@ -11,9 +11,9 @@ type ColUInt256 []UInt256
 
 // Compile-time assertions for ColUInt256.
 var (
-	_ Input  = ColUInt256{}
-	_ Result = (*ColUInt256)(nil)
-	_ Column = (*ColUInt256)(nil)
+	_ ColInput  = ColUInt256{}
+	_ ColResult = (*ColUInt256)(nil)
+	_ Column    = (*ColUInt256)(nil)
 )
 
 // Type returns ColumnType of UInt256.

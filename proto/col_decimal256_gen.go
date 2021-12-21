@@ -11,9 +11,9 @@ type ColDecimal256 []Decimal256
 
 // Compile-time assertions for ColDecimal256.
 var (
-	_ Input  = ColDecimal256{}
-	_ Result = (*ColDecimal256)(nil)
-	_ Column = (*ColDecimal256)(nil)
+	_ ColInput  = ColDecimal256{}
+	_ ColResult = (*ColDecimal256)(nil)
+	_ Column    = (*ColDecimal256)(nil)
 )
 
 // Type returns ColumnType of Decimal256.

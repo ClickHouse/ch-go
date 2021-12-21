@@ -11,9 +11,9 @@ type ColIPv6 []IPv6
 
 // Compile-time assertions for ColIPv6.
 var (
-	_ Input  = ColIPv6{}
-	_ Result = (*ColIPv6)(nil)
-	_ Column = (*ColIPv6)(nil)
+	_ ColInput  = ColIPv6{}
+	_ ColResult = (*ColIPv6)(nil)
+	_ Column    = (*ColIPv6)(nil)
 )
 
 // Type returns ColumnType of IPv6.

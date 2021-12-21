@@ -11,9 +11,9 @@ type ColEnum16 []Enum16
 
 // Compile-time assertions for ColEnum16.
 var (
-	_ Input  = ColEnum16{}
-	_ Result = (*ColEnum16)(nil)
-	_ Column = (*ColEnum16)(nil)
+	_ ColInput  = ColEnum16{}
+	_ ColResult = (*ColEnum16)(nil)
+	_ Column    = (*ColEnum16)(nil)
 )
 
 // Type returns ColumnType of Enum16.

@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-faster/errors"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-faster/ch/proto"
@@ -58,6 +59,16 @@ func (c *Client) handshake(ctx context.Context) error {
 			// Downgrade to server version.
 			c.protocolVersion = c.server.Revision
 		}
+
+		c.lg.Debug("Connected",
+			zap.Int("client.protocol_version", c.info.ProtocolVersion),
+			zap.Int("server.revision", c.server.Revision),
+			zap.Int("protocol_version", c.protocolVersion),
+			zap.Int("server.major", c.server.Major),
+			zap.Int("server.minor", c.server.Minor),
+			zap.Int("server.patch", c.server.Patch),
+			zap.String("server", c.server.String()),
+		)
 
 		return nil
 	})
