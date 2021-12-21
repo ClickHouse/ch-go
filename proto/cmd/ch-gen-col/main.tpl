@@ -15,9 +15,9 @@ type {{ .Type }} []{{ .ElemType }}
 
 // Compile-time assertions for {{ .Type }}.
 var (
-  _ Input  = {{ .Type }}{}
-  _ Result = (*{{ .Type }})(nil)
-  _ Column = (*{{ .Type }})(nil)
+  _ ColInput  = {{ .Type }}{}
+  _ ColResult = (*{{ .Type }})(nil)
+  _ Column    = (*{{ .Type }})(nil)
 )
 
 // Type returns ColumnType of {{ .Name }}.

@@ -13,20 +13,14 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		// Already ok.
 		return nil
 	}
-
+	if c.inferNumeric(t) {
+		return nil
+	}
 	switch t {
 	case ColumnTypeString:
 		c.Data = new(ColStr)
-	case ColumnTypeDateTime:
-		c.Data = new(ColDateTime)
-	case ColumnTypeInt8:
-		c.Data = new(ColInt8)
-	case ColumnTypeUInt8:
-		c.Data = new(ColUInt8)
-	case ColumnTypeUInt32:
-		c.Data = new(ColUInt32)
-	case ColumnTypeUInt64:
-		c.Data = new(ColUInt64)
+	case ColumnTypeBool:
+		c.Data = new(ColBool)
 	default:
 		return errors.Errorf("automatic column inference not supported for %q", t)
 	}

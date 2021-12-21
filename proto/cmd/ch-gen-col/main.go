@@ -31,6 +31,8 @@ type Variant struct {
 	Bits   int
 }
 
+type Variants []Variant
+
 func (v Variant) IsFloat() bool {
 	return v.Kind == KindFloat
 }
@@ -192,7 +194,10 @@ var mainTemplate string
 //go:embed test.tpl
 var testTemplate string
 
-func write(name string, v Variant, t *template.Template) error {
+//go:embed infer.tpl
+var inferTemplate string
+
+func write(name string, v interface{}, t *template.Template) error {
 	out := new(bytes.Buffer)
 	if err := t.Execute(out, v); err != nil {
 		return errors.Wrap(err, "execute")
@@ -209,10 +214,11 @@ func write(name string, v Variant, t *template.Template) error {
 
 func run() error {
 	var (
-		tpl     = template.Must(template.New("main").Parse(mainTemplate))
-		testTpl = template.Must(template.New("main").Parse(testTemplate))
+		tpl      = template.Must(template.New("main").Parse(mainTemplate))
+		tplInfer = template.Must(template.New("main").Parse(inferTemplate))
+		tplTest  = template.Must(template.New("main").Parse(testTemplate))
 	)
-	variants := []Variant{
+	variants := Variants{
 		{ // Float32
 			Bits:   32,
 			Kind:   KindFloat,
@@ -303,9 +309,12 @@ func run() error {
 		if err := write(base, v, tpl); err != nil {
 			return errors.Wrap(err, "write")
 		}
-		if err := write(base+"_test", v, testTpl); err != nil {
+		if err := write(base+"_test", v, tplTest); err != nil {
 			return errors.Wrap(err, "write test")
 		}
+	}
+	if err := write("col_auto_gen", variants, tplInfer); err != nil {
+		return errors.Wrap(err, "write")
 	}
 	return nil
 }
