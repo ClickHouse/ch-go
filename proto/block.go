@@ -107,6 +107,11 @@ func (b Block) EncodeBlock(buf *Buffer, version int, input []InputColumn) error 
 			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
 		}
 		col.EncodeStart(buf)
+		if v, ok := col.Data.(Preparable); ok {
+			if err := v.Prepare(); err != nil {
+				return errors.Wrap(err, "prepare")
+			}
+		}
 		col.Data.EncodeColumn(buf)
 	}
 	return nil

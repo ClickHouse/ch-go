@@ -25,6 +25,11 @@ type Column interface {
 	ColInput
 }
 
+// Preparable is Column that should be prepared before encoding or decoding.
+type Preparable interface {
+	Prepare() error
+}
+
 // ColumnType is type of column element.
 type ColumnType string
 
