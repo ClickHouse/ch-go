@@ -47,6 +47,41 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 4)
 		require.Equal(t, data, gotData)
 	})
+	t.Run("InsertEnum8", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		const enum = proto.ColumnType(`Enum8('foo' = 1, 'bar' = 2)`)
+		createTable := Query{
+			Body: fmt.Sprintf("CREATE TABLE test_table (v %s) ENGINE = TinyLog", enum),
+		}
+		require.NoError(t, conn.Query(ctx, createTable), "create table")
+
+		data := proto.ColEnum8Auto{
+			Str: []string{"foo", "bar"},
+		}
+		require.NoError(t, data.Infer(enum))
+		require.NoError(t, data.PrepareColumn())
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		var gotData proto.ColEnum8Auto
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: &gotData},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.Equal(t, data.Str, gotData.Str)
+		t.Log(gotData.Str)
+	})
 	t.Run("InsertTuple", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
