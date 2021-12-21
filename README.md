@@ -54,6 +54,7 @@ func main() {
 ## Features
 * OpenTelemetry support
 * No reflection or `interface{}`
+* Generics (go1.18) for `ArrayOf[T]`, `LowCardinaliyOf[T]`, `EnumOf[T]`
 * **Column**-first design
   * [Dramatically more efficient](https://github.com/go-faster/ch-bench)
   * Up to 50x faster than row-first design around `sql`
@@ -102,8 +103,8 @@ func main() {
 ## TODO
 - [ ] Pooling
 - [ ] API UX Improvements (with 1.18 generics?)
-    - [ ] Enum
-    - [ ] LowCardinality
+    - [x] Enum
+    - [x] LowCardinality
     - [ ] Array(T)
     - [ ] FixedString(N)
     - [ ] Map(K, V)

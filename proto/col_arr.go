@@ -4,11 +4,6 @@ import (
 	"github.com/go-faster/errors"
 )
 
-type Column interface {
-	ColResult
-	ColInput
-}
-
 // ColArr represents Array[T].
 type ColArr struct {
 	Offsets ColUInt64

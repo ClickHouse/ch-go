@@ -5,6 +5,26 @@ import (
 	"strings"
 )
 
+// ColInput column.
+type ColInput interface {
+	Type() ColumnType
+	Rows() int
+	EncodeColumn(b *Buffer)
+}
+
+// ColResult column.
+type ColResult interface {
+	Type() ColumnType
+	Rows() int
+	DecodeColumn(r *Reader, rows int) error
+	Reset()
+}
+
+type Column interface {
+	ColResult
+	ColInput
+}
+
 // ColumnType is type of column element.
 type ColumnType string
 

@@ -85,21 +85,6 @@ func (c InputColumn) EncodeStart(buf *Buffer) {
 	buf.PutString(string(c.Data.Type()))
 }
 
-// ColInput column.
-type ColInput interface {
-	Type() ColumnType
-	Rows() int
-	EncodeColumn(b *Buffer)
-}
-
-// ColResult column.
-type ColResult interface {
-	Type() ColumnType
-	Rows() int
-	DecodeColumn(r *Reader, rows int) error
-	Reset()
-}
-
 type Block struct {
 	Info    BlockInfo
 	Columns int

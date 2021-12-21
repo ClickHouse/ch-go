@@ -13,29 +13,29 @@ type ColumnOf[T any] interface {
 }
 
 // ColArrOf is generic ColArr.
-type ColArrOf[T any, C ColumnOf[T]] struct {
+type ColArrOf[T any] struct {
 	Offsets ColUInt64
-	Data    C
+	Data    ColumnOf[T]
 }
 
 // ArrayOf returns ColArrOf of c.
 //
 // Example: ArrayOf[string](&ColStr{})
-func ArrayOf[T any, C ColumnOf[T]](c C) *ColArrOf[T, C] {
-	return &ColArrOf[T, C]{
+func ArrayOf[T any](c ColumnOf[T]) *ColArrOf[T] {
+	return &ColArrOf[T]{
 		Data: c,
 	}
 }
 
-func (c ColArrOf[T, C]) Type() ColumnType {
+func (c ColArrOf[T]) Type() ColumnType {
 	return ColumnTypeArray.Sub(c.Data.Type())
 }
 
-func (c ColArrOf[T, C]) Rows() int {
+func (c ColArrOf[T]) Rows() int {
 	return c.Offsets.Rows()
 }
 
-func (c ColArrOf[T, C]) RowAppend(i int, target []T) []T {
+func (c ColArrOf[T]) RowAppend(i int, target []T) []T {
 	var start int
 	end := int(c.Offsets[i])
 	if i > 0 {
@@ -48,11 +48,11 @@ func (c ColArrOf[T, C]) RowAppend(i int, target []T) []T {
 	return target
 }
 
-func (c ColArrOf[T, C]) Row(i int) []T {
+func (c ColArrOf[T]) Row(i int) []T {
 	return c.RowAppend(i, nil)
 }
 
-func (c ColArrOf[T, C]) DecodeColumn(r *Reader, rows int) error {
+func (c ColArrOf[T]) DecodeColumn(r *Reader, rows int) error {
 	if err := c.Offsets.DecodeColumn(r, rows); err != nil {
 		return errors.Wrap(err, "read offsets")
 	}
@@ -67,27 +67,27 @@ func (c ColArrOf[T, C]) DecodeColumn(r *Reader, rows int) error {
 	return nil
 }
 
-func (c *ColArrOf[T, C]) Reset() {
+func (c *ColArrOf[T]) Reset() {
 	c.Data.Reset()
 	c.Offsets.Reset()
 }
 
-func (c ColArrOf[T, C]) EncodeColumn(b *Buffer) {
+func (c ColArrOf[T]) EncodeColumn(b *Buffer) {
 	c.Offsets.EncodeColumn(b)
 	c.Data.EncodeColumn(b)
 }
 
-func (c *ColStr) Array() *ColArrOf[string, *ColStr] {
-	return &ColArrOf[string, *ColStr]{
+func (c *ColStr) Array() *ColArrOf[string] {
+	return &ColArrOf[string]{
 		Data: c,
 	}
 }
 
-func (c *ColArrOf[T, C]) Append(v []T) {
+func (c *ColArrOf[T]) Append(v []T) {
 	c.Data.AppendArr(v)
 }
 
-func (c *ColArrOf[T, C]) AppendArr(v [][]T) {
+func (c *ColArrOf[T]) AppendArr(v [][]T) {
 	for _, e := range v {
 		c.Append(e)
 	}
