@@ -3,14 +3,13 @@
 
 package proto
 
-
 // inferNumeric infers t as numeric type, otherwise returns false.
 func (c *ColAuto) inferNumeric(t ColumnType) bool {
 	switch t {
-  {{- range . }}
+	{{- range . }}
 	case {{ .ColumnType }}:
 		c.Data = new({{ .Type }})
-  {{- end }}
+    {{- end }}
 	default:
 		return false
 	}
