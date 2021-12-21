@@ -1,6 +1,6 @@
 module github.com/go-faster/ch
 
-go 1.17
+go 1.18
 
 require (
 	github.com/dmarkham/enumer v1.5.3

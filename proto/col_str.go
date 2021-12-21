@@ -26,6 +26,12 @@ func (c *ColStr) Append(v string) {
 	c.Pos = append(c.Pos, Position{Start: start, End: end})
 }
 
+func (c *ColStr) AppendArr(v []string) {
+	for _, e := range v {
+		c.Append(e)
+	}
+}
+
 // ArrAppend appends data to array of ColStr.
 func (ColStr) ArrAppend(arr *ColArr, data []string) {
 	c := arr.Data.(*ColStr)
