@@ -38,7 +38,7 @@ jobs:
         run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
 
       - name: Install Go
-        uses: actions/setup-go@v2.1.4
+        uses: actions/setup-go@v2.1.5
         with:
           go-version: 1.17
 
