@@ -9,7 +9,7 @@ func (c *ColAuto) inferNumeric(t ColumnType) bool {
 	{{- range . }}
 	case {{ .ColumnType }}:
 		c.Data = new({{ .Type }})
-    {{- end }}
+	{{- end }}
 	default:
 		return false
 	}
