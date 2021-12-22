@@ -116,6 +116,7 @@ func main() {
   - [ ] Code generator for SELECT/INSERT
   - [ ] Query builder
 - [ ] DSL for DDL
+- [ ] Reading and writing *Native* format dumps
 
 ## Reference
 
