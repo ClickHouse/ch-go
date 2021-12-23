@@ -143,6 +143,8 @@ type Query struct {
 	OnProgress func(ctx context.Context, p proto.Progress) error
 	// OnProfile is optional handler for profiling data.
 	OnProfile func(ctx context.Context, p proto.Profile) error
+	// OnProfileEvent is optional handler for profiling event stream data.
+	OnProfileEvent func(ctx context.Context, e ProfileEvent) error
 	// OnLog is optional handler for server log entry.
 	OnLog func(ctx context.Context, l Log) error
 
@@ -345,6 +347,24 @@ type Log struct {
 	Text     string
 }
 
+//go:generate go run github.com/dmarkham/enumer -type ProfileEventType -trimprefix Profile -output profile_enum.go
+type ProfileEventType byte
+
+const (
+	ProfileIncrement ProfileEventType = 1
+	ProfileGauge     ProfileEventType = 2
+)
+
+// ProfileEvent is detailed profiling event from Server.
+type ProfileEvent struct {
+	ThreadID uint64
+	Host     string
+	Time     time.Time
+	Type     ProfileEventType
+	Name     string
+	Value    int64
+}
+
 func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) error {
 	switch p {
 	case proto.ServerCodeException:
@@ -395,6 +415,71 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 		if err := c.decode(&info); err != nil {
 			return errors.Wrap(err, "table columns")
 		}
+	case proto.ServerProfileEvents:
+		/*
+			auto profile_event_type = std::make_shared<DataTypeEnum8>(
+			    DataTypeEnum8::Values
+			    {
+			        { "increment", static_cast<Int8>(INCREMENT)},
+			        { "gauge",     static_cast<Int8>(GAUGE)},
+			    });
+			NamesAndTypesList column_names_and_types = {
+			    { "host_name",    std::make_shared<DataTypeString>()   },
+			    { "current_time", std::make_shared<DataTypeDateTime>() },
+			    { "thread_id",    std::make_shared<DataTypeUInt64>()   },
+			    { "type",         profile_event_type                   },
+			    { "name",         std::make_shared<DataTypeString>()   },
+			    { "value",        std::make_shared<DataTypeUInt64>()   },
+			}
+		*/
+		var (
+			evHost     proto.ColStr
+			evTime     proto.ColDateTime
+			evThreadID proto.ColUInt64
+			evType     proto.ColInt8
+			evName     proto.ColStr
+			evValue    proto.ColInt64
+		)
+		result := proto.Results{
+			{Name: "host_name", Data: &evHost},
+			{Name: "current_time", Data: &evTime},
+			{Name: "thread_id", Data: &evThreadID},
+			{Name: "type", Data: &evType},
+			{Name: "name", Data: &evName},
+			{Name: "value", Data: &evValue},
+		}
+		onResult := func(ctx context.Context, b proto.Block) error {
+			for i := range evTime {
+				e := ProfileEvent{
+					Time:     evTime[i].Time(),
+					Host:     evHost.Row(i),
+					ThreadID: evThreadID[i],
+					Type:     ProfileEventType(evType[i]),
+					Name:     evName.Row(i),
+					Value:    evValue[i],
+				}
+				if ce := c.lg.Check(zap.DebugLevel, "ProfileEvent"); ce != nil {
+					ce.Write(
+						zap.Time("event.time", e.Time),
+						zap.String("event.host_name", e.Host),
+						zap.Uint64("event.thread_id", e.ThreadID),
+						zap.Stringer("event.type", e.Type),
+						zap.String("event.name", e.Name),
+						zap.Int64("event.value", e.Value),
+					)
+				}
+				if f := q.OnProfileEvent; f != nil {
+					if err := f(ctx, e); err != nil {
+						return errors.Wrap(err, "log")
+					}
+				}
+			}
+			return nil
+		}
+		if err := c.decodeBlock(ctx, onResult, result); err != nil {
+			return errors.Wrap(err, "decode block")
+		}
+		return nil
 	case proto.ServerCodeLog:
 		var (
 			eventTime      proto.ColDateTime
@@ -427,7 +512,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 					Source:   eventSource.Row(i),
 					Text:     eventText.Row(i),
 				}
-				if ce := c.lg.Check(zap.DebugLevel, "Log"); ce != nil {
+				if ce := c.lg.Check(zap.DebugLevel, "Profile"); ce != nil {
 					ce.Write(
 						zap.Time("event_time", l.Time),
 						zap.String("host", l.Host),

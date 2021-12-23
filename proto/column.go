@@ -57,6 +57,18 @@ func (c ColumnType) Conflicts(b ColumnType) bool {
 	if c == b {
 		return false
 	}
+	{
+		a := c
+		if b.Base() == ColumnTypeEnum8 || b.Base() == ColumnTypeEnum16 {
+			a, b = b, a
+		}
+		switch {
+		case a.Base() == ColumnTypeEnum8 && b == ColumnTypeInt8:
+			return false
+		case a.Base() == ColumnTypeEnum16 && b == ColumnTypeInt16:
+			return false
+		}
+	}
 	if c.Base() != b.Base() {
 		return true
 	}
