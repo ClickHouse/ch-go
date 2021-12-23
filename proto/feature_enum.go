@@ -27,7 +27,7 @@ var _FeatureMap = map[Feature]string{
 	54447: _FeatureName[199:218],
 	54448: _FeatureName[218:234],
 	54449: _FeatureName[234:248],
-	54450: _FeatureName[248:261],
+	54451: _FeatureName[248:261],
 }
 
 func (i Feature) String() string {
@@ -57,7 +57,7 @@ func _FeatureNoOp() {
 	_ = x[FeatureRefererInClientInfo-(54447)]
 	_ = x[FeatureDistributedDepth-(54448)]
 	_ = x[FeatureQueryStartTime-(54449)]
-	_ = x[FeatureProfileEvents-(54450)]
+	_ = x[FeatureProfileEvents-(54451)]
 }
 
 var _FeatureValues = []Feature{FeatureTempTables, FeatureBlockInfo, FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry, FeatureXForwardedForInClientInfo, FeatureRefererInClientInfo, FeatureDistributedDepth, FeatureQueryStartTime, FeatureProfileEvents}

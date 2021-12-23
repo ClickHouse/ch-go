@@ -31,7 +31,6 @@ func TestServerHello_DecodeAware(t *testing.T) {
 	features := []Feature{
 		50264, 51903, 54058, 54060, 54372, 54401, 54406, 54410,
 		54420, 54429, 54441, 54442, 54443, 54447, 54448, 54449,
-		54450,
 	}
 	assert.Equal(t, features, v.Features())
 	assert.Equal(t, "ClickHouse server (alpha, Europe/Moscow) 21.11.3 (54450)", v.String())

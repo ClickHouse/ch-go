@@ -718,9 +718,6 @@ func TestClient_ServerProfile(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	conn := Conn(t)
-	if !conn.serverInfo().Has(proto.FeatureProfileEvents) {
-		t.Skip("Profile events not supported")
-	}
 	var profiles int
 	selectStr := Query{
 		Body: "SELECT 1",
@@ -736,5 +733,30 @@ func TestClient_ServerProfile(t *testing.T) {
 	t.Logf("%d profile(s)", profiles)
 	if profiles == 0 {
 		t.Fatal("No profiles")
+	}
+}
+
+func TestClient_ServerProfileEvents(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := Conn(t)
+	if !conn.serverInfo().Has(proto.FeatureProfileEvents) {
+		t.Skip("Profile events not supported")
+	}
+	var events int
+	selectStr := Query{
+		Body: "SELECT 1",
+		OnProfileEvent: func(ctx context.Context, p ProfileEvent) error {
+			events++
+			return nil
+		},
+		Result: proto.Results{
+			proto.AutoResult("1"),
+		},
+	}
+	require.NoError(t, conn.Query(ctx, selectStr))
+	t.Logf("%d profile event(s)", events)
+	if events == 0 {
+		t.Fatal("No profile events")
 	}
 }

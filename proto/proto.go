@@ -7,7 +7,7 @@ import "encoding/binary"
 const (
 	Minor   = 1
 	Major   = 1
-	Version = 54450
+	Version = 54451
 	Name    = "go-faster/ch"
 )
 

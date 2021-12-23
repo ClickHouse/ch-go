@@ -25,7 +25,7 @@ const (
 	FeatureRefererInClientInfo         Feature = 54447
 	FeatureDistributedDepth            Feature = 54448
 	FeatureQueryStartTime              Feature = 54449
-	FeatureProfileEvents               Feature = 54450
+	FeatureProfileEvents               Feature = 54451
 )
 
 // Version reports protocol version when Feature was introduced.
