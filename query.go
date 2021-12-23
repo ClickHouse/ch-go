@@ -350,6 +350,7 @@ type Log struct {
 }
 
 //go:generate go run github.com/dmarkham/enumer -type ProfileEventType -trimprefix Profile -output profile_enum.go
+
 type ProfileEventType byte
 
 const (
