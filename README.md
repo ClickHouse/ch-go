@@ -51,6 +51,26 @@ func main() {
  1.3s 2.5B rows 20GB  15GB/s 5 jobs
 ```
 
+### Results
+
+#### Automatic result inference
+```go
+var result proto.Results
+selectStr := ch.Query{
+	Body:   "SELECT * FROM table",
+	Result: result.Auto(),
+}
+```
+
+#### Single result with column name inference
+```go
+var res proto.ColBool
+selectStr := ch.Query{
+	Body:   "SELECT v FROM test_table",
+	Result: proto.ResultColumn{Data: &res},
+}
+```
+
 ## Features
 * OpenTelemetry support
 * No reflection or `interface{}`
