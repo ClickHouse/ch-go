@@ -173,11 +173,13 @@ func (c *CorruptedDataErr) Error() string {
 	)
 }
 
-func (c *Client) decodeBlock(
-	ctx context.Context,
-	handler func(ctx context.Context, b proto.Block) error,
-	result proto.Result,
-) error {
+type decodeOptions struct {
+	Handler      func(ctx context.Context, b proto.Block) error
+	Result       proto.Result
+	Compressible bool
+}
+
+func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 	if proto.FeatureTempTables.In(c.protocolVersion) {
 		v, err := c.reader.Str()
 		if err != nil {
@@ -188,11 +190,11 @@ func (c *Client) decodeBlock(
 		}
 	}
 	var block proto.Block
-	if c.compression == proto.CompressionEnabled {
+	if c.compression == proto.CompressionEnabled && opt.Compressible {
 		c.reader.EnableCompression()
 		defer c.reader.DisableCompression()
 	}
-	if err := block.DecodeBlock(c.reader, c.protocolVersion, result); err != nil {
+	if err := block.DecodeBlock(c.reader, c.protocolVersion, opt.Result); err != nil {
 		var badData *compress.CorruptedDataErr
 		if errors.As(err, &badData) {
 			// Returning wrapped exported error to allow user matching.
@@ -210,7 +212,7 @@ func (c *Client) decodeBlock(
 	if block.End() {
 		return nil
 	}
-	if err := handler(ctx, block); err != nil {
+	if err := opt.Handler(ctx, block); err != nil {
 		return errors.Wrap(err, "handler")
 	}
 	return nil
@@ -440,14 +442,6 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			evName     proto.ColStr
 			evValue    proto.ColInt64
 		)
-		result := proto.Results{
-			{Name: "host_name", Data: &evHost},
-			{Name: "current_time", Data: &evTime},
-			{Name: "thread_id", Data: &evThreadID},
-			{Name: "type", Data: &evType},
-			{Name: "name", Data: &evName},
-			{Name: "value", Data: &evValue},
-		}
 		onResult := func(ctx context.Context, b proto.Block) error {
 			for i := range evTime {
 				e := ProfileEvent{
@@ -476,7 +470,18 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			}
 			return nil
 		}
-		if err := c.decodeBlock(ctx, onResult, result); err != nil {
+		if err := c.decodeBlock(ctx, decodeOptions{
+			Handler:      onResult,
+			Compressible: p.Compressible(),
+			Result: proto.Results{
+				{Name: "host_name", Data: &evHost},
+				{Name: "current_time", Data: &evTime},
+				{Name: "thread_id", Data: &evThreadID},
+				{Name: "type", Data: &evType},
+				{Name: "name", Data: &evName},
+				{Name: "value", Data: &evValue},
+			},
+		}); err != nil {
 			return errors.Wrap(err, "decode block")
 		}
 		return nil
@@ -491,16 +496,6 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			eventSource    proto.ColStr
 			eventText      proto.ColStr
 		)
-		result := proto.Results{
-			{Name: "event_time", Data: &eventTime},
-			{Name: "event_time_microseconds", Data: &eventTimeMicro},
-			{Name: "host_name", Data: &eventHostName},
-			{Name: "query_id", Data: &eventQueryID},
-			{Name: "thread_id", Data: &eventThreadID},
-			{Name: "priority", Data: &eventPriority},
-			{Name: "source", Data: &eventSource},
-			{Name: "text", Data: &eventText},
-		}
 		onResult := func(ctx context.Context, b proto.Block) error {
 			for i := range eventTime {
 				l := Log{
@@ -531,7 +526,20 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			}
 			return nil
 		}
-		if err := c.decodeBlock(ctx, onResult, result); err != nil {
+		if err := c.decodeBlock(ctx, decodeOptions{
+			Handler:      onResult,
+			Compressible: p.Compressible(),
+			Result: proto.Results{
+				{Name: "event_time", Data: &eventTime},
+				{Name: "event_time_microseconds", Data: &eventTimeMicro},
+				{Name: "host_name", Data: &eventHostName},
+				{Name: "query_id", Data: &eventQueryID},
+				{Name: "thread_id", Data: &eventThreadID},
+				{Name: "priority", Data: &eventPriority},
+				{Name: "source", Data: &eventSource},
+				{Name: "text", Data: &eventText},
+			},
+		}); err != nil {
 			return errors.Wrap(err, "decode block")
 		}
 		return nil
@@ -581,7 +589,11 @@ func (c *Client) Query(ctx context.Context, q Query) error {
 			}
 			switch code {
 			case proto.ServerCodeData:
-				if err := c.decodeBlock(ctx, onResult, q.Result); err != nil {
+				if err := c.decodeBlock(ctx, decodeOptions{
+					Handler:      onResult,
+					Result:       q.Result,
+					Compressible: code.Compressible(),
+				}); err != nil {
 					return errors.Wrap(err, "decode block")
 				}
 			case proto.ServerCodeEndOfStream:

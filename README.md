@@ -64,8 +64,9 @@ func main() {
   * As close to ClickHouse as possible
 * Structured query execution telemetry streaming
   * Query progress
-  * Profiling
+  * Profiles
   * Logs
+  * [Profile events](https://github.com/ClickHouse/ClickHouse/issues/26177)
 * LZ4, ZSTD or *None* (just checksums) compression
 * [External data](https://clickhouse.com/docs/en/engines/table-engines/special/external-data/) support
 * Rigorously tested
