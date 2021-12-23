@@ -56,7 +56,7 @@ func main() {
 #### Automatic result inference
 ```go
 var result proto.Results
-selectStr := ch.Query{
+q := ch.Query{
 	Body:   "SELECT * FROM table",
 	Result: result.Auto(),
 }
@@ -65,7 +65,7 @@ selectStr := ch.Query{
 #### Single result with column name inference
 ```go
 var res proto.ColBool
-selectStr := ch.Query{
+q := ch.Query{
 	Body:   "SELECT v FROM test_table",
 	Result: proto.ResultColumn{Data: &res},
 }
