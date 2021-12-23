@@ -57,8 +57,8 @@ func main() {
 ```go
 var result proto.Results
 q := ch.Query{
-	Body:   "SELECT * FROM table",
-	Result: result.Auto(),
+  Body:   "SELECT * FROM table",
+  Result: result.Auto(),
 }
 ```
 
@@ -66,8 +66,8 @@ q := ch.Query{
 ```go
 var res proto.ColBool
 q := ch.Query{
-	Body:   "SELECT v FROM test_table",
-	Result: proto.ResultColumn{Data: &res},
+  Body:   "SELECT v FROM test_table",
+  Result: proto.ResultColumn{Data: &res},
 }
 ```
 
