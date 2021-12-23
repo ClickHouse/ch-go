@@ -441,7 +441,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			evThreadID proto.ColUInt64
 			evType     proto.ColInt8
 			evName     proto.ColStr
-			evValue    proto.ColInt64
+			evValue    proto.ColAuto // UInt64 or Int64 depending on version
 		)
 		onResult := func(ctx context.Context, b proto.Block) error {
 			for i := range evTime {
@@ -451,7 +451,12 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 					ThreadID: evThreadID[i],
 					Type:     ProfileEventType(evType[i]),
 					Name:     evName.Row(i),
-					Value:    evValue[i],
+				}
+				switch d := evValue.Data.(type) {
+				case *proto.ColInt64:
+					e.Value = (*d)[i]
+				case *proto.ColUInt64:
+					e.Value = int64((*d)[i])
 				}
 				if ce := c.lg.Check(zap.DebugLevel, "ProfileEvent"); ce != nil {
 					ce.Write(
