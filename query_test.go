@@ -760,3 +760,32 @@ func TestClient_ServerProfileEvents(t *testing.T) {
 		t.Fatal("No profile events")
 	}
 }
+
+func TestClient_Query_Bool(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := Conn(t)
+	if v := conn.server.Revision; v < 54452 {
+		t.Skipf("No bool support %v", v)
+	}
+
+	require.NoError(t, conn.Query(ctx, Query{
+		Body: "CREATE TABLE test_table (v Bool) ENGINE = TinyLog",
+	}), "create table")
+
+	data := proto.ColBool{true, true, false, false, true}
+	require.NoError(t, conn.Query(ctx, Query{
+		Body: "INSERT INTO test_table VALUES",
+		Input: []proto.InputColumn{
+			{Name: "v", Data: &data},
+		},
+	}), "insert")
+
+	var res proto.ColBool
+	require.NoError(t, conn.Query(ctx, Query{
+		Body:   "SELECT v FROM test_table",
+		Result: proto.ResultColumn{Data: &res},
+	}), "select")
+	require.Len(t, data, 5)
+	require.Equal(t, data, res)
+}

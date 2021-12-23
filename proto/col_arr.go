@@ -96,6 +96,11 @@ func (s Results) DecodeResult(r *Reader, b Block) error {
 
 		// Checking column name and type.
 		t := s[i]
+		if t.Name == "" {
+			// Inferring column name.
+			t.Name = columnName
+			s[i] = t
+		}
 		if t.Name != columnName {
 			return errors.Errorf("[%d]: unexpected column %q (%q expected)", i, columnName, t.Name)
 		}

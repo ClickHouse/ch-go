@@ -67,9 +67,16 @@ type InputColumn struct {
 	Data ColInput
 }
 
+// ResultColumn can be uses as part of Results or as single Result.
 type ResultColumn struct {
-	Name string
-	Data ColResult
+	Name string    // Name of column. Inferred if not provided.
+	Data ColResult // Data of column, required.
+}
+
+// DecodeResult implements Result as "single result" helper.
+func (c ResultColumn) DecodeResult(r *Reader, b Block) error {
+	v := Results{c}
+	return v.DecodeResult(r, b)
 }
 
 // AutoResult is ResultColumn with type inference.
