@@ -3,8 +3,12 @@
 package proto
 
 import (
+	"encoding/binary"
 	"github.com/go-faster/errors"
 )
+
+// ClickHouse uses LittleEndian.
+var _ = binary.LittleEndian
 
 // ColDecimal256 represents Decimal256 column.
 type ColDecimal256 []Decimal256

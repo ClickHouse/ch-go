@@ -3,8 +3,12 @@
 package proto
 
 import (
+	"encoding/binary"
 	"github.com/go-faster/errors"
 )
+
+// ClickHouse uses LittleEndian.
+var _ = binary.LittleEndian
 
 // ColDateTime64 represents DateTime64 column.
 type ColDateTime64 []DateTime64
@@ -51,7 +55,7 @@ func (c ColDateTime64) EncodeColumn(b *Buffer) {
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
 	for _, v := range c {
-		bin.PutUint64(
+		binary.LittleEndian.PutUint64(
 			b.Buf[offset:offset+size],
 			uint64(v),
 		)
@@ -69,7 +73,7 @@ func (c *ColDateTime64) DecodeColumn(r *Reader, rows int) error {
 	v := *c
 	for i := 0; i < len(data); i += size {
 		v = append(v,
-			DateTime64(bin.Uint64(data[i:i+size])),
+			DateTime64(binary.LittleEndian.Uint64(data[i:i+size])),
 		)
 	}
 	*c = v

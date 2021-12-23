@@ -3,9 +3,13 @@
 package proto
 
 import (
+	"encoding/binary"
 	"github.com/go-faster/errors"
 	"math"
 )
+
+// ClickHouse uses LittleEndian.
+var _ = binary.LittleEndian
 
 // ColFloat64 represents Float64 column.
 type ColFloat64 []float64
@@ -52,7 +56,7 @@ func (c ColFloat64) EncodeColumn(b *Buffer) {
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
 	for _, v := range c {
-		bin.PutUint64(
+		binary.LittleEndian.PutUint64(
 			b.Buf[offset:offset+size],
 			math.Float64bits(v),
 		)

@@ -3,8 +3,12 @@
 package proto
 
 import (
+	"encoding/binary"
 	"github.com/go-faster/errors"
 )
+
+// ClickHouse uses LittleEndian.
+var _ = binary.LittleEndian
 
 // ColUInt8 represents UInt8 column.
 type ColUInt8 []uint8

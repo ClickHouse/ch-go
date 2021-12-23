@@ -93,7 +93,7 @@ func (v Variant) BinGet() string {
 	if v.Big() {
 		return fmt.Sprintf("binUInt%d", v.Bits)
 	}
-	return "bin." + v.BinFunc()
+	return "binary.LittleEndian." + v.BinFunc()
 }
 
 func (v Variant) IsIP() bool {
@@ -115,7 +115,7 @@ func (v Variant) BinPut() string {
 	if v.Big() {
 		return fmt.Sprintf("binPutUInt%d", v.Bits)
 	}
-	return "bin.Put" + v.BinFunc()
+	return "binary.LittleEndian.Put" + v.BinFunc()
 }
 
 func (v Variant) Big() bool {

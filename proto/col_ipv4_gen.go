@@ -3,8 +3,12 @@
 package proto
 
 import (
+	"encoding/binary"
 	"github.com/go-faster/errors"
 )
+
+// ClickHouse uses LittleEndian.
+var _ = binary.LittleEndian
 
 // ColIPv4 represents IPv4 column.
 type ColIPv4 []IPv4
@@ -51,7 +55,7 @@ func (c ColIPv4) EncodeColumn(b *Buffer) {
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
 	for _, v := range c {
-		bin.PutUint32(
+		binary.LittleEndian.PutUint32(
 			b.Buf[offset:offset+size],
 			uint32(v),
 		)
@@ -69,7 +73,7 @@ func (c *ColIPv4) DecodeColumn(r *Reader, rows int) error {
 	v := *c
 	for i := 0; i < len(data); i += size {
 		v = append(v,
-			IPv4(bin.Uint32(data[i:i+size])),
+			IPv4(binary.LittleEndian.Uint32(data[i:i+size])),
 		)
 	}
 	*c = v

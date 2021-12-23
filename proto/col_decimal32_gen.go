@@ -3,8 +3,12 @@
 package proto
 
 import (
+	"encoding/binary"
 	"github.com/go-faster/errors"
 )
+
+// ClickHouse uses LittleEndian.
+var _ = binary.LittleEndian
 
 // ColDecimal32 represents Decimal32 column.
 type ColDecimal32 []Decimal32
@@ -51,7 +55,7 @@ func (c ColDecimal32) EncodeColumn(b *Buffer) {
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
 	for _, v := range c {
-		bin.PutUint32(
+		binary.LittleEndian.PutUint32(
 			b.Buf[offset:offset+size],
 			uint32(v),
 		)
@@ -69,7 +73,7 @@ func (c *ColDecimal32) DecodeColumn(r *Reader, rows int) error {
 	v := *c
 	for i := 0; i < len(data); i += size {
 		v = append(v,
-			Decimal32(bin.Uint32(data[i:i+size])),
+			Decimal32(binary.LittleEndian.Uint32(data[i:i+size])),
 		)
 	}
 	*c = v

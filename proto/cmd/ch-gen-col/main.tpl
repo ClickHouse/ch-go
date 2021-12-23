@@ -4,11 +4,15 @@
 package proto
 
 import (
+	"encoding/binary"
 {{- if .IsFloat }}
    "math"
 {{- end }}
   "github.com/go-faster/errors"
 )
+
+// ClickHouse uses LittleEndian.
+var _ = binary.LittleEndian
 
 // {{ .Type }} represents {{ .Name }} column.
 type {{ .Type }} []{{ .ElemType }}
