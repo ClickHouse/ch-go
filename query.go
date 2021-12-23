@@ -457,6 +457,8 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 					e.Value = (*d)[i]
 				case *proto.ColUInt64:
 					e.Value = int64((*d)[i])
+				default:
+					return errors.Errorf("unexpected type %q for metric column", d.Type())
 				}
 				if ce := c.lg.Check(zap.DebugLevel, "ProfileEvent"); ce != nil {
 					ce.Write(
