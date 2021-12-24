@@ -85,7 +85,7 @@ func TestColIPv6Array(t *testing.T) {
 }
 
 func BenchmarkColIPv6_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColIPv6
 	for i := 0; i < rows; i++ {
 		data = append(data, IPv6FromInt(i))
@@ -117,7 +117,7 @@ func BenchmarkColIPv6_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColIPv6_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColIPv6
 	for i := 0; i < rows; i++ {
 		data = append(data, IPv6FromInt(i))

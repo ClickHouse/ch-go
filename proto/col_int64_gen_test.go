@@ -85,7 +85,7 @@ func TestColInt64Array(t *testing.T) {
 }
 
 func BenchmarkColInt64_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColInt64
 	for i := 0; i < rows; i++ {
 		data = append(data, int64(i))
@@ -117,7 +117,7 @@ func BenchmarkColInt64_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColInt64_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColInt64
 	for i := 0; i < rows; i++ {
 		data = append(data, int64(i))

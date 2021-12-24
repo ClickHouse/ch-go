@@ -85,7 +85,7 @@ func TestColDecimal32Array(t *testing.T) {
 }
 
 func BenchmarkColDecimal32_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColDecimal32
 	for i := 0; i < rows; i++ {
 		data = append(data, Decimal32(i))
@@ -117,7 +117,7 @@ func BenchmarkColDecimal32_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColDecimal32_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColDecimal32
 	for i := 0; i < rows; i++ {
 		data = append(data, Decimal32(i))

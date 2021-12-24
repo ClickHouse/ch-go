@@ -85,7 +85,7 @@ func TestColUInt16Array(t *testing.T) {
 }
 
 func BenchmarkColUInt16_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColUInt16
 	for i := 0; i < rows; i++ {
 		data = append(data, uint16(i))
@@ -117,7 +117,7 @@ func BenchmarkColUInt16_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColUInt16_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColUInt16
 	for i := 0; i < rows; i++ {
 		data = append(data, uint16(i))

@@ -85,7 +85,7 @@ func TestColEnum8Array(t *testing.T) {
 }
 
 func BenchmarkColEnum8_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColEnum8
 	for i := 0; i < rows; i++ {
 		data = append(data, Enum8(i))
@@ -117,7 +117,7 @@ func BenchmarkColEnum8_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColEnum8_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColEnum8
 	for i := 0; i < rows; i++ {
 		data = append(data, Enum8(i))

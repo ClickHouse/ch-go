@@ -86,7 +86,7 @@ func Test{{ .Type }}Array(t *testing.T) {
 }
 
 func Benchmark{{ .Type }}_DecodeColumn(b *testing.B) {
-  const rows = 50_000
+  const rows = 1_000
   var data {{ .Type }}
   for i := 0; i < rows; i++ {
     data = append(data, {{ .New }}(i))
@@ -118,7 +118,7 @@ func Benchmark{{ .Type }}_DecodeColumn(b *testing.B) {
 }
 
 func Benchmark{{ .Type }}_EncodeColumn(b *testing.B) {
-  const rows = 50_000
+  const rows = 1_000
   var data {{ .Type }}
   for i := 0; i < rows; i++ {
     data = append(data, {{ .New }}(i))

@@ -85,7 +85,7 @@ func TestColIPv4Array(t *testing.T) {
 }
 
 func BenchmarkColIPv4_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColIPv4
 	for i := 0; i < rows; i++ {
 		data = append(data, IPv4(i))
@@ -117,7 +117,7 @@ func BenchmarkColIPv4_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColIPv4_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColIPv4
 	for i := 0; i < rows; i++ {
 		data = append(data, IPv4(i))

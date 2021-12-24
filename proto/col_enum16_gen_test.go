@@ -85,7 +85,7 @@ func TestColEnum16Array(t *testing.T) {
 }
 
 func BenchmarkColEnum16_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColEnum16
 	for i := 0; i < rows; i++ {
 		data = append(data, Enum16(i))
@@ -117,7 +117,7 @@ func BenchmarkColEnum16_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColEnum16_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColEnum16
 	for i := 0; i < rows; i++ {
 		data = append(data, Enum16(i))

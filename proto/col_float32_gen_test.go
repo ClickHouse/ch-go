@@ -85,7 +85,7 @@ func TestColFloat32Array(t *testing.T) {
 }
 
 func BenchmarkColFloat32_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColFloat32
 	for i := 0; i < rows; i++ {
 		data = append(data, float32(i))
@@ -117,7 +117,7 @@ func BenchmarkColFloat32_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColFloat32_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColFloat32
 	for i := 0; i < rows; i++ {
 		data = append(data, float32(i))

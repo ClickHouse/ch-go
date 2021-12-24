@@ -85,7 +85,7 @@ func TestColDateArray(t *testing.T) {
 }
 
 func BenchmarkColDate_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColDate
 	for i := 0; i < rows; i++ {
 		data = append(data, Date(i))
@@ -117,7 +117,7 @@ func BenchmarkColDate_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColDate_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColDate
 	for i := 0; i < rows; i++ {
 		data = append(data, Date(i))

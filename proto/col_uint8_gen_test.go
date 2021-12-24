@@ -85,7 +85,7 @@ func TestColUInt8Array(t *testing.T) {
 }
 
 func BenchmarkColUInt8_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColUInt8
 	for i := 0; i < rows; i++ {
 		data = append(data, uint8(i))
@@ -117,7 +117,7 @@ func BenchmarkColUInt8_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColUInt8_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColUInt8
 	for i := 0; i < rows; i++ {
 		data = append(data, uint8(i))

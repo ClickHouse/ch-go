@@ -85,7 +85,7 @@ func TestColDate32Array(t *testing.T) {
 }
 
 func BenchmarkColDate32_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColDate32
 	for i := 0; i < rows; i++ {
 		data = append(data, Date32(i))
@@ -117,7 +117,7 @@ func BenchmarkColDate32_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColDate32_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColDate32
 	for i := 0; i < rows; i++ {
 		data = append(data, Date32(i))
