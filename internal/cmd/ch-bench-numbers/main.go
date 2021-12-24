@@ -5,72 +5,60 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sync/atomic"
+	"runtime/pprof"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/go-faster/errors"
-	"golang.org/x/sync/errgroup"
+	"go.uber.org/multierr"
 
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/proto"
 )
 
-func run(ctx context.Context) error {
+func run(ctx context.Context) (re error) {
 	var arg struct {
-		Workers int
+		Count   int
+		Profile string
 	}
-	flag.IntVar(&arg.Workers, "j", 2, "concurrent workers to use")
+	flag.IntVar(&arg.Count, "n", 20, "count")
+	flag.StringVar(&arg.Profile, "profile", "cpu.out", "memory profile")
 	flag.Parse()
 
-	var (
-		rows       uint64
-		totalBytes uint64
-	)
+	f, err := os.Create(arg.Profile)
+	if err != nil {
+		return errors.Wrap(err, "create profile")
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			re = multierr.Append(re, err)
+		}
 
-	start := time.Now()
-	g, ctx := errgroup.WithContext(ctx)
-	for i := 0; i < arg.Workers; i++ {
-		g.Go(func() error {
-			c, err := ch.Dial(ctx, "localhost:9000", ch.Options{})
-			if err != nil {
-				return errors.Wrap(err, "dial")
-			}
-			defer func() {
-				_ = c.Close()
-			}()
+		fmt.Println("Done, profile wrote to", arg.Profile)
+	}()
+	if err := pprof.StartCPUProfile(f); err != nil {
+		return errors.Wrap(err, "start profile")
+	}
+	defer pprof.StopCPUProfile()
 
-			var data proto.ColUInt64
-			if err := c.Query(ctx, ch.Query{
-				Body: "SELECT number FROM system.numbers LIMIT 500000000",
-				OnResult: func(ctx context.Context, block proto.Block) error {
-					return nil
-				},
-				OnProgress: func(ctx context.Context, p proto.Progress) error {
-					atomic.AddUint64(&rows, p.Rows)
-					atomic.AddUint64(&totalBytes, p.Bytes)
-					return nil
-				},
-				Result: proto.Results{
-					{Name: "number", Data: &data},
-				},
-			}); err != nil {
-				return errors.Wrap(err, "query")
-			}
-
-			return nil
-		})
+	c, err := ch.Dial(ctx, "localhost:9000", ch.Options{})
+	if err != nil {
+		return errors.Wrap(err, "dial")
 	}
 
-	if err := g.Wait(); err != nil {
-		return errors.Wrap(err, "wait")
+	var data proto.ColUInt64
+	for i := 0; i < arg.Count; i++ {
+		start := time.Now()
+		if err := c.Query(ctx, ch.Query{
+			Body:     "SELECT number FROM system.numbers LIMIT 500000000",
+			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
+			Result: proto.Results{
+				{Name: "number", Data: &data},
+			},
+		}); err != nil {
+			return errors.Wrap(err, "query")
+		}
+		fmt.Println(time.Since(start))
 	}
-
-	duration := time.Since(start)
-	fmt.Println(duration.Round(time.Millisecond), rows, "rows",
-		humanize.Bytes(totalBytes),
-		humanize.Bytes(uint64(float64(totalBytes)/duration.Seconds()))+"/s",
-	)
 
 	return nil
 }
