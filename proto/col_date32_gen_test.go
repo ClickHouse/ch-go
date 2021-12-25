@@ -36,6 +36,12 @@ func TestColDate32_DecodeColumn(t *testing.T) {
 		require.Equal(t, 0, dec.Rows())
 		require.Equal(t, ColumnTypeDate32, dec.Type())
 	})
+	t.Run("ZeroRows", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+
+		var dec ColDate32
+		require.NoError(t, dec.DecodeColumn(r, 0))
+	})
 	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 

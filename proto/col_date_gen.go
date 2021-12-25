@@ -65,6 +65,9 @@ func (c ColDate) EncodeColumn(b *Buffer) {
 
 // DecodeColumn decodes Date rows from *Reader.
 func (c *ColDate) DecodeColumn(r *Reader, rows int) error {
+	if rows == 0 {
+		return nil
+	}
 	const size = 16 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {

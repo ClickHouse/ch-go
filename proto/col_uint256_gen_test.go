@@ -36,6 +36,12 @@ func TestColUInt256_DecodeColumn(t *testing.T) {
 		require.Equal(t, 0, dec.Rows())
 		require.Equal(t, ColumnTypeUInt256, dec.Type())
 	})
+	t.Run("ZeroRows", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+
+		var dec ColUInt256
+		require.NoError(t, dec.DecodeColumn(r, 0))
+	})
 	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 

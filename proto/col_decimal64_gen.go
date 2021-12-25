@@ -65,6 +65,9 @@ func (c ColDecimal64) EncodeColumn(b *Buffer) {
 
 // DecodeColumn decodes Decimal64 rows from *Reader.
 func (c *ColDecimal64) DecodeColumn(r *Reader, rows int) error {
+	if rows == 0 {
+		return nil
+	}
 	const size = 64 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {

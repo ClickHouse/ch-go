@@ -60,6 +60,9 @@ func (c ColInt8) EncodeColumn(b *Buffer) {
 
 // DecodeColumn decodes Int8 rows from *Reader.
 func (c *ColInt8) DecodeColumn(r *Reader, rows int) error {
+	if rows == 0 {
+		return nil
+	}
 	data, err := r.ReadRaw(rows)
 	if err != nil {
 		return errors.Wrap(err, "read")

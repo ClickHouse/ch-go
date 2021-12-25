@@ -65,6 +65,9 @@ func (c ColIPv4) EncodeColumn(b *Buffer) {
 
 // DecodeColumn decodes IPv4 rows from *Reader.
 func (c *ColIPv4) DecodeColumn(r *Reader, rows int) error {
+	if rows == 0 {
+		return nil
+	}
 	const size = 32 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {

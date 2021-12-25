@@ -65,6 +65,9 @@ func (c ColInt16) EncodeColumn(b *Buffer) {
 
 // DecodeColumn decodes Int16 rows from *Reader.
 func (c *ColInt16) DecodeColumn(r *Reader, rows int) error {
+	if rows == 0 {
+		return nil
+	}
 	const size = 16 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {

@@ -66,6 +66,9 @@ func (c ColFloat32) EncodeColumn(b *Buffer) {
 
 // DecodeColumn decodes Float32 rows from *Reader.
 func (c *ColFloat32) DecodeColumn(r *Reader, rows int) error {
+	if rows == 0 {
+		return nil
+	}
 	const size = 32 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {
