@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-faster/errors"
 )
@@ -60,6 +61,23 @@ func (i *BlockInfo) Decode(r *Reader) error {
 			return errors.Errorf("unknown field %d", f)
 		}
 	}
+}
+
+// Input of query.
+type Input []InputColumn
+
+// Into returns INSERT INTO table (c0, c..., cn) VALUES query.
+func (i Input) Into(table string) string {
+	return fmt.Sprintf("INSERT INTO %s %s VALUES", table, i.Columns())
+}
+
+// Columns returns "(foo, bar, baz)" formatted list of Input column names.
+func (i Input) Columns() string {
+	var names []string
+	for _, v := range i {
+		names = append(names, v.Name)
+	}
+	return fmt.Sprintf("(%s)", strings.Join(names, ", "))
 }
 
 type InputColumn struct {

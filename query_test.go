@@ -47,6 +47,37 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 4)
 		require.Equal(t, data, gotData)
 	})
+	t.Run("InsertHelper", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		// Create table, no data fetch.
+		createTable := Query{
+			Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
+		}
+		require.NoError(t, conn.Query(ctx, createTable), "create table")
+
+		data := proto.ColUInt8{1, 2, 3, 4}
+		input := proto.Input{
+			{Name: "id", Data: &data},
+		}
+		insertQuery := Query{
+			Body:  input.Into("test_table"),
+			Input: input,
+		}
+		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+
+		var gotData proto.ColUInt8
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "id", Data: &gotData},
+			},
+		}
+		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.Len(t, data, 4)
+		require.Equal(t, data, gotData)
+	})
 	t.Run("InsertEnum8", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)

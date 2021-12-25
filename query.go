@@ -121,7 +121,7 @@ type Query struct {
 	QuotaKey string
 
 	// Input columns for INSERT operations.
-	Input []proto.InputColumn
+	Input proto.Input
 	// OnInput is called to allow ingesting more data to Input.
 	//
 	// The io.EOF reports that no more input should be ingested.
