@@ -85,6 +85,9 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
 
 // DecodeColumn decodes {{ .Name }} rows from *Reader.
 func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
+  if rows == 0 {
+    return nil
+  }
   {{- if .SingleByte }}
   data, err := r.ReadRaw(rows)
   {{- else }}
