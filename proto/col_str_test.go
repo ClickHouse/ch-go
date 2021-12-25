@@ -10,6 +10,38 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestColStr_AppendBytes(t *testing.T) {
+	var data ColStr
+
+	data.AppendBytes([]byte("Hello, World!"))
+	data.AppendBytes([]byte("ClickHouse"))
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_str_bytes")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+
+		var dec ColStr
+		require.NoError(t, dec.DecodeColumn(r, 2))
+		require.Equal(t, data, dec)
+
+		t.Run("ForEach", func(t *testing.T) {
+			var output []string
+			f := func(i int, s string) error {
+				output = append(output, s)
+				return nil
+			}
+			require.NoError(t, dec.ForEach(f))
+			require.Equal(t, []string{"Hello, World!", "ClickHouse"}, output)
+		})
+	})
+}
+
 func TestColStr_EncodeColumn(t *testing.T) {
 	var data ColStr
 

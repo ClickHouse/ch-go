@@ -2,7 +2,6 @@ package proto
 
 import (
 	"encoding/binary"
-	"unicode/utf8"
 
 	"github.com/go-faster/errors"
 )
@@ -20,6 +19,14 @@ type ColStr struct {
 
 // Append string to column.
 func (c *ColStr) Append(v string) {
+	start := len(c.Buf)
+	c.Buf = append(c.Buf, v...)
+	end := len(c.Buf)
+	c.Pos = append(c.Pos, Position{Start: start, End: end})
+}
+
+// AppendBytes append byte slice as string to column.
+func (c *ColStr) AppendBytes(v []byte) {
 	start := len(c.Buf)
 	c.Buf = append(c.Buf, v...)
 	end := len(c.Buf)
@@ -118,10 +125,6 @@ func (c *ColStr) DecodeColumn(r *Reader, rows int) error {
 		if err := r.ReadFull(c.Buf[p.Start:p.End]); err != nil {
 			return errors.Wrapf(err, "row %d: read full", i)
 		}
-		if !utf8.Valid(c.Buf[p.Start:p.End]) {
-			return errors.Errorf("row %d: invalid utf", i)
-		}
-
 		c.Pos = append(c.Pos, p)
 	}
 	return nil
