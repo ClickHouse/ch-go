@@ -72,7 +72,11 @@ func (c *ColFloat64) DecodeColumn(r *Reader, rows int) error {
 		return errors.Wrap(err, "read")
 	}
 	v := *c
-	for i := 0; i < len(data); i += size {
+	// Move bound check out of loop.
+	//
+	// See https://github.com/golang/go/issues/30945.
+	_ = data[len(data)-size]
+	for i := 0; i <= len(data)-size; i += size {
 		v = append(v,
 			math.Float64frombits(bin.Uint64(data[i:i+size])),
 		)
