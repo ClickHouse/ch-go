@@ -122,7 +122,7 @@ q := ch.Query{
 * Nullable(T)
 
 ## TODO
-- [ ] Pooling
+- [ ] Connection pools
 - [ ] API UX Improvements (with 1.18 generics?)
     - [x] Enum
     - [x] LowCardinality
