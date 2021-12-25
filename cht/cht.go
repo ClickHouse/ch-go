@@ -75,6 +75,7 @@ func Bin() (string, error) {
 	return p, nil
 }
 
+// Server represents testing ClickHouse server.
 type Server struct {
 	TCP  string
 	HTTP string
@@ -88,10 +89,27 @@ func writeXML(t testing.TB, name string, v interface{}) {
 	require.NoError(t, os.WriteFile(name, buf.Bytes(), 0o700))
 }
 
-func Connect(t testing.TB) *Server {
+// New creates new ClickHouse server and returns it.
+//
+// Skip tests if CH_E2E variable is set to 0.
+// Fails if CH_E2E is 1, but no binary is available.
+// Skips if CH_E2E is unset and no binary.
+//
+// Override binary with CH_BIN.
+// Can be clickhouse-server or clickhouse.
+func New(t testing.TB) Server {
+	status := e2e.Get(t)
+	if status == e2e.Disabled {
+		t.Skip("E2E: Disabled")
+	}
 	binaryPath, err := Bin()
 	if err != nil {
-		e2e.Skip(t)
+		switch status {
+		case e2e.NotSet:
+			t.Skip("E2E: Skip")
+		case e2e.Enabled:
+			t.Fatalf("E2E: No binary: %v", err)
+		}
 	}
 
 	require.NoError(t, err)
@@ -196,7 +214,7 @@ func Connect(t testing.TB) *Server {
 		t.Log("Closed in", time.Since(startClose).Round(time.Millisecond))
 	})
 
-	return &Server{
+	return Server{
 		TCP:  tcpAddr,
 		HTTP: httpAddr,
 	}

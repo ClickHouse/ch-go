@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-faster/ch"
-	"github.com/go-faster/ch/internal/cht"
+	"github.com/go-faster/ch/cht"
 	"github.com/go-faster/ch/proto"
 )
 
 func TestConnect(t *testing.T) {
 	ctx := context.Background()
-	server := cht.Connect(t)
+	server := cht.New(t)
 
 	client, err := ch.Dial(ctx, server.TCP, ch.Options{})
 	require.NoError(t, err)

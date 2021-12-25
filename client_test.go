@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
-	"github.com/go-faster/ch/internal/cht"
+	"github.com/go-faster/ch/cht"
 	"github.com/go-faster/ch/internal/gold"
 )
 
@@ -23,7 +23,7 @@ func ConnOpt(t testing.TB, opt Options) *Client {
 	t.Helper()
 
 	ctx := context.Background()
-	server := cht.Connect(t)
+	server := cht.New(t)
 
 	if opt.Logger == nil {
 		opt.Logger = zaptest.NewLogger(t)
