@@ -558,8 +558,8 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 	return nil
 }
 
-// Query performs Query on ClickHouse server.
-func (c *Client) Query(ctx context.Context, q Query) error {
+// Do performs Query on ClickHouse server.
+func (c *Client) Do(ctx context.Context, q Query) error {
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
 	}

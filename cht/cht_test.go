@@ -28,7 +28,7 @@ func TestConnect(t *testing.T) {
 		createTable := ch.Query{
 			Body: "CREATE TABLE test_table (id UInt64) ENGINE = MergeTree ORDER BY id",
 		}
-		require.NoError(t, client.Query(ctx, createTable))
+		require.NoError(t, client.Do(ctx, createTable))
 	})
 	t.Run("SelectOne", func(t *testing.T) {
 		// Select single row.
@@ -42,7 +42,7 @@ func TestConnect(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, client.Query(ctx, selectOne))
+		require.NoError(t, client.Do(ctx, selectOne))
 		require.Len(t, data, 1)
 		require.Equal(t, byte(1), data[0])
 	})

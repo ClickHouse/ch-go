@@ -26,7 +26,7 @@ func run(ctx context.Context) error {
 		Result: result.Auto(),
 	}
 
-	if err := c.Query(ctx, selectStr); err != nil {
+	if err := c.Do(ctx, selectStr); err != nil {
 		return errors.Wrap(err, "select")
 	}
 

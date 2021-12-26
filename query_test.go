@@ -25,7 +25,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColUInt8{1, 2, 3, 4}
 		insertQuery := Query{
@@ -34,7 +34,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "id", Data: &data},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		var gotData proto.ColUInt8
 		selectData := Query{
@@ -43,7 +43,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "id", Data: &gotData},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Len(t, data, 4)
 		require.Equal(t, data, gotData)
 	})
@@ -55,7 +55,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColUInt8{1, 2, 3, 4}
 		input := proto.Input{
@@ -65,7 +65,7 @@ func TestClient_Query(t *testing.T) {
 			Body:  input.Into("test_table"),
 			Input: input,
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		var gotData proto.ColUInt8
 		selectData := Query{
@@ -74,7 +74,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "id", Data: &gotData},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Len(t, data, 4)
 		require.Equal(t, data, gotData)
 	})
@@ -86,7 +86,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: fmt.Sprintf("CREATE TABLE test_table (v %s) ENGINE = TinyLog", enum),
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColEnum8Auto{
 			Str: []string{"foo", "bar"},
@@ -100,7 +100,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: data},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		var gotData proto.ColEnum8Auto
 		selectData := Query{
@@ -109,7 +109,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: &gotData},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Equal(t, data.Str, gotData.Str)
 		t.Log(gotData.Str)
 	})
@@ -120,7 +120,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: "CREATE TABLE test_table (v Tuple(String, Int64)) ENGINE = TinyLog",
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		const rows = 50
 		var (
@@ -139,7 +139,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: &data},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		gotData := proto.ColTuple{new(proto.ColStr), new(proto.ColInt64)}
 		selectData := Query{
@@ -148,7 +148,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: gotData},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Equal(t, rows, gotData.Rows())
 		require.Equal(t, data, gotData)
 	})
@@ -160,7 +160,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: "CREATE TABLE test_table (id UInt8) ENGINE = TinyLog",
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		const (
 			blocks = 5 // total blocks
@@ -184,7 +184,7 @@ func TestClient_Query(t *testing.T) {
 				return nil
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		var (
 			gotTotal int
@@ -200,14 +200,14 @@ func TestClient_Query(t *testing.T) {
 				return nil
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Equal(t, blocks*size, gotTotal)
 	})
 	t.Run("InsertArr", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 
-		require.NoError(t, conn.Query(ctx, Query{
+		require.NoError(t, conn.Do(ctx, Query{
 			Body: "CREATE TABLE test_array_table (id UInt8, v Array(String)) ENGINE = MergeTree ORDER BY id",
 		}), "create table")
 
@@ -230,7 +230,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: &arr},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertArr), "insert")
+		require.NoError(t, conn.Do(ctx, insertArr), "insert")
 
 		var gotData proto.ColStr
 		gotArr := proto.ColArr{Data: &gotData}
@@ -240,7 +240,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: &gotArr},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectArr), "select")
+		require.NoError(t, conn.Do(ctx, selectArr), "select")
 		require.Equal(t, data, gotData)
 		require.Equal(t, arr.Offsets, gotArr.Offsets)
 	})
@@ -257,7 +257,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectOne))
+		require.NoError(t, Conn(t).Do(ctx, selectOne))
 		require.Len(t, data, 1)
 		require.Equal(t, byte(1), data[0])
 	})
@@ -274,7 +274,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "unsigned", Data: &unsigned},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectOne))
+		require.NoError(t, Conn(t).Do(ctx, selectOne))
 		require.Len(t, signed, 1)
 		require.Len(t, unsigned, 1)
 
@@ -286,7 +286,7 @@ func TestClient_Query(t *testing.T) {
 	t.Run("Exception", func(t *testing.T) {
 		t.Parallel()
 		drop := Query{Body: "DROP TABLE _3_"}
-		err := Conn(t).Query(ctx, drop)
+		err := Conn(t).Do(ctx, drop)
 		ex, ok := AsException(err)
 		t.Logf("%#v", ex)
 		require.True(t, ok)
@@ -306,7 +306,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectStr))
+		require.NoError(t, Conn(t).Do(ctx, selectStr))
 		require.Equal(t, 1, data.Rows())
 		require.Equal(t, "foo", data.First())
 	})
@@ -325,7 +325,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectArr))
+		require.NoError(t, Conn(t).Do(ctx, selectArr))
 		require.Equal(t, 1, arr.Rows())
 		require.Equal(t, 3, data.Rows())
 		require.Equal(t, proto.ColUInt8{1, 2, 3}, data)
@@ -342,7 +342,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectArr))
+		require.NoError(t, Conn(t).Do(ctx, selectArr))
 		require.Equal(t, 1, data.Rows())
 		t.Logf("%v %s", data[0], data[0].ToIP())
 		require.Equal(t, netaddr.MustParseIP("127.1.1.5"), data[0].ToIP())
@@ -359,7 +359,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectArr))
+		require.NoError(t, Conn(t).Do(ctx, selectArr))
 		require.Equal(t, 1, data.Rows())
 		t.Logf("%v %s", data[0], data[0].ToIP())
 		expected := netaddr.MustParseIP("2001:db8:ac10:fe01:feed:babe:cafe:f00d")
@@ -381,7 +381,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectArr))
+		require.NoError(t, Conn(t).Do(ctx, selectArr))
 		require.Equal(t, 1, data.Rows())
 		loc, err := time.LoadLocation(tz)
 		require.NoError(t, err)
@@ -399,7 +399,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: "CREATE TABLE test_table (d DateTime) ENGINE = MergeTree ORDER BY d",
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColDateTime{1546290000}
 		insertQuery := Query{
@@ -408,7 +408,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "d", Data: &data},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		var gotData proto.ColDateTime
 		selectData := Query{
@@ -417,7 +417,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "d", Data: &gotData},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Len(t, data, 1)
 		require.Equal(t, data, gotData)
 	})
@@ -429,7 +429,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: fmt.Sprintf("CREATE TABLE test_table (d DateTime64(%d)) ENGINE = MergeTree ORDER BY d", p),
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColDateTime64{
 			proto.DateTime64(time.Unix(1546290000, 0).UnixNano()),
@@ -440,7 +440,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "d", Data: data.Wrap(p)},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		var gotData proto.ColDateTime64
 		selectData := Query{
@@ -449,7 +449,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "d", Data: &gotData},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Len(t, data, 1)
 		require.Equal(t, data, gotData)
 	})
@@ -461,7 +461,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: "CREATE TABLE test_table (v LowCardinality(String)) ENGINE = TinyLog",
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		s := &proto.ColStr{}
 		data := proto.ColLowCardinality{
@@ -478,7 +478,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: &data},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		var (
 			gotIndex = &proto.ColStr{}
@@ -492,7 +492,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: gotData},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Equal(t, data.Rows(), gotData.Rows())
 		require.Equal(t, data.Key, gotData.Key)
 
@@ -512,7 +512,7 @@ func TestClient_Query(t *testing.T) {
 		createTable := Query{
 			Body: "CREATE TABLE test_table (v Map(String, String)) ENGINE = TinyLog",
 		}
-		require.NoError(t, conn.Query(ctx, createTable), "create table")
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		var (
 			keys   = &proto.ColStr{}
@@ -544,7 +544,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: data},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, insertQuery), "insert")
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
 		var (
 			gotKeys   = &proto.ColStr{}
@@ -560,7 +560,7 @@ func TestClient_Query(t *testing.T) {
 				{Name: "v", Data: gotData},
 			},
 		}
-		require.NoError(t, conn.Query(ctx, selectData), "select")
+		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Equal(t, data.Rows(), gotData.Rows())
 		require.Equal(t, data, gotData)
 	})
@@ -584,7 +584,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectRand))
+		require.NoError(t, Conn(t).Do(ctx, selectRand))
 		require.Equal(t, numbers, total)
 	})
 }
@@ -621,7 +621,7 @@ func TestClientCompression(t *testing.T) {
 						},
 					},
 				}
-				require.NoError(t, conn(t).Query(ctx, selectStr))
+				require.NoError(t, conn(t).Do(ctx, selectStr))
 				require.Equal(t, 1, data.Rows())
 				require.Equal(t, "foo", data.First())
 			})
@@ -632,7 +632,7 @@ func TestClientCompression(t *testing.T) {
 				createTable := Query{
 					Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
 				}
-				require.NoError(t, client.Query(ctx, createTable), "create table")
+				require.NoError(t, client.Do(ctx, createTable), "create table")
 
 				data := proto.ColUInt8{1, 2, 3, 4}
 				insertQuery := Query{
@@ -641,7 +641,7 @@ func TestClientCompression(t *testing.T) {
 						{Name: "id", Data: &data},
 					},
 				}
-				require.NoError(t, client.Query(ctx, insertQuery), "insert")
+				require.NoError(t, client.Do(ctx, insertQuery), "insert")
 
 				var gotData proto.ColUInt8
 				selectData := Query{
@@ -650,7 +650,7 @@ func TestClientCompression(t *testing.T) {
 						{Name: "id", Data: &gotData},
 					},
 				}
-				require.NoError(t, client.Query(ctx, selectData), "select")
+				require.NoError(t, client.Do(ctx, selectData), "select")
 				require.Len(t, data, 4)
 				require.Equal(t, data, gotData)
 			})
@@ -700,7 +700,7 @@ func TestClient_ServerLog(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, conn(t).Query(ctx, selectStr))
+		require.NoError(t, conn(t).Do(ctx, selectStr))
 		require.Equal(t, 1, data.Rows())
 		require.Equal(t, "foo", data.First())
 		if logs == 0 {
@@ -725,7 +725,7 @@ func TestClient_ExternalData(t *testing.T) {
 				{Name: "v", Data: &data},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectStr))
+		require.NoError(t, Conn(t).Do(ctx, selectStr))
 		require.Equal(t, 3, data.Rows())
 	})
 	t.Run("Default", func(t *testing.T) {
@@ -740,7 +740,7 @@ func TestClient_ExternalData(t *testing.T) {
 				{Name: "v", Data: &data},
 			},
 		}
-		require.NoError(t, Conn(t).Query(ctx, selectStr))
+		require.NoError(t, Conn(t).Do(ctx, selectStr))
 		require.Equal(t, 3, data.Rows())
 	})
 }
@@ -760,7 +760,7 @@ func TestClient_ServerProfile(t *testing.T) {
 			proto.AutoResult("1"),
 		},
 	}
-	require.NoError(t, conn.Query(ctx, selectStr))
+	require.NoError(t, conn.Do(ctx, selectStr))
 	t.Logf("%d profile(s)", profiles)
 	if profiles == 0 {
 		t.Fatal("No profiles")
@@ -785,7 +785,7 @@ func TestClient_ServerProfileEvents(t *testing.T) {
 			proto.AutoResult("1"),
 		},
 	}
-	require.NoError(t, conn.Query(ctx, selectStr))
+	require.NoError(t, conn.Do(ctx, selectStr))
 	t.Logf("%d profile event(s)", events)
 	if events == 0 {
 		t.Fatal("No profile events")
@@ -800,12 +800,12 @@ func TestClient_Query_Bool(t *testing.T) {
 		t.Skipf("No bool support %v", v)
 	}
 
-	require.NoError(t, conn.Query(ctx, Query{
+	require.NoError(t, conn.Do(ctx, Query{
 		Body: "CREATE TABLE test_table (v Bool) ENGINE = TinyLog",
 	}), "create table")
 
 	data := proto.ColBool{true, true, false, false, true}
-	require.NoError(t, conn.Query(ctx, Query{
+	require.NoError(t, conn.Do(ctx, Query{
 		Body: "INSERT INTO test_table VALUES",
 		Input: []proto.InputColumn{
 			{Name: "v", Data: &data},
@@ -813,7 +813,7 @@ func TestClient_Query_Bool(t *testing.T) {
 	}), "insert")
 
 	var res proto.ColBool
-	require.NoError(t, conn.Query(ctx, Query{
+	require.NoError(t, conn.Do(ctx, Query{
 		Body:   "SELECT v FROM test_table",
 		Result: proto.ResultColumn{Data: &res},
 	}), "select")

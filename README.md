@@ -1,6 +1,6 @@
 # ch [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/go-faster/ch#section-documentation) [![](https://img.shields.io/codecov/c/github/go-faster/ch?label=cover)](https://codecov.io/gh/go-faster/ch) [![experimental](https://img.shields.io/badge/-experimental-blueviolet)](https://go-faster.org/docs/projects/status#experimental)
 
-TCP ClickHouse client in Go. Designed for very fast data streaming with low network, cpu and memory overhead.
+TCP ClickHouse client in Go. Designed for very fast data block streaming with low network, cpu and memory overhead.
 
 Work in progress, please [leave feedback](https://github.com/go-faster/ch/discussions/6) on package API or features.
 
@@ -30,8 +30,9 @@ func main() {
     numbers int
     data    proto.ColUInt64
   )
-  if err := c.Query(ctx, ch.Query{
+  if err := c.Do(ctx, ch.Query{
     Body: "SELECT number FROM system.numbers LIMIT 500000000",
+	// OnResult will be called on next received data block.
     OnResult: func(ctx context.Context, b proto.Block) error {
       numbers += len(data)
       return nil
@@ -52,6 +53,12 @@ func main() {
 ```
 
 ### Results
+
+To stream query results, set `Result` and `OnResult` fields of [Query](https://pkg.go.dev/github.com/go-faster/ch#Query).
+The `OnResult` will be called after `Result` is filled with received data block.
+
+The `OnResult` is optional, but query will fail if more than single block is received, so it is ok to solely set the `Result`
+if only one row is expected.
 
 #### Automatic result inference
 ```go
@@ -75,12 +82,12 @@ q := ch.Query{
 * OpenTelemetry support
 * No reflection or `interface{}`
 * Generics (go1.18) for `ArrayOf[T]`, `LowCardinaliyOf[T]`, `EnumOf[T]`
-* **Column**-first design
+* **Column**-oriented design that operates with **blocks**
   * [Dramatically more efficient](https://github.com/go-faster/ch-bench)
   * Up to 50x faster than row-first design around `sql`
   * Up to 500x faster than HTTP API
-  * Low memory overhead (column blocks are slices, i.e. continuous memory)
-  * Highly efficient input and output streaming
+  * Low memory overhead (data blocks are slices, i.e. continuous memory)
+  * Highly efficient input and output block streaming
   * As close to ClickHouse as possible
 * Structured query execution telemetry streaming
   * Query progress

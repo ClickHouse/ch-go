@@ -45,14 +45,14 @@ func run(ctx context.Context) (re error) {
 		return errors.Wrap(err, "dial")
 	}
 
-	var data proto.ColUInt64
+	var data proto.ColStr
 	for i := 0; i < arg.Count; i++ {
 		start := time.Now()
 		if err := c.Do(ctx, ch.Query{
-			Body:     "SELECT number FROM system.numbers LIMIT 500000000",
+			Body:     "SELECT str FROM ascii_random_data",
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
 			Result: proto.Results{
-				{Name: "number", Data: &data},
+				{Name: "str", Data: &data},
 			},
 		}); err != nil {
 			return errors.Wrap(err, "query")

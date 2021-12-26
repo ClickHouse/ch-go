@@ -18,7 +18,7 @@ func main() {
 		numbers int
 		data    proto.ColUInt64
 	)
-	if err := c.Query(ctx, ch.Query{
+	if err := c.Do(ctx, ch.Query{
 		Body: "SELECT number FROM system.numbers LIMIT 500000000",
 		OnResult: func(ctx context.Context, b proto.Block) error {
 			numbers += len(data)

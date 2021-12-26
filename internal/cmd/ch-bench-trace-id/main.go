@@ -74,7 +74,7 @@ func run(ctx context.Context) error {
 			return &d
 		},
 	} {
-		if err := c.Query(ctx, ch.Query{
+		if err := c.Do(ctx, ch.Query{
 			Body: "DROP TABLE bench_trace_id",
 		}); err != nil && !ch.IsErr(err, proto.ErrUnknownTable) {
 			return errors.Wrap(err, "create table")
@@ -82,7 +82,7 @@ func run(ctx context.Context) error {
 
 		data := v()
 		ddl := fmt.Sprintf("CREATE TABLE bench_trace_id (trace_id %s) ENGINE=Memory", data.Type())
-		if err := c.Query(ctx, ch.Query{
+		if err := c.Do(ctx, ch.Query{
 			Body: ddl,
 		}); err != nil {
 			return errors.Wrap(err, "create")
@@ -99,7 +99,7 @@ func run(ctx context.Context) error {
 		const targetRows = n * 100
 		var rows int
 		start := time.Now()
-		if err := c.Query(ctx, ch.Query{
+		if err := c.Do(ctx, ch.Query{
 			Body: "INSERT INTO bench_trace_id VALUES",
 			Settings: []ch.Setting{
 				{
@@ -139,7 +139,7 @@ func run(ctx context.Context) error {
 		lg.Info("Done", zap.Duration("duration", report.Insert))
 
 		start = time.Now()
-		if err := c.Query(ctx, ch.Query{
+		if err := c.Do(ctx, ch.Query{
 			Body: "SELECT trace_id FROM bench_trace_id",
 			Settings: []ch.Setting{
 				{

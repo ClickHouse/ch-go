@@ -40,7 +40,7 @@ func TestServer_Serve(t *testing.T) {
 		if err := c.Ping(ctx); err != nil {
 			return errors.Wrap(err, "ping")
 		}
-		if err := c.Query(ctx, Query{Body: "HELLO"}); err != nil {
+		if err := c.Do(ctx, Query{Body: "HELLO"}); err != nil {
 			return errors.Wrap(err, "query")
 		}
 		return c.Close()

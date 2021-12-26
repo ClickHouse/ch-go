@@ -20,12 +20,12 @@ func run(ctx context.Context) error {
 		_ = c.Close()
 	}()
 
-	if err := c.Query(ctx, ch.Query{
+	if err := c.Do(ctx, ch.Query{
 		Body: "DROP TABLE test_array_table",
 	}); err != nil && !ch.IsErr(err, proto.ErrUnknownTable) {
 		return errors.Wrap(err, "create table")
 	}
-	if err := c.Query(ctx, ch.Query{
+	if err := c.Do(ctx, ch.Query{
 		Body: "CREATE TABLE test_array_table (v Array(String)) ENGINE = MergeTree ORDER BY v",
 	}); err != nil {
 		return errors.Wrap(err, "create table")
@@ -38,7 +38,7 @@ func run(ctx context.Context) error {
 	data.ArrAppend(&arr, []string{"foo", "bar", "baz"})
 	data.ArrAppend(&arr, []string{"Hello", "World!"})
 	data.ArrAppend(&arr, []string{"", "", "0", "None", "False"})
-	if err := c.Query(ctx, ch.Query{
+	if err := c.Do(ctx, ch.Query{
 		Body: "INSERT INTO test_array_table VALUES",
 		Input: []proto.InputColumn{
 			{Name: "v", Data: &arr},

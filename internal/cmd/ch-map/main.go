@@ -20,12 +20,12 @@ func run(ctx context.Context) error {
 		_ = c.Close()
 	}()
 
-	if err := c.Query(ctx, ch.Query{
+	if err := c.Do(ctx, ch.Query{
 		Body: "DROP TABLE test_map_table",
 	}); err != nil && !ch.IsErr(err, proto.ErrUnknownTable) {
 		return errors.Wrap(err, "create table")
 	}
-	if err := c.Query(ctx, ch.Query{
+	if err := c.Do(ctx, ch.Query{
 		Body: "CREATE TABLE test_map_table (v Map(String, String)) ENGINE = TinyLog",
 	}); err != nil {
 		return errors.Wrap(err, "create table")
@@ -55,7 +55,7 @@ func run(ctx context.Context) error {
 		3, // [2:3]
 	}
 
-	if err := c.Query(ctx, ch.Query{
+	if err := c.Do(ctx, ch.Query{
 		Body: "INSERT INTO test_map_table VALUES",
 		Input: []proto.InputColumn{
 			{Name: "v", Data: data},

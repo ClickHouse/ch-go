@@ -48,7 +48,7 @@ func run(ctx context.Context) error {
 		data       proto.ColUInt32
 	)
 	start := time.Now()
-	if err := c.Query(ctx, ch.Query{
+	if err := c.Do(ctx, ch.Query{
 		Body: "SELECT v FROM test_values",
 		OnProgress: func(ctx context.Context, p proto.Progress) error {
 			rows += p.Rows
