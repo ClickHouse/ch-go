@@ -104,6 +104,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 			return errors.Wrap(err, "external data")
 		}
 	}
+	// End of external data.
 	if err := c.encodeBlankBlock(); err != nil {
 		return errors.Wrap(err, "external data end")
 	}
