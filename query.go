@@ -269,9 +269,25 @@ func (c *Client) encodeBlankBlock() error {
 	return c.encodeBlock("", nil)
 }
 
-func (c *Client) sendInput(ctx context.Context, q Query) error {
+func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query) error {
 	if len(q.Input) == 0 {
 		return nil
+	}
+	// Handling input columns that require inference, e.g. enums.
+	for _, v := range info {
+		for _, inCol := range q.Input {
+			infer, ok := inCol.Data.(proto.InferColumn)
+			if !ok || inCol.Name != v.Name {
+				continue
+			}
+			c.lg.Debug("Inferring column",
+				zap.String("column.name", v.Name),
+				zap.Stringer("column.type", v.Type),
+			)
+			if err := infer.Infer(v.Type); err != nil {
+				return errors.Wrapf(err, "infer %q", inCol.Name)
+			}
+		}
 	}
 	var (
 		rows = q.Input[0].Data.Rows()
@@ -566,13 +582,50 @@ func (c *Client) Do(ctx context.Context, q Query) error {
 	}
 	g, ctx := errgroup.WithContext(ctx)
 	done := make(chan struct{})
-	var gotException atomic.Bool
+	var (
+		gotException atomic.Bool
+		colInfo      chan proto.ColInfoInput
+	)
+	if q.Result == nil && len(q.Input) > 0 {
+		// Handling input column type inference, e.g. enums.
+		result := proto.ColInfoInput{}
+		q.Result = &result
+		colInfo = make(chan proto.ColInfoInput, 1)
+		q.OnResult = func(ctx context.Context, block proto.Block) error {
+			c.lg.Debug("Received column info")
+			for _, v := range result {
+				c.lg.Debug("Column",
+					zap.String("column.name", v.Name),
+					zap.Stringer("column.type", v.Type),
+				)
+			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case colInfo <- result:
+				return nil
+			}
+		}
+	}
 	g.Go(func() error {
 		// Sending data.
 		if err := c.sendQuery(ctx, q); err != nil {
 			return errors.Wrap(err, "send query")
 		}
-		if err := c.sendInput(ctx, q); err != nil {
+		if err := c.flush(ctx); err != nil {
+			return errors.Wrap(err, "flush")
+		}
+		var info proto.ColInfoInput
+		if colInfo != nil {
+			c.lg.Info("Waiting for column info")
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case v := <-colInfo:
+				info = v
+			}
+		}
+		if err := c.sendInput(ctx, info, q); err != nil {
 			return errors.Wrap(err, "send input")
 		}
 		if err := c.flush(ctx); err != nil {
@@ -583,6 +636,9 @@ func (c *Client) Do(ctx context.Context, q Query) error {
 	g.Go(func() error {
 		// Receiving query result, data and telemetry.
 		defer close(done)
+		if colInfo != nil {
+			defer close(colInfo)
+		}
 		onResult := c.resultHandler(q)
 		for {
 			if ctx.Err() != nil {

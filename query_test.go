@@ -82,22 +82,18 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 
-		const enum = proto.ColumnType(`Enum8('foo' = 1, 'bar' = 2)`)
 		createTable := Query{
-			Body: fmt.Sprintf("CREATE TABLE test_table (v %s) ENGINE = TinyLog", enum),
+			Body: "CREATE TABLE test_table (v Enum8('foo' = 1, 'bar' = 2)) ENGINE = TinyLog",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColEnum8Auto{
 			Str: []string{"foo", "bar"},
 		}
-		require.NoError(t, data.Infer(enum))
-		require.NoError(t, data.PrepareColumn())
-
 		insertQuery := Query{
 			Body: "INSERT INTO test_table VALUES",
 			Input: []proto.InputColumn{
-				{Name: "v", Data: data},
+				{Name: "v", Data: &data},
 			},
 		}
 		require.NoError(t, conn.Do(ctx, insertQuery), "insert")

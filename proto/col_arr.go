@@ -158,3 +158,36 @@ func (c *ColArr) Reset() {
 	c.Offsets = c.Offsets[:0]
 	c.Data.Reset()
 }
+
+// ColInfo wraps Name and Type of column.
+type ColInfo struct {
+	Name string
+	Type ColumnType
+}
+
+// ColInfoInput saves column info on decoding.
+type ColInfoInput []ColInfo
+
+func (s *ColInfoInput) DecodeResult(r *Reader, b Block) error {
+	if len(*s) > 0 {
+		return errors.New("already inferred")
+	}
+	if b.Rows > 0 {
+		return errors.New("got unexpected rows")
+	}
+	for i := 0; i < b.Columns; i++ {
+		columnName, err := r.Str()
+		if err != nil {
+			return errors.Wrapf(err, "column [%d] name", i)
+		}
+		columnTypeRaw, err := r.Str()
+		if err != nil {
+			return errors.Wrapf(err, "column [%d] type", i)
+		}
+		*s = append(*s, ColInfo{
+			Name: columnName,
+			Type: ColumnType(columnTypeRaw),
+		})
+	}
+	return nil
+}

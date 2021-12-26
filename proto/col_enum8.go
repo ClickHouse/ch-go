@@ -8,8 +8,6 @@ import (
 )
 
 // ColEnum8Auto is inference helper for ColEnum8.
-//
-// NB: Currently no automatic inference if used as input.
 type ColEnum8Auto struct {
 	t ColumnType
 
@@ -18,6 +16,10 @@ type ColEnum8Auto struct {
 	raw      ColEnum8
 
 	Str []string
+}
+
+func (e *ColEnum8Auto) Append(v string) {
+	e.Str = append(e.Str, v)
 }
 
 func (e *ColEnum8Auto) parse(t ColumnType) error {
@@ -66,8 +68,8 @@ func (e *ColEnum8Auto) Infer(t ColumnType) error {
 	return nil
 }
 
-func (e ColEnum8Auto) Rows() int {
-	return e.raw.Rows()
+func (e *ColEnum8Auto) Rows() int {
+	return len(e.Str)
 }
 
 func (e *ColEnum8Auto) DecodeColumn(r *Reader, rows int) error {
@@ -89,7 +91,7 @@ func (e *ColEnum8Auto) Reset() {
 	e.Str = e.Str[:0]
 }
 
-func (e *ColEnum8Auto) PrepareColumn() error {
+func (e *ColEnum8Auto) Prepare() error {
 	for _, v := range e.Str {
 		raw, ok := e.strToRaw[v]
 		if !ok {
@@ -100,10 +102,10 @@ func (e *ColEnum8Auto) PrepareColumn() error {
 	return nil
 }
 
-func (e ColEnum8Auto) EncodeColumn(b *Buffer) {
+func (e *ColEnum8Auto) EncodeColumn(b *Buffer) {
 	e.raw.EncodeColumn(b)
 }
 
-func (e ColEnum8Auto) Type() ColumnType {
+func (e *ColEnum8Auto) Type() ColumnType {
 	return e.t
 }
