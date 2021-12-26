@@ -37,6 +37,12 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
     require.Equal(t, 0, dec.Rows())
     require.Equal(t, {{ .ColumnType }}, dec.Type())
   })
+  t.Run("ZeroRows", func(t *testing.T) {
+    r := NewReader(bytes.NewReader(nil))
+
+    var dec {{ .Type }}
+    require.NoError(t, dec.DecodeColumn(r, 0))
+  })
   t.Run("ErrUnexpectedEOF", func(t *testing.T) {
     r := NewReader(bytes.NewReader(nil))
 

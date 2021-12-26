@@ -65,13 +65,20 @@ func (c ColEnum16) EncodeColumn(b *Buffer) {
 
 // DecodeColumn decodes Enum16 rows from *Reader.
 func (c *ColEnum16) DecodeColumn(r *Reader, rows int) error {
+	if rows == 0 {
+		return nil
+	}
 	const size = 16 / 8
 	data, err := r.ReadRaw(rows * size)
 	if err != nil {
 		return errors.Wrap(err, "read")
 	}
 	v := *c
-	for i := 0; i < len(data); i += size {
+	// Move bound check out of loop.
+	//
+	// See https://github.com/golang/go/issues/30945.
+	_ = data[len(data)-size]
+	for i := 0; i <= len(data)-size; i += size {
 		v = append(v,
 			Enum16(binary.LittleEndian.Uint16(data[i:i+size])),
 		)
