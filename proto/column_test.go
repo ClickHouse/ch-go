@@ -29,6 +29,8 @@ func TestColumnType_Elem(t *testing.T) {
 				{A: ColumnTypeDateTime.With("Europe/Moscow"), B: ColumnTypeDateTime.With("UTC")},
 				{A: ColumnTypeDateTime.With("Europe/Moscow"), B: ColumnTypeDateTime},
 				{A: "Map(String,String)", B: "Map(String, String)"},
+				{A: "Enum8('increment' = 1, 'gauge' = 2)", B: "Int8"},
+				{A: "Int8", B: "Enum8('increment' = 1, 'gauge' = 2)"},
 			} {
 				assert.False(t, tt.A.Conflicts(tt.B),
 					"%s ~ %s", tt.A, tt.B,
@@ -44,6 +46,7 @@ func TestColumnType_Elem(t *testing.T) {
 				{A: ColumnTypeDateTime, B: ColumnTypeInt32},
 				{A: ColumnTypeArray.Sub(ColumnTypeInt32), B: ColumnTypeArray.Sub(ColumnTypeInt64)},
 				{A: "Map(String,String)", B: "Map(String,Int32)"},
+				{A: "Enum16('increment' = 1, 'gauge' = 2)", B: "Int8"},
 			} {
 				assert.True(t, tt.A.Conflicts(tt.B),
 					"%s !~ %s", tt.A, tt.B,
