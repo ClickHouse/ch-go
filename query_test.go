@@ -88,7 +88,7 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColEnum8Auto{
-			Str: []string{"foo", "bar"},
+			Values: []string{"foo", "bar"},
 		}
 		insertQuery := Query{
 			Body: "INSERT INTO test_table VALUES",
@@ -106,8 +106,8 @@ func TestClient_Query(t *testing.T) {
 			},
 		}
 		require.NoError(t, conn.Do(ctx, selectData), "select")
-		require.Equal(t, data.Str, gotData.Str)
-		t.Log(gotData.Str)
+		require.Equal(t, data.Values, gotData.Values)
+		t.Log(gotData.Values)
 	})
 	t.Run("InsertTuple", func(t *testing.T) {
 		t.Parallel()

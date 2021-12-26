@@ -8,6 +8,9 @@ import (
 )
 
 // ColEnum8Auto is inference helper for ColEnum8.
+//
+// You can set Values and actual enum mapping will be inferred during query
+// execution.
 type ColEnum8Auto struct {
 	t ColumnType
 
@@ -15,11 +18,13 @@ type ColEnum8Auto struct {
 	strToRaw map[string]Enum8
 	raw      ColEnum8
 
-	Str []string
+	// Values of Enum8.
+	Values []string
 }
 
+// Append value to Enum8 column.
 func (e *ColEnum8Auto) Append(v string) {
-	e.Str = append(e.Str, v)
+	e.Values = append(e.Values, v)
 }
 
 func (e *ColEnum8Auto) parse(t ColumnType) error {
@@ -69,7 +74,7 @@ func (e *ColEnum8Auto) Infer(t ColumnType) error {
 }
 
 func (e *ColEnum8Auto) Rows() int {
-	return len(e.Str)
+	return len(e.Values)
 }
 
 func (e *ColEnum8Auto) DecodeColumn(r *Reader, rows int) error {
@@ -81,18 +86,18 @@ func (e *ColEnum8Auto) DecodeColumn(r *Reader, rows int) error {
 		if !ok {
 			return errors.Errorf("unknown enum value %d", v)
 		}
-		e.Str = append(e.Str, s)
+		e.Values = append(e.Values, s)
 	}
 	return nil
 }
 
 func (e *ColEnum8Auto) Reset() {
 	e.raw.Reset()
-	e.Str = e.Str[:0]
+	e.Values = e.Values[:0]
 }
 
 func (e *ColEnum8Auto) Prepare() error {
-	for _, v := range e.Str {
+	for _, v := range e.Values {
 		raw, ok := e.strToRaw[v]
 		if !ok {
 			return errors.Errorf("unknown enum value %s", v)
