@@ -17,7 +17,9 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
   const rows = 50
   var data {{ .Type }}
   for i := 0; i < rows; i++ {
-    data = append(data, {{ .New }}(i))
+    v := {{ .New }}(i)
+	data.Append(v)
+    require.Equal(t, v, data.Row(i))
   }
 
   var buf Buffer

@@ -34,6 +34,16 @@ func (c {{ .Type }}) Rows() int {
   return len(c)
 }
 
+// Row returns i-th row of column.
+func (c {{ .Type }}) Row(i int) {{ .ElemType }} {
+  return c[i]
+}
+
+// Append {{ .ElemType }} to column.
+func (c *{{ .Type }}) Append(v {{ .ElemType }})  {
+  *c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *{{ .Type }}) Reset() {
   *c = (*c)[:0]
@@ -42,7 +52,7 @@ func (c *{{ .Type }}) Reset() {
 // NewArr{{ .Name }} returns new Array({{ .Name }}).
 func NewArr{{ .Name }}() *ColArr {
   return &ColArr{
-    Data: new({{ .Type }}),
+	Data: new({{ .Type }}),
   }
 }
 
@@ -61,24 +71,24 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
   start := len(b.Buf)
   b.Buf = append(b.Buf, make([]byte, len(c))...)
   for i := range c {
-    b.Buf[i + start] = {{ .UnsignedType }}(c[i])
+	b.Buf[i + start] = {{ .UnsignedType }}(c[i])
   }
   {{- else }}
   const size = {{ .Bits }} / 8
   offset := len(b.Buf)
   b.Buf = append(b.Buf, make([]byte, size * len(c))...)
   for _, v := range c {
-    {{ .BinPut }}(
-      b.Buf[offset:offset+size],
-    {{- if .IsFloat }}
-      math.{{ .Name }}bits(v),
-    {{- else if .Cast }}
-      {{ .UnsignedType }}(v),
-    {{- else }}
-      v,
-    {{- end }}
-    )
-    offset += size
+	{{ .BinPut }}(
+	  b.Buf[offset:offset+size],
+	{{- if .IsFloat }}
+	  math.{{ .Name }}bits(v),
+	{{- else if .Cast }}
+	  {{ .UnsignedType }}(v),
+	{{- else }}
+	  v,
+	{{- end }}
+	)
+	offset += size
   }
   {{- end }}
 }
@@ -86,7 +96,7 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
 // DecodeColumn decodes {{ .Name }} rows from *Reader.
 func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   if rows == 0 {
-    return nil
+	return nil
   }
   {{- if .SingleByte }}
   data, err := r.ReadRaw(rows)
@@ -95,7 +105,7 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   data, err := r.ReadRaw(rows * size)
   {{- end }}
   if err != nil {
-    return errors.Wrap(err, "read")
+	return errors.Wrap(err, "read")
   }
   {{- if .Byte }}
   *c = append(*c, data...)
@@ -103,7 +113,7 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   v := *c
   v = append(v, make([]{{ .ElemType }}, rows)...)
   for i := range data {
-    v[i] = {{ .ElemType }}(data[i])
+	v[i] = {{ .ElemType }}(data[i])
   }
   *c = v
   {{- else }}
@@ -113,15 +123,15 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   // See https://github.com/golang/go/issues/30945.
   _ = data[len(data)-size]
   for i := 0; i <= len(data)-size; i += size {
-    v = append(v,
-    {{- if .IsFloat }}
-      math.{{ .Name }}frombits(bin.{{ .BinFunc }}(data[i:i+size])),
-    {{- else if .Cast }}
-     {{ .ElemType }}({{ .BinGet }}(data[i:i+size])),
-    {{- else }}
-      {{ .BinGet }}(data[i:i+size]),
-    {{- end }}
-    )
+	v = append(v,
+	{{- if .IsFloat }}
+	  math.{{ .Name }}frombits(bin.{{ .BinFunc }}(data[i:i+size])),
+	{{- else if .Cast }}
+	 {{ .ElemType }}({{ .BinGet }}(data[i:i+size])),
+	{{- else }}
+	  {{ .BinGet }}(data[i:i+size]),
+	{{- end }}
+	)
   }
   *c = v
   {{- end }}
