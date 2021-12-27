@@ -617,7 +617,7 @@ func (c *Client) Do(ctx context.Context, q Query) error {
 		}
 		var info proto.ColInfoInput
 		if colInfo != nil {
-			c.lg.Info("Waiting for column info")
+			c.lg.Debug("Waiting for column info")
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
