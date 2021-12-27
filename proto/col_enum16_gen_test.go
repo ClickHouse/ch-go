@@ -16,7 +16,9 @@ func TestColEnum16_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColEnum16
 	for i := 0; i < rows; i++ {
-		data = append(data, Enum16(i))
+		v := Enum16(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

@@ -30,6 +30,16 @@ func (c ColDecimal32) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColDecimal32) Row(i int) Decimal32 {
+	return c[i]
+}
+
+// Append Decimal32 to column.
+func (c *ColDecimal32) Append(v Decimal32) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDecimal32) Reset() {
 	*c = (*c)[:0]

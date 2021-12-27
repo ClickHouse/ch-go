@@ -30,6 +30,16 @@ func (c ColInt64) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColInt64) Row(i int) int64 {
+	return c[i]
+}
+
+// Append int64 to column.
+func (c *ColInt64) Append(v int64) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColInt64) Reset() {
 	*c = (*c)[:0]

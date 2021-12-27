@@ -16,7 +16,9 @@ func TestColDecimal32_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColDecimal32
 	for i := 0; i < rows; i++ {
-		data = append(data, Decimal32(i))
+		v := Decimal32(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

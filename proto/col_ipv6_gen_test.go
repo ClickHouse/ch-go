@@ -16,7 +16,9 @@ func TestColIPv6_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColIPv6
 	for i := 0; i < rows; i++ {
-		data = append(data, IPv6FromInt(i))
+		v := IPv6FromInt(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

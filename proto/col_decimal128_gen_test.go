@@ -16,7 +16,9 @@ func TestColDecimal128_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColDecimal128
 	for i := 0; i < rows; i++ {
-		data = append(data, Decimal128FromInt(i))
+		v := Decimal128FromInt(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

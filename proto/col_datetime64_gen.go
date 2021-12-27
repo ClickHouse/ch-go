@@ -30,6 +30,16 @@ func (c ColDateTime64) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColDateTime64) Row(i int) DateTime64 {
+	return c[i]
+}
+
+// Append DateTime64 to column.
+func (c *ColDateTime64) Append(v DateTime64) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDateTime64) Reset() {
 	*c = (*c)[:0]

@@ -16,7 +16,9 @@ func TestColUInt8_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColUInt8
 	for i := 0; i < rows; i++ {
-		data = append(data, uint8(i))
+		v := uint8(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

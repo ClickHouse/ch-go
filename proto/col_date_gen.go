@@ -30,6 +30,16 @@ func (c ColDate) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColDate) Row(i int) Date {
+	return c[i]
+}
+
+// Append Date to column.
+func (c *ColDate) Append(v Date) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDate) Reset() {
 	*c = (*c)[:0]

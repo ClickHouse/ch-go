@@ -16,7 +16,9 @@ func TestColFloat64_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColFloat64
 	for i := 0; i < rows; i++ {
-		data = append(data, float64(i))
+		v := float64(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

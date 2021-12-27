@@ -30,6 +30,16 @@ func (c ColUInt256) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColUInt256) Row(i int) UInt256 {
+	return c[i]
+}
+
+// Append UInt256 to column.
+func (c *ColUInt256) Append(v UInt256) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColUInt256) Reset() {
 	*c = (*c)[:0]

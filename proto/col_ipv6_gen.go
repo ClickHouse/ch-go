@@ -30,6 +30,16 @@ func (c ColIPv6) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColIPv6) Row(i int) IPv6 {
+	return c[i]
+}
+
+// Append IPv6 to column.
+func (c *ColIPv6) Append(v IPv6) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColIPv6) Reset() {
 	*c = (*c)[:0]

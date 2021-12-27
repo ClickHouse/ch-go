@@ -16,7 +16,9 @@ func TestColDateTime_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColDateTime
 	for i := 0; i < rows; i++ {
-		data = append(data, DateTime(i))
+		v := DateTime(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

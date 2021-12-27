@@ -16,7 +16,9 @@ func TestColDate32_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColDate32
 	for i := 0; i < rows; i++ {
-		data = append(data, Date32(i))
+		v := Date32(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

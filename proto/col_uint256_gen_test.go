@@ -16,7 +16,9 @@ func TestColUInt256_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColUInt256
 	for i := 0; i < rows; i++ {
-		data = append(data, UInt256FromInt(i))
+		v := UInt256FromInt(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

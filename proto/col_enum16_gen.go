@@ -30,6 +30,16 @@ func (c ColEnum16) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColEnum16) Row(i int) Enum16 {
+	return c[i]
+}
+
+// Append Enum16 to column.
+func (c *ColEnum16) Append(v Enum16) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColEnum16) Reset() {
 	*c = (*c)[:0]

@@ -16,7 +16,9 @@ func TestColUInt16_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColUInt16
 	for i := 0; i < rows; i++ {
-		data = append(data, uint16(i))
+		v := uint16(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer

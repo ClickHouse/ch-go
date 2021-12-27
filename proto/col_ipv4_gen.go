@@ -30,6 +30,16 @@ func (c ColIPv4) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColIPv4) Row(i int) IPv4 {
+	return c[i]
+}
+
+// Append IPv4 to column.
+func (c *ColIPv4) Append(v IPv4) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColIPv4) Reset() {
 	*c = (*c)[:0]

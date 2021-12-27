@@ -30,6 +30,16 @@ func (c ColDateTime) Rows() int {
 	return len(c)
 }
 
+// Row returns i-th row of column.
+func (c ColDateTime) Row(i int) DateTime {
+	return c[i]
+}
+
+// Append DateTime to column.
+func (c *ColDateTime) Append(v DateTime) {
+	*c = append(*c, v)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDateTime) Reset() {
 	*c = (*c)[:0]

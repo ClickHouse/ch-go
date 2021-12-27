@@ -16,7 +16,9 @@ func TestColUInt64_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColUInt64
 	for i := 0; i < rows; i++ {
-		data = append(data, uint64(i))
+		v := uint64(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
 	}
 
 	var buf Buffer
