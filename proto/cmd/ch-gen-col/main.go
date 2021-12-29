@@ -26,9 +26,11 @@ const (
 )
 
 type Variant struct {
-	Kind   Kind
-	Signed bool
-	Bits   int
+	Kind           Kind
+	Signed         bool
+	Bits           int
+	GenerateUnsafe bool
+	Unsafe         bool
 }
 
 type Variants []Variant
@@ -304,8 +306,24 @@ func run() error {
 			})
 		}
 	}
+	for i, v := range variants {
+		if v.Bits <= 64 && !v.Byte() {
+			variants[i].GenerateUnsafe = true
+			variants = append(variants, Variant{
+				Kind:           v.Kind,
+				Signed:         v.Signed,
+				Bits:           v.Bits,
+				GenerateUnsafe: true,
+				Unsafe:         true,
+			})
+		}
+	}
 	for _, v := range variants {
-		base := "col_" + v.ElemLower() + "_gen"
+		base := "col_" + v.ElemLower()
+		if v.Unsafe {
+			base += "_unsafe"
+		}
+		base += "_gen"
 		if err := write(base, v, tpl); err != nil {
 			return errors.Wrap(err, "write")
 		}

@@ -6,10 +6,10 @@ package proto
 // inferNumeric infers t as numeric type, otherwise returns false.
 func (c *ColAuto) inferNumeric(t ColumnType) bool {
 	switch t {
-	{{- range . }}
+	{{- range . }}{{- if not .Unsafe }}
 	case {{ .ColumnType }}:
 		c.Data = new({{ .Type }})
-	{{- end }}
+	{{- end }}{{- end }}
 	default:
 		return false
 	}
