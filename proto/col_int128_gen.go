@@ -4,6 +4,7 @@ package proto
 
 import (
 	"encoding/binary"
+
 	"github.com/go-faster/errors"
 )
 
@@ -84,11 +85,7 @@ func (c *ColInt128) DecodeColumn(r *Reader, rows int) error {
 		return errors.Wrap(err, "read")
 	}
 	v := *c
-	// Move bound check out of loop.
-	//
-	// See https://github.com/golang/go/issues/30945.
-	_ = data[len(data)-size]
-	for i := 0; i <= len(data)-size; i += size {
+	for i := 0; i < len(data); i += size {
 		v = append(v,
 			Int128(binUInt128(data[i:i+size])),
 		)

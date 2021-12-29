@@ -4,6 +4,7 @@ package proto
 
 import (
 	"encoding/binary"
+
 	"github.com/go-faster/errors"
 )
 
