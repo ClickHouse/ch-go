@@ -5,99 +5,24 @@
 package proto
 
 import (
-	"encoding/binary"
+	"reflect"
 	"unsafe"
 
 	"github.com/go-faster/errors"
 )
-
-// ClickHouse uses LittleEndian.
-var _ = binary.LittleEndian
-
-// ColDate represents Date column.
-type ColDate []Date
-
-// Compile-time assertions for ColDate.
-var (
-	_ ColInput  = ColDate{}
-	_ ColResult = (*ColDate)(nil)
-	_ Column    = (*ColDate)(nil)
-)
-
-// Type returns ColumnType of Date.
-func (ColDate) Type() ColumnType {
-	return ColumnTypeDate
-}
-
-// Rows returns count of rows in column.
-func (c ColDate) Rows() int {
-	return len(c)
-}
-
-// Row returns i-th row of column.
-func (c ColDate) Row(i int) Date {
-	return c[i]
-}
-
-// Append Date to column.
-func (c *ColDate) Append(v Date) {
-	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColDate) Reset() {
-	*c = (*c)[:0]
-}
-
-// NewArrDate returns new Array(Date).
-func NewArrDate() *ColArr {
-	return &ColArr{
-		Data: new(ColDate),
-	}
-}
-
-// AppendDate appends slice of Date to Array(Date).
-func (c *ColArr) AppendDate(data []Date) {
-	d := c.Data.(*ColDate)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
-}
-
-// EncodeColumn encodes Date rows to *Buffer.
-func (c ColDate) EncodeColumn(b *Buffer) {
-	const size = 16 / 8
-	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
-		binary.LittleEndian.PutUint16(
-			b.Buf[offset:offset+size],
-			uint16(v),
-		)
-		offset += size
-	}
-}
 
 // DecodeColumn decodes Date rows from *Reader.
 func (c *ColDate) DecodeColumn(r *Reader, rows int) error {
 	if rows == 0 {
 		return nil
 	}
-	const size = 16 / 8
-	data, err := r.ReadRaw(rows * size)
-	if err != nil {
-		return errors.Wrap(err, "read")
-	}
-	v := *c
-	v = append(v, make([]Date, rows)...)
-	s := *(*struct {
-		Data unsafe.Pointer
-		Len  uintptr
-		Cap  uintptr
-	})(unsafe.Pointer(&v))
-	s.Len *= size
-	s.Cap *= size
+	*c = append(*c, make([]Date, rows)...)
+	s := *(*reflect.SliceHeader)(unsafe.Pointer(c))
+	s.Len *= 2
+	s.Cap *= 2
 	dst := *(*[]byte)(unsafe.Pointer(&s))
-	copy(dst, data)
-	*c = v
+	if err := r.ReadFull(dst); err != nil {
+		return errors.Wrap(err, "read full")
+	}
 	return nil
 }

@@ -4,12 +4,9 @@ package proto
 
 import (
 	"encoding/binary"
-
-	"github.com/go-faster/errors"
 )
 
-// ClickHouse uses LittleEndian.
-var _ = binary.LittleEndian
+var _ = binary.LittleEndian // clickHouse uses LittleEndian
 
 // ColInt256 represents Int256 column.
 type ColInt256 []Int256
@@ -72,24 +69,4 @@ func (c ColInt256) EncodeColumn(b *Buffer) {
 		)
 		offset += size
 	}
-}
-
-// DecodeColumn decodes Int256 rows from *Reader.
-func (c *ColInt256) DecodeColumn(r *Reader, rows int) error {
-	if rows == 0 {
-		return nil
-	}
-	const size = 256 / 8
-	data, err := r.ReadRaw(rows * size)
-	if err != nil {
-		return errors.Wrap(err, "read")
-	}
-	v := *c
-	for i := 0; i < len(data); i += size {
-		v = append(v,
-			Int256(binUInt256(data[i:i+size])),
-		)
-	}
-	*c = v
-	return nil
 }

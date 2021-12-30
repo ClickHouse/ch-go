@@ -5,99 +5,24 @@
 package proto
 
 import (
-	"encoding/binary"
+	"reflect"
 	"unsafe"
 
 	"github.com/go-faster/errors"
 )
-
-// ClickHouse uses LittleEndian.
-var _ = binary.LittleEndian
-
-// ColDecimal64 represents Decimal64 column.
-type ColDecimal64 []Decimal64
-
-// Compile-time assertions for ColDecimal64.
-var (
-	_ ColInput  = ColDecimal64{}
-	_ ColResult = (*ColDecimal64)(nil)
-	_ Column    = (*ColDecimal64)(nil)
-)
-
-// Type returns ColumnType of Decimal64.
-func (ColDecimal64) Type() ColumnType {
-	return ColumnTypeDecimal64
-}
-
-// Rows returns count of rows in column.
-func (c ColDecimal64) Rows() int {
-	return len(c)
-}
-
-// Row returns i-th row of column.
-func (c ColDecimal64) Row(i int) Decimal64 {
-	return c[i]
-}
-
-// Append Decimal64 to column.
-func (c *ColDecimal64) Append(v Decimal64) {
-	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColDecimal64) Reset() {
-	*c = (*c)[:0]
-}
-
-// NewArrDecimal64 returns new Array(Decimal64).
-func NewArrDecimal64() *ColArr {
-	return &ColArr{
-		Data: new(ColDecimal64),
-	}
-}
-
-// AppendDecimal64 appends slice of Decimal64 to Array(Decimal64).
-func (c *ColArr) AppendDecimal64(data []Decimal64) {
-	d := c.Data.(*ColDecimal64)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
-}
-
-// EncodeColumn encodes Decimal64 rows to *Buffer.
-func (c ColDecimal64) EncodeColumn(b *Buffer) {
-	const size = 64 / 8
-	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
-		binary.LittleEndian.PutUint64(
-			b.Buf[offset:offset+size],
-			uint64(v),
-		)
-		offset += size
-	}
-}
 
 // DecodeColumn decodes Decimal64 rows from *Reader.
 func (c *ColDecimal64) DecodeColumn(r *Reader, rows int) error {
 	if rows == 0 {
 		return nil
 	}
-	const size = 64 / 8
-	data, err := r.ReadRaw(rows * size)
-	if err != nil {
-		return errors.Wrap(err, "read")
-	}
-	v := *c
-	v = append(v, make([]Decimal64, rows)...)
-	s := *(*struct {
-		Data unsafe.Pointer
-		Len  uintptr
-		Cap  uintptr
-	})(unsafe.Pointer(&v))
-	s.Len *= size
-	s.Cap *= size
+	*c = append(*c, make([]Decimal64, rows)...)
+	s := *(*reflect.SliceHeader)(unsafe.Pointer(c))
+	s.Len *= 8
+	s.Cap *= 8
 	dst := *(*[]byte)(unsafe.Pointer(&s))
-	copy(dst, data)
-	*c = v
+	if err := r.ReadFull(dst); err != nil {
+		return errors.Wrap(err, "read full")
+	}
 	return nil
 }
