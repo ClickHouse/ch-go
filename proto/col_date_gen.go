@@ -4,11 +4,9 @@ package proto
 
 import (
 	"encoding/binary"
-	"github.com/go-faster/errors"
 )
 
-// ClickHouse uses LittleEndian.
-var _ = binary.LittleEndian
+var _ = binary.LittleEndian // clickHouse uses LittleEndian
 
 // ColDate represents Date column.
 type ColDate []Date
@@ -71,28 +69,4 @@ func (c ColDate) EncodeColumn(b *Buffer) {
 		)
 		offset += size
 	}
-}
-
-// DecodeColumn decodes Date rows from *Reader.
-func (c *ColDate) DecodeColumn(r *Reader, rows int) error {
-	if rows == 0 {
-		return nil
-	}
-	const size = 16 / 8
-	data, err := r.ReadRaw(rows * size)
-	if err != nil {
-		return errors.Wrap(err, "read")
-	}
-	v := *c
-	// Move bound check out of loop.
-	//
-	// See https://github.com/golang/go/issues/30945.
-	_ = data[len(data)-size]
-	for i := 0; i <= len(data)-size; i += size {
-		v = append(v,
-			Date(binary.LittleEndian.Uint16(data[i:i+size])),
-		)
-	}
-	*c = v
-	return nil
 }

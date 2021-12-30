@@ -26,9 +26,14 @@ const (
 )
 
 type Variant struct {
-	Kind   Kind
-	Signed bool
-	Bits   int
+	Kind           Kind
+	Signed         bool
+	Bits           int
+	GenerateUnsafe bool
+}
+
+func (v Variant) Bytes() int {
+	return v.Bits / 8
 }
 
 type Variants []Variant
@@ -197,6 +202,12 @@ var testTemplate string
 //go:embed infer.tpl
 var inferTemplate string
 
+//go:embed safe.tpl
+var safeTemplate string
+
+//go:embed unsafe.tpl
+var unsafeTemplate string
+
 func write(name string, v interface{}, t *template.Template) error {
 	out := new(bytes.Buffer)
 	if err := t.Execute(out, v); err != nil {
@@ -214,9 +225,11 @@ func write(name string, v interface{}, t *template.Template) error {
 
 func run() error {
 	var (
-		tpl      = template.Must(template.New("main").Parse(mainTemplate))
-		tplInfer = template.Must(template.New("main").Parse(inferTemplate))
-		tplTest  = template.Must(template.New("main").Parse(testTemplate))
+		tpl       = template.Must(template.New("main").Parse(mainTemplate))
+		tplInfer  = template.Must(template.New("main").Parse(inferTemplate))
+		tplSafe   = template.Must(template.New("main").Parse(safeTemplate))
+		tplUnsafe = template.Must(template.New("main").Parse(unsafeTemplate))
+		tplTest   = template.Must(template.New("main").Parse(testTemplate))
 	)
 	variants := Variants{
 		{ // Float32
@@ -305,11 +318,22 @@ func run() error {
 		}
 	}
 	for _, v := range variants {
-		base := "col_" + v.ElemLower() + "_gen"
-		if err := write(base, v, tpl); err != nil {
+		if v.Bits <= 64 && !v.Byte() {
+			v.GenerateUnsafe = true
+		}
+		base := "col_" + v.ElemLower()
+		if err := write(base+"_gen", v, tpl); err != nil {
 			return errors.Wrap(err, "write")
 		}
-		if err := write(base+"_test", v, tplTest); err != nil {
+		if err := write(base+"_safe_gen", v, tplSafe); err != nil {
+			return errors.Wrap(err, "write")
+		}
+		if v.GenerateUnsafe {
+			if err := write(base+"_unsafe_gen", v, tplUnsafe); err != nil {
+				return errors.Wrap(err, "write")
+			}
+		}
+		if err := write(base+"_gen_test", v, tplTest); err != nil {
 			return errors.Wrap(err, "write test")
 		}
 	}

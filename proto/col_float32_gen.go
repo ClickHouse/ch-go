@@ -4,12 +4,10 @@ package proto
 
 import (
 	"encoding/binary"
-	"github.com/go-faster/errors"
 	"math"
 )
 
-// ClickHouse uses LittleEndian.
-var _ = binary.LittleEndian
+var _ = binary.LittleEndian // clickHouse uses LittleEndian
 
 // ColFloat32 represents Float32 column.
 type ColFloat32 []float32
@@ -72,28 +70,4 @@ func (c ColFloat32) EncodeColumn(b *Buffer) {
 		)
 		offset += size
 	}
-}
-
-// DecodeColumn decodes Float32 rows from *Reader.
-func (c *ColFloat32) DecodeColumn(r *Reader, rows int) error {
-	if rows == 0 {
-		return nil
-	}
-	const size = 32 / 8
-	data, err := r.ReadRaw(rows * size)
-	if err != nil {
-		return errors.Wrap(err, "read")
-	}
-	v := *c
-	// Move bound check out of loop.
-	//
-	// See https://github.com/golang/go/issues/30945.
-	_ = data[len(data)-size]
-	for i := 0; i <= len(data)-size; i += size {
-		v = append(v,
-			math.Float32frombits(bin.Uint32(data[i:i+size])),
-		)
-	}
-	*c = v
-	return nil
 }
