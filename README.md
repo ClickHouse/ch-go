@@ -32,7 +32,7 @@ func main() {
   )
   if err := c.Do(ctx, ch.Query{
     Body: "SELECT number FROM system.numbers LIMIT 500000000",
-	// OnResult will be called on next received data block.
+    // OnResult will be called on next received data block.
     OnResult: func(ctx context.Context, b proto.Block) error {
       numbers += len(data)
       return nil
