@@ -11,15 +11,15 @@ import (
 	"github.com/go-faster/errors"
 )
 
-// DecodeColumn decodes IPv4 rows from *Reader.
-func (c *ColIPv4) DecodeColumn(r *Reader, rows int) error {
+// DecodeColumn decodes Int128 rows from *Reader.
+func (c *ColInt128) DecodeColumn(r *Reader, rows int) error {
 	if rows == 0 {
 		return nil
 	}
-	*c = append(*c, make([]IPv4, rows)...)
+	*c = append(*c, make([]Int128, rows)...)
 	s := *(*reflect.SliceHeader)(unsafe.Pointer(c))
-	s.Len *= 4
-	s.Cap *= 4
+	s.Len *= 16
+	s.Cap *= 16
 	dst := *(*[]byte)(unsafe.Pointer(&s))
 	if err := r.ReadFull(dst); err != nil {
 		return errors.Wrap(err, "read full")
