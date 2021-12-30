@@ -48,8 +48,8 @@ func main() {
 ```
 
 ```
-750ms 0.5B rows  4GB 5.3GB/s 1 job
- 1.3s 2.5B rows 20GB  15GB/s 5 jobs
+440ms 0.5B rows  4GB 9.1GB/s 1 job
+ 1.0s 2.0B rows 20GB  16GB/s 4 jobs
 ```
 
 ### Results
