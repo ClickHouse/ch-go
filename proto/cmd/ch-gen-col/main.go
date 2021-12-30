@@ -318,7 +318,7 @@ func run() error {
 		}
 	}
 	for _, v := range variants {
-		if !v.Byte() && v.Kind != KindIP {
+		if !v.Byte() && !v.IPv6() {
 			v.GenerateUnsafe = true
 		}
 		base := "col_" + v.ElemLower()
