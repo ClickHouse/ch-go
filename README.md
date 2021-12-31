@@ -130,6 +130,7 @@ q := ch.Query{
 
 ## TODO
 - [ ] Connection pools
+- [ ] TLS
 - [ ] API UX Improvements (with 1.18 generics?)
     - [x] Enum
     - [x] LowCardinality
