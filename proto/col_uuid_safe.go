@@ -2,6 +2,8 @@
 
 package proto
 
+import "github.com/go-faster/errors"
+
 func (c *ColUUID) DecodeColumn(r *Reader, rows int) error {
 	const size = 16
 	data, err := r.ReadRaw(rows * size)
