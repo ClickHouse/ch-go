@@ -34,7 +34,6 @@ func (c ColUInt64) EncodeColumn(b *Buffer) {
 	offset := len(b.Buf)
 	const size = 64 / 8
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-
 	s := *(*slice)(unsafe.Pointer(&c))
 	s.Len *= 8
 	s.Cap *= 8

@@ -39,7 +39,7 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
 {{- else }}
 	const size = {{ .Bits }} / 8
 	b.Buf = append(b.Buf, make([]byte, size * len(c))...)
-{{ end }}
+{{- end }}
 	s := *(*slice)(unsafe.Pointer(&c))
 {{- if not .SingleByte }}
 	s.Len *= {{ .Bytes }}
