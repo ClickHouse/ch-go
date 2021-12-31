@@ -16,5 +16,6 @@ func (c *ColUUID) DecodeColumn(r *Reader, rows int) error {
 		// https://go.dev/ref/spec#Conversions_from_slice_to_array_pointer
 		v = append(v, *(*[size]byte)(data[i : i+size]))
 	}
+	*c = v
 	return nil
 }
