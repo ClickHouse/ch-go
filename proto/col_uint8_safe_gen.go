@@ -22,3 +22,8 @@ func (c *ColUInt8) DecodeColumn(r *Reader, rows int) error {
 	*c = append(*c, data...)
 	return nil
 }
+
+// EncodeColumn encodes UInt8 rows to *Buffer.
+func (c ColUInt8) EncodeColumn(b *Buffer) {
+	b.Buf = append(b.Buf, c...)
+}

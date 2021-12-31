@@ -25,3 +25,20 @@ func (c *ColDateTime64) DecodeColumn(r *Reader, rows int) error {
 	}
 	return nil
 }
+
+// EncodeColumn encodes DateTime64 rows to *Buffer.
+func (c ColDateTime64) EncodeColumn(b *Buffer) {
+	if len(c) == 0 {
+		return
+	}
+	offset := len(b.Buf)
+	const size = 64 / 8
+	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
+
+	s := *(*slice)(unsafe.Pointer(&c))
+	s.Len *= 8
+	s.Cap *= 8
+	src := *(*[]byte)(unsafe.Pointer(&s))
+	dst := b.Buf[offset:]
+	copy(dst, src)
+}

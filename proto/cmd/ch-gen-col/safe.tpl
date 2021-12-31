@@ -59,3 +59,33 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   {{- end }}
   return nil
 }
+
+// EncodeColumn encodes {{ .Name }} rows to *Buffer.
+func (c {{ .Type }}) EncodeColumn(b *Buffer) {
+  {{- if .Byte }}
+  b.Buf = append(b.Buf, c...)
+  {{- else if .SingleByte }}
+  start := len(b.Buf)
+  b.Buf = append(b.Buf, make([]byte, len(c))...)
+  for i := range c {
+	b.Buf[i + start] = {{ .UnsignedType }}(c[i])
+  }
+  {{- else }}
+  const size = {{ .Bits }} / 8
+  offset := len(b.Buf)
+  b.Buf = append(b.Buf, make([]byte, size * len(c))...)
+  for _, v := range c {
+	{{ .BinPut }}(
+	  b.Buf[offset:offset+size],
+	{{- if .IsFloat }}
+	  math.{{ .Name }}bits(v),
+	{{- else if .Cast }}
+	  {{ .UnsignedType }}(v),
+	{{- else }}
+	  v,
+	{{- end }}
+	)
+	offset += size
+  }
+  {{- end }}
+}

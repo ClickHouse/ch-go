@@ -56,17 +56,3 @@ func (c *ColArr) AppendDecimal256(data []Decimal256) {
 	*d = append(*d, data...)
 	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }
-
-// EncodeColumn encodes Decimal256 rows to *Buffer.
-func (c ColDecimal256) EncodeColumn(b *Buffer) {
-	const size = 256 / 8
-	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
-		binPutUInt256(
-			b.Buf[offset:offset+size],
-			UInt256(v),
-		)
-		offset += size
-	}
-}

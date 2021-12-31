@@ -23,3 +23,16 @@ func (c *ColInt8) DecodeColumn(r *Reader, rows int) error {
 	}
 	return nil
 }
+
+// EncodeColumn encodes Int8 rows to *Buffer.
+func (c ColInt8) EncodeColumn(b *Buffer) {
+	if len(c) == 0 {
+		return
+	}
+	offset := len(b.Buf)
+	b.Buf = append(b.Buf, make([]byte, len(c))...)
+	s := *(*slice)(unsafe.Pointer(&c))
+	src := *(*[]byte)(unsafe.Pointer(&s))
+	dst := b.Buf[offset:]
+	copy(dst, src)
+}

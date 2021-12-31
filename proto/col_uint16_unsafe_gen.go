@@ -25,3 +25,20 @@ func (c *ColUInt16) DecodeColumn(r *Reader, rows int) error {
 	}
 	return nil
 }
+
+// EncodeColumn encodes UInt16 rows to *Buffer.
+func (c ColUInt16) EncodeColumn(b *Buffer) {
+	if len(c) == 0 {
+		return
+	}
+	offset := len(b.Buf)
+	const size = 16 / 8
+	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
+
+	s := *(*slice)(unsafe.Pointer(&c))
+	s.Len *= 2
+	s.Cap *= 2
+	src := *(*[]byte)(unsafe.Pointer(&s))
+	dst := b.Buf[offset:]
+	copy(dst, src)
+}

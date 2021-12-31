@@ -27,3 +27,25 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   }
   return nil
 }
+
+// EncodeColumn encodes {{ .Name }} rows to *Buffer.
+func (c {{ .Type }}) EncodeColumn(b *Buffer) {
+	if len(c) == 0 {
+		return
+	}
+	offset := len(b.Buf)
+{{- if .SingleByte }}
+	b.Buf = append(b.Buf, make([]byte, len(c))...)
+{{- else }}
+	const size = {{ .Bits }} / 8
+	b.Buf = append(b.Buf, make([]byte, size * len(c))...)
+{{ end }}
+	s := *(*slice)(unsafe.Pointer(&c))
+{{- if not .SingleByte }}
+	s.Len *= {{ .Bytes }}
+	s.Cap *= {{ .Bytes }}
+{{- end }}
+	src := *(*[]byte)(unsafe.Pointer(&s))
+    dst := b.Buf[offset:]
+	copy(dst, src)
+}

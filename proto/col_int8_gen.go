@@ -56,12 +56,3 @@ func (c *ColArr) AppendInt8(data []int8) {
 	*d = append(*d, data...)
 	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }
-
-// EncodeColumn encodes Int8 rows to *Buffer.
-func (c ColInt8) EncodeColumn(b *Buffer) {
-	start := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, len(c))...)
-	for i := range c {
-		b.Buf[i+start] = uint8(c[i])
-	}
-}
