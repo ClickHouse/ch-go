@@ -5,7 +5,6 @@
 package proto
 
 import (
-	"reflect"
 	"unsafe"
 
 	"github.com/go-faster/errors"
@@ -17,7 +16,7 @@ func (c *ColUInt64) DecodeColumn(r *Reader, rows int) error {
 		return nil
 	}
 	*c = append(*c, make([]uint64, rows)...)
-	s := *(*reflect.SliceHeader)(unsafe.Pointer(c))
+	s := *(*slice)(unsafe.Pointer(c))
 	s.Len *= 8
 	s.Cap *= 8
 	dst := *(*[]byte)(unsafe.Pointer(&s))

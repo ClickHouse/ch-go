@@ -5,7 +5,6 @@
 package proto
 
 import (
-	"reflect"
 	"unsafe"
 
 	"github.com/go-faster/errors"
@@ -17,7 +16,7 @@ func (c *ColEnum8) DecodeColumn(r *Reader, rows int) error {
 		return nil
 	}
 	*c = append(*c, make([]Enum8, rows)...)
-	s := *(*reflect.SliceHeader)(unsafe.Pointer(c))
+	s := *(*slice)(unsafe.Pointer(c))
 	dst := *(*[]byte)(unsafe.Pointer(&s))
 	if err := r.ReadFull(dst); err != nil {
 		return errors.Wrap(err, "read full")
