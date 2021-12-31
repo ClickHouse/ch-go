@@ -56,17 +56,3 @@ func (c *ColArr) AppendUInt128(data []UInt128) {
 	*d = append(*d, data...)
 	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }
-
-// EncodeColumn encodes UInt128 rows to *Buffer.
-func (c ColUInt128) EncodeColumn(b *Buffer) {
-	const size = 128 / 8
-	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
-		binPutUInt128(
-			b.Buf[offset:offset+size],
-			v,
-		)
-		offset += size
-	}
-}

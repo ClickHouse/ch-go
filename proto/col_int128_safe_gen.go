@@ -35,3 +35,17 @@ func (c *ColInt128) DecodeColumn(r *Reader, rows int) error {
 	*c = v
 	return nil
 }
+
+// EncodeColumn encodes Int128 rows to *Buffer.
+func (c ColInt128) EncodeColumn(b *Buffer) {
+	const size = 128 / 8
+	offset := len(b.Buf)
+	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
+	for _, v := range c {
+		binPutUInt128(
+			b.Buf[offset:offset+size],
+			UInt128(v),
+		)
+		offset += size
+	}
+}

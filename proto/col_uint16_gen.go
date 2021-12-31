@@ -56,17 +56,3 @@ func (c *ColArr) AppendUInt16(data []uint16) {
 	*d = append(*d, data...)
 	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }
-
-// EncodeColumn encodes UInt16 rows to *Buffer.
-func (c ColUInt16) EncodeColumn(b *Buffer) {
-	const size = 16 / 8
-	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
-		binary.LittleEndian.PutUint16(
-			b.Buf[offset:offset+size],
-			v,
-		)
-		offset += size
-	}
-}

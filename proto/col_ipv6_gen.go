@@ -56,17 +56,3 @@ func (c *ColArr) AppendIPv6(data []IPv6) {
 	*d = append(*d, data...)
 	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }
-
-// EncodeColumn encodes IPv6 rows to *Buffer.
-func (c ColIPv6) EncodeColumn(b *Buffer) {
-	const size = 128 / 8
-	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
-		binPutIPv6(
-			b.Buf[offset:offset+size],
-			v,
-		)
-		offset += size
-	}
-}

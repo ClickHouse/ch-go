@@ -35,3 +35,17 @@ func (c *ColDate32) DecodeColumn(r *Reader, rows int) error {
 	*c = v
 	return nil
 }
+
+// EncodeColumn encodes Date32 rows to *Buffer.
+func (c ColDate32) EncodeColumn(b *Buffer) {
+	const size = 32 / 8
+	offset := len(b.Buf)
+	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
+	for _, v := range c {
+		binary.LittleEndian.PutUint32(
+			b.Buf[offset:offset+size],
+			uint32(v),
+		)
+		offset += size
+	}
+}

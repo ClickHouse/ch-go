@@ -56,17 +56,3 @@ func (c *ColArr) AppendDateTime(data []DateTime) {
 	*d = append(*d, data...)
 	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }
-
-// EncodeColumn encodes DateTime rows to *Buffer.
-func (c ColDateTime) EncodeColumn(b *Buffer) {
-	const size = 32 / 8
-	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
-		binary.LittleEndian.PutUint32(
-			b.Buf[offset:offset+size],
-			uint32(v),
-		)
-		offset += size
-	}
-}

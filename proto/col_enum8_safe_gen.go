@@ -29,3 +29,12 @@ func (c *ColEnum8) DecodeColumn(r *Reader, rows int) error {
 	*c = v
 	return nil
 }
+
+// EncodeColumn encodes Enum8 rows to *Buffer.
+func (c ColEnum8) EncodeColumn(b *Buffer) {
+	start := len(b.Buf)
+	b.Buf = append(b.Buf, make([]byte, len(c))...)
+	for i := range c {
+		b.Buf[i+start] = uint8(c[i])
+	}
+}
