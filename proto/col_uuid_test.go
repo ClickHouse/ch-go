@@ -44,7 +44,7 @@ func TestColUUID_DecodeColumn(t *testing.T) {
 }
 
 func BenchmarkColUUID_DecodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColUUID
 	for i := 0; i < rows; i++ {
 		data = append(data, uuid.UUID{byte(i)})
@@ -76,7 +76,7 @@ func BenchmarkColUUID_DecodeColumn(b *testing.B) {
 }
 
 func BenchmarkColUUID_EncodeColumn(b *testing.B) {
-	const rows = 50_000
+	const rows = 1_000
 	var data ColUUID
 	for i := 0; i < rows; i++ {
 		data = append(data, uuid.UUID{byte(i)})
