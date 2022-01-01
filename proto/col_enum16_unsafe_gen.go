@@ -17,8 +17,9 @@ func (c *ColEnum16) DecodeColumn(r *Reader, rows int) error {
 	}
 	*c = append(*c, make([]Enum16, rows)...)
 	s := *(*slice)(unsafe.Pointer(c))
-	s.Len *= 2
-	s.Cap *= 2
+	const size = 16 / 8
+	s.Len *= size
+	s.Cap *= size
 	dst := *(*[]byte)(unsafe.Pointer(&s))
 	if err := r.ReadFull(dst); err != nil {
 		return errors.Wrap(err, "read full")
@@ -35,8 +36,8 @@ func (c ColEnum16) EncodeColumn(b *Buffer) {
 	const size = 16 / 8
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
 	s := *(*slice)(unsafe.Pointer(&c))
-	s.Len *= 2
-	s.Cap *= 2
+	s.Len *= size
+	s.Cap *= size
 	src := *(*[]byte)(unsafe.Pointer(&s))
 	dst := b.Buf[offset:]
 	copy(dst, src)
