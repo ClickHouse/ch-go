@@ -489,7 +489,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 				}
 				if f := q.OnProfileEvent; f != nil {
 					if err := f(ctx, e); err != nil {
-						return errors.Wrap(err, "log")
+						return errors.Wrap(err, "profile event")
 					}
 				}
 			}
