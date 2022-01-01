@@ -6,7 +6,7 @@ import (
 	"inet.af/netaddr"
 )
 
-// IPv6 represents UInt128 address as uint32 number.
+// IPv6 represents UInt128 address as UInt128 number.
 //
 // Not using netaddr.IP because UInt128 is more efficient.
 //
