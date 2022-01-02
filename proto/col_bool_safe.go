@@ -8,13 +8,17 @@ import "github.com/go-faster/errors"
 func (c ColBool) EncodeColumn(b *Buffer) {
 	start := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, len(c))...)
-	for i := range c {
-		if c[i] {
-			b.Buf[i+start] = boolTrue
-		} else {
-			b.Buf[i+start] = boolFalse
-		}
+	dst := b.Buf[start:]
+	for i, v := range c {
+		dst[i] = boolToByte(v)
 	}
+}
+
+func boolToByte(b bool) byte {
+	if b {
+		return boolTrue
+	}
+	return boolFalse
 }
 
 // DecodeColumn decodes Bool rows from *Reader.
