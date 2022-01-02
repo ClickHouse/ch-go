@@ -15,8 +15,8 @@ func (c ColBool) EncodeColumn(b *Buffer) {
 	}
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, len(c))...)
-	s := *(*slice)(unsafe.Pointer(&c))
-	src := *(*[]byte)(unsafe.Pointer(&s))
+	s := *(*slice)(unsafe.Pointer(&c))    // #nosec G103
+	src := *(*[]byte)(unsafe.Pointer(&s)) // #nosec G103
 	dst := b.Buf[offset:]
 	copy(dst, src)
 }
@@ -27,8 +27,8 @@ func (c *ColBool) DecodeColumn(r *Reader, rows int) error {
 		return nil
 	}
 	*c = append(*c, make([]bool, rows)...)
-	s := *(*slice)(unsafe.Pointer(c))
-	dst := *(*[]byte)(unsafe.Pointer(&s))
+	s := *(*slice)(unsafe.Pointer(c))     // #nosec G103
+	dst := *(*[]byte)(unsafe.Pointer(&s)) // #nosec G103
 	if err := r.ReadFull(dst); err != nil {
 		return errors.Wrap(err, "read full")
 	}
