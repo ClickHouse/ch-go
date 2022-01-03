@@ -145,6 +145,7 @@ q := ch.Query{
   - [ ] Code generator for SELECT/INSERT
   - [ ] Query builder
 - [ ] DSL for DDL
+- [ ] `database/sql` integration
 - [ ] Reading and writing *Native* format dumps
 
 ## Reference
