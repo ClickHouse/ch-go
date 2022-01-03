@@ -49,7 +49,7 @@ func run(ctx context.Context) (re error) {
 	for i := 0; i < arg.Count; i++ {
 		start := time.Now()
 		if err := c.Do(ctx, ch.Query{
-			Body:     "SELECT number FROM system.numbers LIMIT 500000000",
+			Body:     "SELECT number FROM system.numbers_mt LIMIT 500000000",
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
 			Result: proto.Results{
 				{Name: "number", Data: &data},
