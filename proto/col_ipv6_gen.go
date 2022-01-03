@@ -2,12 +2,6 @@
 
 package proto
 
-import (
-	"encoding/binary"
-)
-
-var _ = binary.LittleEndian // clickHouse uses LittleEndian
-
 // ColIPv6 represents IPv6 column.
 type ColIPv6 []IPv6
 

@@ -2,12 +2,6 @@
 
 package proto
 
-import (
-	"encoding/binary"
-)
-
-var _ = binary.LittleEndian // clickHouse uses LittleEndian
-
 // ColEnum16 represents Enum16 column.
 type ColEnum16 []Enum16
 

@@ -2,12 +2,6 @@
 
 package proto
 
-import (
-	"encoding/binary"
-)
-
-var _ = binary.LittleEndian // clickHouse uses LittleEndian
-
 // ColDecimal64 represents Decimal64 column.
 type ColDecimal64 []Decimal64
 

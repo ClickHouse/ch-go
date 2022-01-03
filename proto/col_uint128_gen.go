@@ -2,12 +2,6 @@
 
 package proto
 
-import (
-	"encoding/binary"
-)
-
-var _ = binary.LittleEndian // clickHouse uses LittleEndian
-
 // ColUInt128 represents UInt128 column.
 type ColUInt128 []UInt128
 

@@ -1,4 +1,4 @@
-//go:build amd64 && !nounsafe
+//go:build amd64 && !purego
 
 package proto
 

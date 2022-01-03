@@ -2,12 +2,6 @@
 
 package proto
 
-import (
-	"encoding/binary"
-)
-
-var _ = binary.LittleEndian // clickHouse uses LittleEndian
-
 // ColDateTime64 represents DateTime64 column.
 type ColDateTime64 []DateTime64
 

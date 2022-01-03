@@ -3,12 +3,6 @@
 
 package proto
 
-import (
-	"encoding/binary"
-)
-
-var _ = binary.LittleEndian // clickHouse uses LittleEndian
-
 // {{ .Type }} represents {{ .Name }} column.
 type {{ .Type }} []{{ .ElemType }}
 
