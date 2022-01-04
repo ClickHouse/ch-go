@@ -84,8 +84,8 @@ q := ch.Query{
 * Generics (go1.18) for `ArrayOf[T]`, `LowCardinaliyOf[T]`, `EnumOf[T]`
 * **Column**-oriented design that operates with **blocks**
   * [Dramatically more efficient](https://github.com/go-faster/ch-bench)
-  * Up to 50x faster than row-first design around `sql`
-  * Up to 500x faster than HTTP API
+  * Up to 100x faster than row-first design around `sql`
+  * Up to 700x faster than HTTP API
   * Low memory overhead (data blocks are slices, i.e. continuous memory)
   * Highly efficient input and output block streaming
   * As close to ClickHouse as possible
