@@ -1,8 +1,10 @@
 package ch
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"testing"
 	"time"
@@ -815,4 +817,52 @@ func TestClient_Query_Bool(t *testing.T) {
 	}), "select")
 	require.Len(t, data, 5)
 	require.Equal(t, data, res)
+}
+
+func BenchmarkClient_decodeBlock(b *testing.B) {
+	// Encoding block.
+	buf := new(proto.Buffer)
+	{
+		const rows = 65535
+		buf.PutString("") // no temp table
+		var data proto.ColUInt64
+		for i := uint64(0); i < rows; i++ {
+			data.Append(i)
+		}
+		block := proto.Block{
+			Info:    proto.BlockInfo{BucketNum: -1},
+			Columns: 1,
+			Rows:    rows,
+		}
+		input := []proto.InputColumn{
+			{Name: "v", Data: data},
+		}
+		require.NoError(b, block.EncodeBlock(buf, proto.Version, input))
+	}
+	var (
+		br  = bytes.NewReader(buf.Buf)
+		r   = proto.NewReader(br)
+		ctx = context.Background()
+	)
+	c := &Client{
+		reader:          r,
+		protocolVersion: proto.Version,
+		lg:              zap.NewNop(),
+	}
+	opt := decodeOptions{
+		Handler: func(ctx context.Context, b proto.Block) error { return nil },
+		Result: proto.Results{
+			{Name: "v", Data: new(proto.ColUInt64)},
+		},
+	}
+
+	b.ResetTimer()
+	b.SetBytes(int64(len(buf.Buf)))
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		br.Reset(buf.Buf)
+		if err := c.decodeBlock(ctx, opt); err != nil {
+			b.Fatal(err)
+		}
+	}
 }
