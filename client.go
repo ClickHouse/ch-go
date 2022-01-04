@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,6 +45,15 @@ type Client struct {
 type Setting struct {
 	Key, Value string
 	Important  bool
+}
+
+// SettingInt returns Setting with integer value v.
+func SettingInt(k string, v int) Setting {
+	return Setting{
+		Key:       k,
+		Value:     strconv.Itoa(v),
+		Important: true,
+	}
 }
 
 // serverInfo returns server information.

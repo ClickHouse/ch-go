@@ -8,20 +8,23 @@ import (
 	"runtime/pprof"
 	"time"
 
-	"github.com/go-faster/errors"
-	"go.uber.org/multierr"
-
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/proto"
+	"github.com/go-faster/errors"
+	"go.uber.org/multierr"
 )
 
 func run(ctx context.Context) (re error) {
 	var arg struct {
-		Count   int
-		Profile string
+		Count     int
+		Profile   string
+		Numbers   int
+		BlockSize int
 	}
 	flag.IntVar(&arg.Count, "n", 20, "count")
-	flag.StringVar(&arg.Profile, "profile", "cpu.out", "memory profile")
+	flag.IntVar(&arg.Numbers, "numbers", 500_000_000, "numbers count")
+	flag.IntVar(&arg.BlockSize, "block-size", 65_536, "maximum row count in block")
+	flag.StringVar(&arg.Profile, "profile", "cpu.out", "cpu profile")
 	flag.Parse()
 
 	f, err := os.Create(arg.Profile)
@@ -40,7 +43,11 @@ func run(ctx context.Context) (re error) {
 	}
 	defer pprof.StopCPUProfile()
 
-	c, err := ch.Dial(ctx, "localhost:9000", ch.Options{})
+	c, err := ch.Dial(ctx, "localhost:9000", ch.Options{
+		Settings: []ch.Setting{
+			ch.SettingInt("max_block_size", arg.BlockSize),
+		},
+	})
 	if err != nil {
 		return errors.Wrap(err, "dial")
 	}
@@ -49,7 +56,7 @@ func run(ctx context.Context) (re error) {
 	for i := 0; i < arg.Count; i++ {
 		start := time.Now()
 		if err := c.Do(ctx, ch.Query{
-			Body:     "SELECT number FROM system.numbers_mt LIMIT 500000000",
+			Body:     fmt.Sprintf("SELECT number FROM system.numbers_mt LIMIT %d", arg.Numbers),
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
 			Result: proto.Results{
 				{Name: "number", Data: &data},
