@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/pprof"
+	"runtime/trace"
 	"time"
 
 	"github.com/go-faster/ch"
@@ -18,6 +19,7 @@ func run(ctx context.Context) (re error) {
 	var arg struct {
 		Count     int
 		Profile   string
+		Trace     string
 		Numbers   int
 		BlockSize int
 	}
@@ -25,23 +27,38 @@ func run(ctx context.Context) (re error) {
 	flag.IntVar(&arg.Numbers, "numbers", 500_000_000, "numbers count")
 	flag.IntVar(&arg.BlockSize, "block-size", 65_536, "maximum row count in block")
 	flag.StringVar(&arg.Profile, "profile", "cpu.out", "cpu profile")
+	flag.StringVar(&arg.Trace, "trace", "trace.out", "trace")
 	flag.Parse()
 
-	f, err := os.Create(arg.Profile)
+	cpuOut, err := os.Create(arg.Profile)
 	if err != nil {
 		return errors.Wrap(err, "create profile")
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
+		if err := cpuOut.Close(); err != nil {
 			re = multierr.Append(re, err)
 		}
-
 		fmt.Println("Done, profile wrote to", arg.Profile)
 	}()
-	if err := pprof.StartCPUProfile(f); err != nil {
+	if err := pprof.StartCPUProfile(cpuOut); err != nil {
 		return errors.Wrap(err, "start profile")
 	}
 	defer pprof.StopCPUProfile()
+
+	traceOut, err := os.Create(arg.Trace)
+	if err != nil {
+		return errors.Wrap(err, "create profile")
+	}
+	defer func() {
+		if err := traceOut.Close(); err != nil {
+			re = multierr.Append(re, err)
+		}
+		fmt.Println("Done, trace wrote to", arg.Trace)
+	}()
+	if err := trace.Start(traceOut); err != nil {
+		return errors.Wrap(err, "start profile")
+	}
+	defer trace.Stop()
 
 	c, err := ch.Dial(ctx, "localhost:9000", ch.Options{
 		Settings: []ch.Setting{
