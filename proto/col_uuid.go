@@ -23,13 +23,3 @@ func (c ColUUID) Rows() int { return len(c) }
 func (c *ColUUID) Reset() {
 	*c = (*c)[:0]
 }
-
-func (c ColUUID) EncodeColumn(b *Buffer) {
-	const size = 16
-	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
-		copy(b.Buf[offset:offset+size], v[:])
-		offset += size
-	}
-}
