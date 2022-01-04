@@ -292,7 +292,7 @@ func (r *Reader) Bool() (bool, error) {
 	}
 }
 
-const defaultReaderSize = 1024 // 1kb
+const defaultReaderSize = 1024 * 128 // 128kb
 
 // NewReader initializes new Reader from provided io.Reader.
 func NewReader(r io.Reader) *Reader {
