@@ -30,8 +30,6 @@ const (
 	hRawSize  = 17
 	hDataSize = 21
 	hMethod   = 16
-
-	rawSizeOffset = 9
 )
 
 var bin = binary.LittleEndian

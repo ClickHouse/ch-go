@@ -44,7 +44,7 @@ func (w *Writer) Compress(m Method, buf []byte) error {
 
 	w.Data = w.Data[:n+headerSize]
 
-	bin.PutUint32(w.Data[hRawSize:], uint32(n+rawSizeOffset))
+	bin.PutUint32(w.Data[hRawSize:], uint32(n+compressHeaderSize))
 	bin.PutUint32(w.Data[hDataSize:], uint32(len(buf)))
 	h := city.CH128(w.Data[hMethod:])
 	bin.PutUint64(w.Data[0:8], h.Low)

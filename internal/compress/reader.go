@@ -38,7 +38,7 @@ func (r *Reader) readBlock() error {
 	}
 
 	var (
-		rawSize  = int(bin.Uint32(r.header[hRawSize:])) - rawSizeOffset
+		rawSize  = int(bin.Uint32(r.header[hRawSize:])) - compressHeaderSize
 		dataSize = int(bin.Uint32(r.header[hDataSize:]))
 	)
 	if dataSize < 0 || dataSize > maxDataSize {
