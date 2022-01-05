@@ -3,6 +3,7 @@
 TCP ClickHouse client in Go. Designed for very fast data block streaming with low network, cpu and memory overhead.
 
 Work in progress, please [leave feedback](https://github.com/go-faster/ch/discussions/6) on package API or features.
+Also, see [benchmarks](https://github.com/go-faster/ch-bench#benchmarks).
 
 ```console
 go get github.com/go-faster/ch
