@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"github.com/go-faster/ch/proto"
 	"github.com/go-faster/errors"
 	"io"
@@ -21,6 +22,8 @@ func run(ctx context.Context) (re error) {
 	const (
 		rows   = 65535
 		blocks = 500_000_000 / rows
+		chunk  = 3
+		chunks = blocks / chunk
 	)
 	{
 		proto.ServerCodeData.Encode(data)
@@ -42,7 +45,12 @@ func run(ctx context.Context) (re error) {
 		}
 	}
 
-	fmt.Println("starting")
+	var raw []byte
+	for i := 0; i < chunk; i++ {
+		raw = append(raw, data.Buf...)
+	}
+
+	fmt.Println("starting", "with chunk of", humanize.Bytes(uint64(len(raw))))
 
 	for {
 		conn, err := ln.Accept()
@@ -72,8 +80,8 @@ func run(ctx context.Context) (re error) {
 				return
 			}
 
-			for i := 0; i < blocks; i++ {
-				if _, err := conn.Write(data.Buf); err != nil {
+			for i := 0; i < chunks; i++ {
+				if _, err := conn.Write(raw); err != nil {
 					return
 				}
 			}
