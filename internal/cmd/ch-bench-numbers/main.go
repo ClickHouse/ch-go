@@ -9,10 +9,11 @@ import (
 	"runtime/trace"
 	"time"
 
-	"github.com/go-faster/ch"
-	"github.com/go-faster/ch/proto"
 	"github.com/go-faster/errors"
 	"go.uber.org/multierr"
+
+	"github.com/go-faster/ch"
+	"github.com/go-faster/ch/proto"
 )
 
 func run(ctx context.Context) (re error) {
@@ -27,40 +28,43 @@ func run(ctx context.Context) (re error) {
 	flag.IntVar(&arg.Count, "n", 20, "count")
 	flag.IntVar(&arg.Numbers, "numbers", 500_000_000, "numbers count")
 	flag.IntVar(&arg.BlockSize, "block-size", 65_536, "maximum row count in block")
-	flag.StringVar(&arg.Profile, "profile", "cpu.out", "cpu profile")
-	flag.StringVar(&arg.Trace, "trace", "trace.out", "trace")
+	flag.StringVar(&arg.Profile, "profile", "", "cpu profile")
+	flag.StringVar(&arg.Trace, "trace", "", "trace")
 	flag.StringVar(&arg.Address, "addr", "localhost:9000", "server address")
 	flag.Parse()
 
-	cpuOut, err := os.Create(arg.Profile)
-	if err != nil {
-		return errors.Wrap(err, "create profile")
-	}
-	defer func() {
-		if err := cpuOut.Close(); err != nil {
-			re = multierr.Append(re, err)
+	if arg.Profile != "" {
+		cpuOut, err := os.Create(arg.Profile)
+		if err != nil {
+			return errors.Wrap(err, "create profile")
 		}
-		fmt.Println("Done, profile wrote to", arg.Profile)
-	}()
-	if err := pprof.StartCPUProfile(cpuOut); err != nil {
-		return errors.Wrap(err, "start profile")
-	}
-	defer pprof.StopCPUProfile()
-
-	traceOut, err := os.Create(arg.Trace)
-	if err != nil {
-		return errors.Wrap(err, "create profile")
-	}
-	defer func() {
-		if err := traceOut.Close(); err != nil {
-			re = multierr.Append(re, err)
+		defer func() {
+			if err := cpuOut.Close(); err != nil {
+				re = multierr.Append(re, err)
+			}
+			fmt.Println("Done, profile wrote to", arg.Profile)
+		}()
+		if err := pprof.StartCPUProfile(cpuOut); err != nil {
+			return errors.Wrap(err, "start profile")
 		}
-		fmt.Println("Done, trace wrote to", arg.Trace)
-	}()
-	if err := trace.Start(traceOut); err != nil {
-		return errors.Wrap(err, "start profile")
+		defer pprof.StopCPUProfile()
 	}
-	defer trace.Stop()
+	if arg.Trace != "" {
+		traceOut, err := os.Create(arg.Trace)
+		if err != nil {
+			return errors.Wrap(err, "create profile")
+		}
+		defer func() {
+			if err := traceOut.Close(); err != nil {
+				re = multierr.Append(re, err)
+			}
+			fmt.Println("Done, trace wrote to", arg.Trace)
+		}()
+		if err := trace.Start(traceOut); err != nil {
+			return errors.Wrap(err, "start profile")
+		}
+		defer trace.Stop()
+	}
 
 	c, err := ch.Dial(ctx, arg.Address, ch.Options{
 		Settings: []ch.Setting{

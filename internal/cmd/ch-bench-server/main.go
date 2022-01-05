@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/dustin/go-humanize"
-	"github.com/go-faster/ch/proto"
-	"github.com/go-faster/errors"
 	"io"
 	"net"
 	"os"
+
+	"github.com/dustin/go-humanize"
+	"github.com/go-faster/errors"
+
+	"github.com/go-faster/ch/proto"
 )
 
 func run(ctx context.Context) (re error) {
@@ -63,9 +65,6 @@ func run(ctx context.Context) (re error) {
 		}()
 		go func() {
 			defer func() { _ = conn.Close() }()
-
-			fmt.Println("start")
-
 			b := new(proto.Buffer)
 			b.EncodeAware(&proto.ServerHello{
 				Name:        "ch-bench-server",
@@ -92,7 +91,6 @@ func run(ctx context.Context) (re error) {
 			if _, err := conn.Write(b.Buf); err != nil {
 				return
 			}
-			fmt.Println("done")
 		}()
 	}
 }
