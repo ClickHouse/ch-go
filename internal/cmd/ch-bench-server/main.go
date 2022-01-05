@@ -13,7 +13,7 @@ import (
 	"github.com/go-faster/ch/proto"
 )
 
-func run(ctx context.Context) (re error) {
+func run(_ context.Context) (re error) {
 	ln, err := net.Listen("tcp4", "127.0.0.1:9001")
 	if err != nil {
 		return errors.Wrap(err, "listen")
