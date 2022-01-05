@@ -22,12 +22,14 @@ func run(ctx context.Context) (re error) {
 		Trace     string
 		Numbers   int
 		BlockSize int
+		Address   string
 	}
 	flag.IntVar(&arg.Count, "n", 20, "count")
 	flag.IntVar(&arg.Numbers, "numbers", 500_000_000, "numbers count")
 	flag.IntVar(&arg.BlockSize, "block-size", 65_536, "maximum row count in block")
 	flag.StringVar(&arg.Profile, "profile", "cpu.out", "cpu profile")
 	flag.StringVar(&arg.Trace, "trace", "trace.out", "trace")
+	flag.StringVar(&arg.Address, "addr", "localhost:9000", "server address")
 	flag.Parse()
 
 	cpuOut, err := os.Create(arg.Profile)
@@ -60,7 +62,7 @@ func run(ctx context.Context) (re error) {
 	}
 	defer trace.Stop()
 
-	c, err := ch.Dial(ctx, "localhost:9000", ch.Options{
+	c, err := ch.Dial(ctx, arg.Address, ch.Options{
 		Settings: []ch.Setting{
 			ch.SettingInt("max_block_size", arg.BlockSize),
 		},

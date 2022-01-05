@@ -32,6 +32,11 @@ type AwareEncoder interface {
 	EncodeAware(b *Buffer, version int)
 }
 
+// EncodeAware value that implements AwareEncoder.
+func (b *Buffer) EncodeAware(e AwareEncoder, version int) {
+	e.EncodeAware(b, version)
+}
+
 // Encode value that implements Encoder.
 func (b *Buffer) Encode(e Encoder) {
 	e.Encode(b)
