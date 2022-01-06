@@ -5,7 +5,13 @@ import (
 )
 
 // IPv6 represents IPv6 address.
+//
+// Same as FixedString(16) internally in ClickHouse.
 type IPv6 [16]byte
+
+func (v IPv6) String() string {
+	return v.ToIP().String()
+}
 
 // ToIP represents IPv6 as netaddr.IP.
 func (v IPv6) ToIP() netaddr.IP {
