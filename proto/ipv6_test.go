@@ -17,6 +17,14 @@ func IPv6FromInt(v int) IPv6 {
 	return s
 }
 
+func TestToIPv6(t *testing.T) {
+	v := netaddr.MustParseIP("2001:db8:ac10:fe01:feed:babe:cafe:0")
+	b := make([]byte, 16)
+	binPutIPv6(b, v.As16())
+	ip := binIPv6(b)
+	require.Equal(t, v, ip.ToIP())
+}
+
 func TestColIPv6_NetAddr(t *testing.T) {
 	input := []netaddr.IP{
 		netaddr.MustParseIP("2001:db8:ac10:fe01:feed:babe:cafe:0"),
