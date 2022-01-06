@@ -11,6 +11,16 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestIPv6_String(t *testing.T) {
+	for _, v := range []netaddr.IP{
+		netaddr.MustParseIP("2001:db8:ac10:fe01:feed:babe:cafe:0"),
+		netaddr.MustParseIP("2001:4860:4860::8888"),
+	} {
+		d := ToIPv6(v)
+		require.Equal(t, v.String(), d.String())
+	}
+}
+
 func IPv6FromInt(v int) IPv6 {
 	s := IPv6{}
 	binary.BigEndian.PutUint64(s[:], uint64(v))

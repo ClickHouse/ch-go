@@ -10,6 +10,16 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestIPv4_String(t *testing.T) {
+	for _, v := range []netaddr.IP{
+		netaddr.MustParseIP("127.0.0.1"),
+		netaddr.MustParseIP("1.1.1.1"),
+	} {
+		d := ToIPv4(v)
+		require.Equal(t, v.String(), d.String())
+	}
+}
+
 func TestColIPv4_NetAddr(t *testing.T) {
 	input := []netaddr.IP{
 		netaddr.MustParseIP("127.0.0.1"),

@@ -14,6 +14,10 @@ import (
 // Use ToIP helper for convenience.
 type IPv4 uint32
 
+func (v IPv4) String() string {
+	return v.ToIP().String()
+}
+
 // ToIP represents IPv4 as netaddr.IP.
 func (v IPv4) ToIP() netaddr.IP {
 	var buf [4]byte
