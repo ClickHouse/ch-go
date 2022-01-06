@@ -100,7 +100,7 @@ func (q *Query) DecodeAware(r *Reader, version int) error {
 	{
 		v, err := r.UVarInt()
 		if err != nil {
-			return errors.Wrap(err, "stage")
+			return errors.Wrap(err, "compression")
 		}
 		q.Compression = Compression(v)
 		if !q.Compression.IsACompression() {
