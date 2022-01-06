@@ -2,6 +2,7 @@ package proto
 
 import (
 	"bytes"
+	"encoding/binary"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,9 @@ import (
 )
 
 func IPv6FromInt(v int) IPv6 {
-	return IPv6(UInt128FromInt(v))
+	s := IPv6{}
+	binary.BigEndian.PutUint64(s[:], uint64(v))
+	return s
 }
 
 func TestColIPv6_NetAddr(t *testing.T) {
