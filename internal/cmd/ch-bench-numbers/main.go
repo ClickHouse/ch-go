@@ -9,6 +9,7 @@ import (
 	"runtime/trace"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/go-faster/errors"
 	"go.uber.org/multierr"
 
@@ -25,7 +26,7 @@ func run(ctx context.Context) (re error) {
 		BlockSize int
 		Address   string
 	}
-	flag.IntVar(&arg.Count, "n", 20, "count")
+	flag.IntVar(&arg.Count, "n", 1, "count")
 	flag.IntVar(&arg.Numbers, "numbers", 500_000_000, "numbers count")
 	flag.IntVar(&arg.BlockSize, "block-size", 65_536, "maximum row count in block")
 	flag.StringVar(&arg.Profile, "profile", "", "cpu profile")
@@ -87,6 +88,12 @@ func run(ctx context.Context) (re error) {
 		}); err != nil {
 			return errors.Wrap(err, "query")
 		}
+		duration := time.Since(start)
+		gotBytes := uint64(arg.Numbers * 8)
+		fmt.Println(duration.Round(time.Millisecond), arg.Numbers, "rows",
+			humanize.Bytes(gotBytes),
+			humanize.Bytes(uint64(float64(gotBytes)/duration.Seconds()))+"/s",
+		)
 		fmt.Println(time.Since(start))
 	}
 
