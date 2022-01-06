@@ -3,7 +3,7 @@
 TCP [ClickHouse](https://clickhouse.com/) client in Go. Designed for very fast data block streaming with low network, cpu and memory overhead.
 
 Work in progress, please [leave feedback](https://github.com/go-faster/ch/discussions/6) on package API or features.
-Also, see [benchmarks](https://github.com/go-faster/ch-bench#benchmarks).
+Also, see [benchmarks](https://github.com/go-faster/ch-bench#benchmarks) and [protocol reference](https://go-faster.org/docs/clickhouse).
 
 *[ClickHouse](https://clickhouse.com/) is an open-source, high performance columnar OLAP database management system for real-time analytics using SQL.*
 
