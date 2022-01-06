@@ -15,11 +15,5 @@ func (v IPv6) ToIP() netaddr.IP {
 // ToIPv6 represents ip as IPv6.
 func ToIPv6(ip netaddr.IP) IPv6 { return ip.As16() }
 
-func binIPv6(b []byte) IPv6 {
-	v := (*IPv6)(b)
-	return *v
-}
-
-func binPutIPv6(b []byte, v IPv6) {
-	copy(b, v[:])
-}
+func binIPv6(b []byte) IPv6       { return *(*[16]byte)(b) }
+func binPutIPv6(b []byte, v IPv6) { copy(b, v[:]) }
