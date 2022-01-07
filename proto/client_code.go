@@ -17,13 +17,3 @@ const (
 
 // Encode to buffer.
 func (c ClientCode) Encode(b *Buffer) { b.PutByte(byte(c)) }
-
-// Compressible reports whether message can be compressed.
-func (c ClientCode) Compressible() bool {
-	switch c {
-	case ClientCodeData:
-		return true
-	default:
-		return false
-	}
-}
