@@ -13,18 +13,10 @@ func (c *ColAuto) inferNumeric(t ColumnType) bool {
 		c.Data = new(ColIPv4)
 	case ColumnTypeIPv6:
 		c.Data = new(ColIPv6)
-	case ColumnTypeDateTime:
-		c.Data = new(ColDateTime)
-	case ColumnTypeDateTime64:
-		c.Data = new(ColDateTime64)
 	case ColumnTypeDate:
 		c.Data = new(ColDate)
 	case ColumnTypeDate32:
 		c.Data = new(ColDate32)
-	case ColumnTypeEnum8:
-		c.Data = new(ColEnum8)
-	case ColumnTypeEnum16:
-		c.Data = new(ColEnum16)
 	case ColumnTypeDecimal32:
 		c.Data = new(ColDecimal32)
 	case ColumnTypeDecimal64:

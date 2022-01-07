@@ -10,11 +10,24 @@ func TestColAuto_Infer(t *testing.T) {
 	r := AutoResult("foo")
 	for _, columnType := range []ColumnType{
 		ColumnTypeString,
-		ColumnTypeDateTime,
+		ColumnTypeDate,
+		ColumnTypeDate32,
 		ColumnTypeInt8,
+		ColumnTypeInt16,
+		ColumnTypeInt32,
+		ColumnTypeInt64,
+		ColumnTypeInt128,
+		ColumnTypeInt256,
 		ColumnTypeUInt8,
+		ColumnTypeUInt16,
 		ColumnTypeUInt32,
 		ColumnTypeUInt64,
+		ColumnTypeUInt128,
+		ColumnTypeUInt256,
+		ColumnTypeFloat32,
+		ColumnTypeFloat64,
+		ColumnTypeIPv4,
+		ColumnTypeIPv6,
 	} {
 		auto := r.Data.(InferColumn)
 		require.NoError(t, auto.Infer(columnType))

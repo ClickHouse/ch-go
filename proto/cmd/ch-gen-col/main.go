@@ -337,7 +337,16 @@ func run() error {
 			return errors.Wrap(err, "write test")
 		}
 	}
-	if err := write("col_auto_gen", variants, tplInfer); err != nil {
+	var infer []Variant
+	for _, v := range variants {
+		switch v.Kind {
+		case KindDateTime, KindEnum:
+			continue
+		default:
+			infer = append(infer, v)
+		}
+	}
+	if err := write("col_auto_gen", infer, tplInfer); err != nil {
 		return errors.Wrap(err, "write")
 	}
 	return nil
