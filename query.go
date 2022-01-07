@@ -436,22 +436,6 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			return errors.Wrap(err, "table columns")
 		}
 	case proto.ServerProfileEvents:
-		/*
-			auto profile_event_type = std::make_shared<DataTypeEnum8>(
-			    DataTypeEnum8::Values
-			    {
-			        { "increment", static_cast<Int8>(INCREMENT)},
-			        { "gauge",     static_cast<Int8>(GAUGE)},
-			    });
-			NamesAndTypesList column_names_and_types = {
-			    { "host_name",    std::make_shared<DataTypeString>()   },
-			    { "current_time", std::make_shared<DataTypeDateTime>() },
-			    { "thread_id",    std::make_shared<DataTypeUInt64>()   },
-			    { "type",         profile_event_type                   },
-			    { "name",         std::make_shared<DataTypeString>()   },
-			    { "value",        std::make_shared<DataTypeUInt64>()   },
-			}
-		*/
 		var (
 			evHost     proto.ColStr
 			evTime     proto.ColDateTime
