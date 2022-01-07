@@ -340,7 +340,7 @@ func run() error {
 	var infer []Variant
 	for _, v := range variants {
 		switch v.Kind {
-		case KindDateTime, KindEnum:
+		case KindDateTime, KindEnum, KindDecimal:
 			continue
 		default:
 			infer = append(infer, v)
