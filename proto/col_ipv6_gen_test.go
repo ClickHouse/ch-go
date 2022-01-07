@@ -54,6 +54,10 @@ func TestColIPv6_DecodeColumn(t *testing.T) {
 		var dec ColIPv6
 		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
 	})
+	t.Run("ZeroRowsEncode", func(t *testing.T) {
+		var v ColIPv6
+		v.EncodeColumn(nil) // should be no-op
+	})
 }
 
 func TestColIPv6Array(t *testing.T) {

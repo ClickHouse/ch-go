@@ -38,6 +38,9 @@ func (c *ColIPv6) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes IPv6 rows to *Buffer.
 func (c ColIPv6) EncodeColumn(b *Buffer) {
+	if len(c) == 0 {
+		return
+	}
 	const size = 128 / 8
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)

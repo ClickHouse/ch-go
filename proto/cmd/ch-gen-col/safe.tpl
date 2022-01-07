@@ -62,6 +62,9 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes {{ .Name }} rows to *Buffer.
 func (c {{ .Type }}) EncodeColumn(b *Buffer) {
+  if len(c) == 0 {
+  	return
+  }
   {{- if .Byte }}
   b.Buf = append(b.Buf, c...)
   {{- else if .SingleByte }}

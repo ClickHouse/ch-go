@@ -54,6 +54,10 @@ func TestColIPv4_DecodeColumn(t *testing.T) {
 		var dec ColIPv4
 		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
 	})
+	t.Run("ZeroRowsEncode", func(t *testing.T) {
+		var v ColIPv4
+		v.EncodeColumn(nil) // should be no-op
+	})
 }
 
 func TestColIPv4Array(t *testing.T) {

@@ -38,6 +38,9 @@ func (c *ColDecimal128) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes Decimal128 rows to *Buffer.
 func (c ColDecimal128) EncodeColumn(b *Buffer) {
+	if len(c) == 0 {
+		return
+	}
 	const size = 128 / 8
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)

@@ -54,6 +54,10 @@ func TestColDate_DecodeColumn(t *testing.T) {
 		var dec ColDate
 		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
 	})
+	t.Run("ZeroRowsEncode", func(t *testing.T) {
+		var v ColDate
+		v.EncodeColumn(nil) // should be no-op
+	})
 }
 
 func TestColDateArray(t *testing.T) {

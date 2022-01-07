@@ -38,6 +38,9 @@ func (c *ColEnum16) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes Enum16 rows to *Buffer.
 func (c ColEnum16) EncodeColumn(b *Buffer) {
+	if len(c) == 0 {
+		return
+	}
 	const size = 16 / 8
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)

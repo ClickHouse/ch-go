@@ -55,6 +55,10 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
     var dec {{ .Type }}
     requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
   })
+  t.Run("ZeroRowsEncode", func(t *testing.T) {
+  	  var v {{ .Type }}
+	  v.EncodeColumn(nil) // should be no-op
+  })
 }
 
 func Test{{ .Type }}Array(t *testing.T) {

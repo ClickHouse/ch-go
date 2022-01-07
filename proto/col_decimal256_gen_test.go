@@ -54,6 +54,10 @@ func TestColDecimal256_DecodeColumn(t *testing.T) {
 		var dec ColDecimal256
 		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
 	})
+	t.Run("ZeroRowsEncode", func(t *testing.T) {
+		var v ColDecimal256
+		v.EncodeColumn(nil) // should be no-op
+	})
 }
 
 func TestColDecimal256Array(t *testing.T) {

@@ -54,6 +54,10 @@ func TestColUInt8_DecodeColumn(t *testing.T) {
 		var dec ColUInt8
 		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
 	})
+	t.Run("ZeroRowsEncode", func(t *testing.T) {
+		var v ColUInt8
+		v.EncodeColumn(nil) // should be no-op
+	})
 }
 
 func TestColUInt8Array(t *testing.T) {

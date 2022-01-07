@@ -38,6 +38,9 @@ func (c *ColDate32) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes Date32 rows to *Buffer.
 func (c ColDate32) EncodeColumn(b *Buffer) {
+	if len(c) == 0 {
+		return
+	}
 	const size = 32 / 8
 	offset := len(b.Buf)
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
