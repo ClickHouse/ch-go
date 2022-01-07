@@ -1,6 +1,19 @@
 package proto
 
-import "testing"
+import (
+	"github.com/go-faster/ch/internal/gold"
+	"github.com/stretchr/testify/require"
+	"testing"
+)
+
+func Test_putUInt256(t *testing.T) {
+	v := UInt256FromInt(100)
+	buf := make([]byte, 32)
+	binPutUInt256(buf, v)
+	gold.Bytes(t, buf, "uint256_100")
+	dec := binUInt256(buf)
+	require.Equal(t, v, dec)
+}
 
 func Benchmark_PutUInt256(b *testing.B) {
 	buf := make([]byte, 256/8)
