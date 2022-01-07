@@ -17,7 +17,7 @@ jobs:
         uses: actions/cache@v2.1.7
         with:
           path: /opt/ch/clickhouse
-          key: ClickHouse-${{ matrix.clickhouse }}
+          key: ClickHouse-${{ env.CH_VER }}
 
       - name: Check ClickHouse
         id: "ch_exists"
