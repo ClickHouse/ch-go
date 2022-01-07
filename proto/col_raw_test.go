@@ -3,7 +3,33 @@ package proto
 import (
 	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
+
+func TestColRaw(t *testing.T) {
+	v := ColRaw{
+		T:     ColumnType("Foo(5)"),
+		Size:  5,
+		Data:  []byte{1, 2, 3, 4, 5},
+		Count: 1,
+	}
+
+	r := require.New(t)
+	r.Equal(v.T, v.Type())
+	r.Equal(1, v.Rows())
+
+	b := new(Buffer)
+	v.EncodeColumn(b)
+
+	dec := ColRaw{T: v.T, Size: v.Size}
+	r.NoError(dec.DecodeColumn(b.Reader(), 1))
+	r.Equal(v, dec)
+
+	dec.Reset()
+	r.Equal(0, dec.Rows())
+	r.Len(dec.Data, 0)
+}
 
 func BenchmarkColRaw_EncodeColumn(b *testing.B) {
 	buf := new(Buffer)

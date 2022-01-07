@@ -21,6 +21,7 @@ func (c ColRaw) Rows() int              { return c.Count }
 func (c ColRaw) EncodeColumn(b *Buffer) { b.Buf = append(b.Buf, c.Data...) }
 
 func (c *ColRaw) DecodeColumn(r *Reader, rows int) error {
+	c.Count = rows
 	c.Data = append(c.Data[:0], make([]byte, c.Size*rows)...)
 	if err := r.ReadFull(c.Data); err != nil {
 		return errors.Wrap(err, "read full")
