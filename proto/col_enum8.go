@@ -97,6 +97,9 @@ func (e *ColEnum8Auto) Reset() {
 }
 
 func (e *ColEnum8Auto) Prepare() error {
+	if len(e.raw) != 0 {
+		return errors.New("already prepared")
+	}
 	for _, v := range e.Values {
 		raw, ok := e.strToRaw[v]
 		if !ok {
