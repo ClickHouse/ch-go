@@ -142,11 +142,19 @@ func BenchmarkOTEL(b *testing.B) {
 		require.NoError(b, block.EncodeBlock(buf, proto.Version, input))
 
 		b.ReportAllocs()
+		b.ResetTimer()
 		b.SetBytes(int64(len(buf.Buf)))
 
 		for i := 0; i < b.N; i++ {
 			buf.Reset()
 			buf.PutString("")
+
+			// Important!
+			// Simulating "Reset" to new values.
+			v := data.SevText.Values
+			data.SevText.Reset()
+			data.SevText.Values = v
+
 			if err := block.EncodeBlock(buf, proto.Version, input); err != nil {
 				b.Fatal(err)
 			}
