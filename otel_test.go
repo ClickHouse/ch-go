@@ -35,6 +35,8 @@ func (t *OTEL) Input() proto.Input {
 	return proto.Input{
 		{Name: "body", Data: t.Body},
 		{Name: "timestamp", Data: t.Timestamp.Wrap(proto.PrecisionNano)},
+		{Name: "trace_id", Data: t.TraceID},
+		{Name: "span_id", Data: t.SpanID},
 		{Name: "severity_text", Data: &t.SevText},
 		{Name: "severity_number", Data: t.SevNumber},
 
@@ -68,6 +70,9 @@ func (t *OTEL) Append(row OTELRow) {
 	t.SevNumber.Append(row.SeverityNumber)
 	t.SevText.Append(row.SeverityText)
 
+	t.TraceID.Append(row.TraceID[:])
+	t.SpanID.Append(row.SpanID[:])
+
 	t.ResStringKeys.ArrAppend(&t.ResStringKeysArr, row.ResKeys)
 	t.ResStringValues.ArrAppend(&t.ResStringValuesArr, row.ResValues)
 
@@ -84,6 +89,9 @@ func NewOTEL() *OTEL {
 
 	t.ResStringValuesArr.Data = &t.ResStringValues
 	t.ResStringKeysArr.Data = &t.ResStringKeys
+
+	t.TraceID = proto.ColFixedStr{Size: 16}
+	t.SpanID = proto.ColFixedStr{Size: 8}
 
 	if err := t.SevText.Infer(`Enum8('TRACE'=1, 'DEBUG'=2, 'INFO'=3, 'WARN'=4, 'ERROR'=5, 'FATAL'=6)`); err != nil {
 		panic(err)
