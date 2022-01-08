@@ -46,10 +46,6 @@ func (t *OTEL) Input() proto.Input {
 	}
 }
 
-func (t *OTEL) appendStrArr(values *proto.ColStr, arr *proto.ColArr, data []string) {
-	values.ArrAppend(arr, data)
-}
-
 type OTELRow struct {
 	Body           []byte
 	Timestamp      int64
