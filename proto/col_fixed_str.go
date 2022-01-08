@@ -52,6 +52,14 @@ func (c *ColFixedStr) Reset() {
 	c.Buf = c.Buf[:0]
 }
 
+// Append value to column. Panics if len(b) != Size.
+func (c *ColFixedStr) Append(b []byte) {
+	if len(b) != c.Size {
+		panic("invalid size")
+	}
+	c.Buf = append(c.Buf, b...)
+}
+
 // EncodeColumn encodes ColFixedStr rows to *Buffer.
 func (c ColFixedStr) EncodeColumn(b *Buffer) {
 	b.Buf = append(b.Buf, c.Buf...)
