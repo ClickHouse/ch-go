@@ -133,6 +133,9 @@ q := ch.Query{
 
 ## TODO
 - [ ] Connection pools
+- [ ] Improved i/o timeout handling
+  - [ ] Close connection on context cancellation in all cases
+  - [ ] Ensure that reads can't block forever
 - [ ] TLS
 - [ ] API UX Improvements (with 1.18 generics?)
     - [x] Enum
