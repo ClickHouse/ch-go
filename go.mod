@@ -8,7 +8,7 @@ require (
 	github.com/go-faster/city v1.0.0
 	github.com/go-faster/errors v0.5.0
 	github.com/google/uuid v1.3.0
-	github.com/klauspost/compress v1.13.6
+	github.com/klauspost/compress v1.14.1
 	github.com/pierrec/lz4/v4 v4.1.12
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/otel/trace v1.3.0
