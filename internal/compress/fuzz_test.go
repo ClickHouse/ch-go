@@ -4,6 +4,7 @@ package compress
 
 import (
 	"bytes"
+	"encoding/binary"
 	"io"
 	"testing"
 
@@ -41,8 +42,8 @@ func FuzzReader_Read(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		if len(data) > headerSize {
 			h := city.CH128(data[hMethod:])
-			bin.PutUint64(data[0:8], h.Low)
-			bin.PutUint64(data[8:16], h.High)
+			binary.LittleEndian.PutUint64(data[0:8], h.Low)
+			binary.LittleEndian.PutUint64(data[8:16], h.High)
 		}
 
 		r := NewReader(bytes.NewReader(data))

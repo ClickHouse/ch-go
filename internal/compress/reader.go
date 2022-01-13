@@ -1,6 +1,7 @@
 package compress
 
 import (
+	"encoding/binary"
 	"fmt"
 	"io"
 
@@ -23,8 +24,8 @@ type Reader struct {
 // FormatU128 formats city.U128 as hex.
 func FormatU128(v city.U128) string {
 	var buf [16]byte
-	bin.PutUint64(buf[:8], v.Low)
-	bin.PutUint64(buf[8:], v.High)
+	binary.LittleEndian.PutUint64(buf[:8], v.Low)
+	binary.LittleEndian.PutUint64(buf[8:], v.High)
 	return fmt.Sprintf("%x", buf)
 }
 
@@ -38,8 +39,8 @@ func (r *Reader) readBlock() error {
 	}
 
 	var (
-		rawSize  = int(bin.Uint32(r.header[hRawSize:])) - compressHeaderSize
-		dataSize = int(bin.Uint32(r.header[hDataSize:]))
+		rawSize  = int(binary.LittleEndian.Uint32(r.header[hRawSize:])) - compressHeaderSize
+		dataSize = int(binary.LittleEndian.Uint32(r.header[hDataSize:]))
 	)
 	if dataSize < 0 || dataSize > maxDataSize {
 		return errors.Errorf("data size should be %d < %d < %d", 0, dataSize, maxDataSize)
@@ -57,8 +58,8 @@ func (r *Reader) readBlock() error {
 		return errors.Wrap(err, "read raw")
 	}
 	hGot := city.U128{
-		Low:  bin.Uint64(r.raw[0:8]),
-		High: bin.Uint64(r.raw[8:16]),
+		Low:  binary.LittleEndian.Uint64(r.raw[0:8]),
+		High: binary.LittleEndian.Uint64(r.raw[8:16]),
 	}
 	h := city.CH128(r.raw[hMethod:])
 	if hGot != h {

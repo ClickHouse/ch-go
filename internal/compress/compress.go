@@ -2,7 +2,6 @@
 package compress
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/go-faster/city"
@@ -31,8 +30,6 @@ const (
 	hDataSize = 21
 	hMethod   = 16
 )
-
-var bin = binary.LittleEndian
 
 // CorruptedDataErr means that provided hash mismatch with calculated.
 type CorruptedDataErr struct {

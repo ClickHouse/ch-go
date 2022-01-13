@@ -1,6 +1,8 @@
 package compress
 
 import (
+	"encoding/binary"
+
 	"github.com/go-faster/city"
 	"github.com/go-faster/errors"
 	"github.com/klauspost/compress/zstd"
@@ -44,11 +46,11 @@ func (w *Writer) Compress(m Method, buf []byte) error {
 
 	w.Data = w.Data[:n+headerSize]
 
-	bin.PutUint32(w.Data[hRawSize:], uint32(n+compressHeaderSize))
-	bin.PutUint32(w.Data[hDataSize:], uint32(len(buf)))
+	binary.LittleEndian.PutUint32(w.Data[hRawSize:], uint32(n+compressHeaderSize))
+	binary.LittleEndian.PutUint32(w.Data[hDataSize:], uint32(len(buf)))
 	h := city.CH128(w.Data[hMethod:])
-	bin.PutUint64(w.Data[0:8], h.Low)
-	bin.PutUint64(w.Data[8:16], h.High)
+	binary.LittleEndian.PutUint64(w.Data[0:8], h.Low)
+	binary.LittleEndian.PutUint64(w.Data[8:16], h.High)
 
 	return nil
 }
