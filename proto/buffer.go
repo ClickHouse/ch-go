@@ -99,19 +99,19 @@ func (b *Buffer) PutUInt8(x uint8) {
 
 func (b *Buffer) PutUInt16(x uint16) {
 	buf := make([]byte, 16/8)
-	bin.PutUint16(buf, x)
+	binary.LittleEndian.PutUint16(buf, x)
 	b.Buf = append(b.Buf, buf...)
 }
 
 func (b *Buffer) PutUInt32(x uint32) {
 	buf := make([]byte, 32/8)
-	bin.PutUint32(buf, x)
+	binary.LittleEndian.PutUint32(buf, x)
 	b.Buf = append(b.Buf, buf...)
 }
 
 func (b *Buffer) PutUInt64(x uint64) {
 	buf := make([]byte, 64/8)
-	bin.PutUint64(buf, x)
+	binary.LittleEndian.PutUint64(buf, x)
 	b.Buf = append(b.Buf, buf...)
 }
 

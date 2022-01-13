@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"encoding/binary"
 	"math"
 )
 
@@ -81,13 +82,12 @@ func UInt128FromUInt64(v uint64) UInt128 {
 func binUInt128(b []byte) UInt128 {
 	_ = b[:128/8] // bounds check hint to compiler; see golang.org/issue/14808
 	return UInt128{
-		Low:  bin.Uint64(b[0 : 64/8]),
-		High: bin.Uint64(b[64/8 : 128/8]),
+		Low:  binary.LittleEndian.Uint64(b[0 : 64/8]),
+		High: binary.LittleEndian.Uint64(b[64/8 : 128/8]),
 	}
 }
 
 func binPutUInt128(b []byte, v UInt128) {
-	_ = b[:128/8] // bounds check hint to compiler; see golang.org/issue/14808
-	bin.PutUint64(b[0:64/8], v.Low)
-	bin.PutUint64(b[64/8:128/8], v.High)
+	binary.LittleEndian.PutUint64(b[64/8:128/8], v.High)
+	binary.LittleEndian.PutUint64(b[0:64/8], v.Low)
 }

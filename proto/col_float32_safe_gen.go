@@ -30,7 +30,7 @@ func (c *ColFloat32) DecodeColumn(r *Reader, rows int) error {
 	_ = data[len(data)-size]
 	for i := 0; i <= len(data)-size; i += size {
 		v = append(v,
-			math.Float32frombits(bin.Uint32(data[i:i+size])),
+			math.Float32frombits(binary.LittleEndian.Uint32(data[i:i+size])),
 		)
 	}
 	*c = v

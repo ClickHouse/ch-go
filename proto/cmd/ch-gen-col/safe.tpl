@@ -47,7 +47,7 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
   for i := 0; i <= len(data)-size; i += size {
 	v = append(v,
 	{{- if .IsFloat }}
-	  math.{{ .Name }}frombits(bin.{{ .BinFunc }}(data[i:i+size])),
+	  math.{{ .Name }}frombits(binary.LittleEndian.{{ .BinFunc }}(data[i:i+size])),
 	{{- else if .Cast }}
 	 {{ .ElemType }}({{ .BinGet }}(data[i:i+size])),
 	{{- else }}

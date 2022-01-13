@@ -231,7 +231,7 @@ func (r *Reader) UInt16() (uint16, error) {
 	if err := r.readFull(2); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
-	return bin.Uint16(r.b.Buf), nil
+	return binary.LittleEndian.Uint16(r.b.Buf), nil
 }
 
 // UInt32 decodes uint32 value.
@@ -239,7 +239,7 @@ func (r *Reader) UInt32() (uint32, error) {
 	if err := r.readFull(32 / 8); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
-	return bin.Uint32(r.b.Buf), nil
+	return binary.LittleEndian.Uint32(r.b.Buf), nil
 }
 
 // UInt64 decodes uint64 value.
@@ -247,7 +247,7 @@ func (r *Reader) UInt64() (uint64, error) {
 	if err := r.readFull(64 / 8); err != nil {
 		return 0, errors.Wrap(err, "read")
 	}
-	return bin.Uint64(r.b.Buf), nil
+	return binary.LittleEndian.Uint64(r.b.Buf), nil
 }
 
 // UInt128 decodes UInt128 value.
