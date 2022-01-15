@@ -33,6 +33,13 @@ func (s autoResults) DecodeResult(r *Reader, b Block) error {
 	return s.results.decodeAuto(r, b)
 }
 
+func (s Results) Rows() int {
+	if len(s) == 0 {
+		return 0
+	}
+	return s[0].Data.Rows()
+}
+
 func (s *Results) Auto() Result {
 	return autoResults{results: s}
 }

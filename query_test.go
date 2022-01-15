@@ -866,3 +866,16 @@ func BenchmarkClient_decodeBlock(b *testing.B) {
 		}
 	}
 }
+
+func TestClient_ResultsAuto(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	var data proto.Results
+	require.NoError(t, Conn(t).Do(ctx, Query{
+		Body:   "SELECT number as a, number as b FROM system.numbers LIMIT 10",
+		Result: data.Auto(),
+	}), "select")
+
+	require.Len(t, data, 2)
+	require.Equal(t, 10, data.Rows())
+}
