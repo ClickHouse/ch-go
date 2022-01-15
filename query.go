@@ -366,24 +366,10 @@ type Log struct {
 	Text     string
 }
 
-//go:generate go run github.com/dmarkham/enumer -type ProfileEventType -trimprefix Profile -output profile_enum.go
-
-type ProfileEventType byte
-
-const (
-	ProfileIncrement ProfileEventType = 1
-	ProfileGauge     ProfileEventType = 2
+type (
+	ProfileEvent     = proto.ProfileEvent
+	ProfileEventType = proto.ProfileEventType
 )
-
-// ProfileEvent is detailed profiling event from Server.
-type ProfileEvent struct {
-	ThreadID uint64
-	Host     string
-	Time     time.Time
-	Type     ProfileEventType
-	Name     string
-	Value    int64
-}
 
 func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) error {
 	switch p {
@@ -436,31 +422,13 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			return errors.Wrap(err, "table columns")
 		}
 	case proto.ServerProfileEvents:
-		var (
-			evHost     proto.ColStr
-			evTime     proto.ColDateTime
-			evThreadID proto.ColUInt64
-			evType     proto.ColInt8
-			evName     proto.ColStr
-			evValue    proto.ColAuto // UInt64 or Int64 depending on version
-		)
+		var data proto.ProfileEvents
 		onResult := func(ctx context.Context, b proto.Block) error {
-			for i := range evTime {
-				e := ProfileEvent{
-					Time:     evTime[i].Time(),
-					Host:     evHost.Row(i),
-					ThreadID: evThreadID[i],
-					Type:     ProfileEventType(evType[i]),
-					Name:     evName.Row(i),
-				}
-				switch d := evValue.Data.(type) {
-				case *proto.ColInt64:
-					e.Value = (*d)[i]
-				case *proto.ColUInt64:
-					e.Value = int64((*d)[i])
-				default:
-					return errors.Errorf("unexpected type %q for metric column", d.Type())
-				}
+			events, err := data.All()
+			if err != nil {
+				return errors.Wrap(err, "events")
+			}
+			for _, e := range events {
 				if ce := c.lg.Check(zap.DebugLevel, "ProfileEvent"); ce != nil {
 					ce.Write(
 						zap.Time("event.time", e.Time),
@@ -482,14 +450,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 		if err := c.decodeBlock(ctx, decodeOptions{
 			Handler:      onResult,
 			Compressible: p.Compressible(),
-			Result: proto.Results{
-				{Name: "host_name", Data: &evHost},
-				{Name: "current_time", Data: &evTime},
-				{Name: "thread_id", Data: &evThreadID},
-				{Name: "type", Data: &evType},
-				{Name: "name", Data: &evName},
-				{Name: "value", Data: &evValue},
-			},
+			Result:       data.Result(),
 		}); err != nil {
 			return errors.Wrap(err, "decode block")
 		}
