@@ -175,10 +175,12 @@ type ColInfo struct {
 // ColInfoInput saves column info on decoding.
 type ColInfoInput []ColInfo
 
+func (s *ColInfoInput) Reset() {
+	*s = (*s)[:0]
+}
+
 func (s *ColInfoInput) DecodeResult(r *Reader, b Block) error {
-	if len(*s) > 0 {
-		return errors.New("already inferred")
-	}
+	s.Reset()
 	if b.Rows > 0 {
 		return errors.New("got unexpected rows")
 	}

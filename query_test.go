@@ -879,3 +879,14 @@ func TestClient_ResultsAuto(t *testing.T) {
 	require.Len(t, data, 2)
 	require.Equal(t, 10, data.Rows())
 }
+
+func TestClient_ColInfoInput(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	var data proto.ColInfoInput
+	require.NoError(t, Conn(t).Do(ctx, Query{
+		Body:   "SELECT number as a, number as b FROM system.numbers LIMIT 0",
+		Result: &data,
+	}), "select")
+	require.Len(t, data, 2)
+}
