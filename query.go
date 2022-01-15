@@ -355,20 +355,10 @@ func (c *Client) resultHandler(q Query) func(ctx context.Context, b proto.Block)
 	}
 }
 
-// Log from server.
-type Log struct {
-	Time     time.Time
-	Host     string
-	QueryID  string
-	ThreadID uint64
-	Priority int8
-	Source   string
-	Text     string
-}
-
 type (
 	ProfileEvent     = proto.ProfileEvent
 	ProfileEventType = proto.ProfileEventType
+	Log              = proto.Log
 )
 
 func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) error {
@@ -398,6 +388,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 				return errors.Wrap(err, "progress")
 			}
 		}
+		return nil
 	case proto.ServerCodeProfile:
 		p, err := c.profile()
 		if err != nil {
@@ -415,12 +406,14 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 				return errors.Wrap(err, "profile")
 			}
 		}
+		return nil
 	case proto.ServerCodeTableColumns:
 		// Ignoring for now.
 		var info proto.TableColumns
 		if err := c.decode(&info); err != nil {
 			return errors.Wrap(err, "table columns")
 		}
+		return nil
 	case proto.ServerProfileEvents:
 		var data proto.ProfileEvents
 		onResult := func(ctx context.Context, b proto.Block) error {
@@ -456,27 +449,9 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 		}
 		return nil
 	case proto.ServerCodeLog:
-		var (
-			eventTime      proto.ColDateTime
-			eventTimeMicro proto.ColUInt32
-			eventHostName  proto.ColStr
-			eventQueryID   proto.ColStr
-			eventThreadID  proto.ColUInt64
-			eventPriority  proto.ColInt8
-			eventSource    proto.ColStr
-			eventText      proto.ColStr
-		)
+		var data proto.Logs
 		onResult := func(ctx context.Context, b proto.Block) error {
-			for i := range eventTime {
-				l := Log{
-					Time:     eventTime[i].Time(),
-					Host:     eventHostName.Row(i),
-					QueryID:  eventQueryID.Row(i),
-					ThreadID: eventThreadID[i],
-					Priority: eventPriority[i],
-					Source:   eventSource.Row(i),
-					Text:     eventText.Row(i),
-				}
+			for _, l := range data.All() {
 				if ce := c.lg.Check(zap.DebugLevel, "Profile"); ce != nil {
 					ce.Write(
 						zap.Time("event_time", l.Time),
@@ -499,16 +474,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 		if err := c.decodeBlock(ctx, decodeOptions{
 			Handler:      onResult,
 			Compressible: p.Compressible(),
-			Result: proto.Results{
-				{Name: "event_time", Data: &eventTime},
-				{Name: "event_time_microseconds", Data: &eventTimeMicro},
-				{Name: "host_name", Data: &eventHostName},
-				{Name: "query_id", Data: &eventQueryID},
-				{Name: "thread_id", Data: &eventThreadID},
-				{Name: "priority", Data: &eventPriority},
-				{Name: "source", Data: &eventSource},
-				{Name: "text", Data: &eventText},
-			},
+			Result:       data.Result(),
 		}); err != nil {
 			return errors.Wrap(err, "decode block")
 		}
@@ -516,8 +482,6 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 	default:
 		return errors.Errorf("unexpected packet %q", p)
 	}
-
-	return nil
 }
 
 // Do performs Query on ClickHouse server.
