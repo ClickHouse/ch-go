@@ -12,8 +12,7 @@ import (
 )
 
 func TestColFixedStr_EncodeColumn(t *testing.T) {
-	data := ColFixedStr{Size: 32}
-
+	var data ColFixedStr
 	input := []string{
 		"foo",
 		"bar",
@@ -25,7 +24,7 @@ func TestColFixedStr_EncodeColumn(t *testing.T) {
 	rows := len(input)
 	for _, s := range input {
 		h := sha256.Sum256([]byte(s))
-		data.Buf = append(data.Buf, h[:]...)
+		data.Append(h[:])
 	}
 
 	var buf Buffer
@@ -56,6 +55,36 @@ func TestColFixedStr_EncodeColumn(t *testing.T) {
 
 		dec := ColFixedStr{Size: 32}
 		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
+	t.Run("ZeroRows", func(t *testing.T) {
+		var v ColFixedStr
+		require.Equal(t, 0, v.Rows())
+	})
+	t.Run("AppendPanic", func(t *testing.T) {
+		v := ColFixedStr{Size: 10}
+		require.Panics(t, func() {
+			v.Append(nil)
+		})
+		require.Panics(t, func() {
+			v.Append(make([]byte, 9))
+		})
+		require.Panics(t, func() {
+			v.Append(make([]byte, 11))
+		})
+		require.NotPanics(t, func() {
+			v.Append(make([]byte, 10))
+		})
+	})
+	t.Run("Auto", func(t *testing.T) {
+		var v ColFixedStr
+		v.Append(make([]byte, 10))
+		require.Equal(t, 10, v.Size)
+		t.Run("Reset", func(t *testing.T) {
+			require.Equal(t, 1, v.Rows())
+			v.Reset()
+			require.Equal(t, 0, v.Rows())
+			require.Equal(t, 10, v.Size)
+		})
 	})
 }
 

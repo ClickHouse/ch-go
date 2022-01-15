@@ -53,7 +53,13 @@ func (c *ColFixedStr) Reset() {
 }
 
 // Append value to column. Panics if len(b) != Size.
+//
+// If Size is not set, will set to len of first value.
 func (c *ColFixedStr) Append(b []byte) {
+	if c.Size == 0 {
+		// Automatic size set.
+		c.Size = len(b)
+	}
 	if len(b) != c.Size {
 		panic("invalid size")
 	}
