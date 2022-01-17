@@ -1,7 +1,9 @@
 package cht_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/xml"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,6 +12,37 @@ import (
 	"github.com/go-faster/ch/cht"
 	"github.com/go-faster/ch/proto"
 )
+
+func TestXML(t *testing.T) {
+	buf := new(bytes.Buffer)
+	e := xml.NewEncoder(buf)
+	e.Indent("", "  ")
+	require.NoError(t, e.Encode(cht.Config{
+		RemoteServers: cht.Clusters{
+			"alpha": cht.Cluster{
+				Secret: "foo",
+				Shards: []cht.Shard{
+					{
+						Weight:              10,
+						InternalReplication: true,
+						Replicas: []cht.Replica{
+							{
+								Priority: 1,
+								Host:     "localhost",
+								Port:     33123,
+							},
+						},
+					},
+				},
+			},
+			"beta": cht.Cluster{
+				Secret: "bar",
+			},
+		},
+	}))
+
+	t.Log(buf)
+}
 
 func TestConnect(t *testing.T) {
 	ctx := context.Background()
