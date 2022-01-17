@@ -70,7 +70,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 	c.encode(proto.Query{
 		ID:          q.QueryID,
 		Body:        q.Body,
-		Secret:      "",
+		Secret:      q.Secret,
 		Stage:       proto.StageComplete,
 		Compression: c.compression,
 		Settings:    c.querySettings(q),
@@ -82,7 +82,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 			Interface:       proto.InterfaceTCP,
 			Query:           proto.ClientQueryInitial,
 
-			InitialUser:    "",
+			InitialUser:    q.InitialUser,
 			InitialQueryID: q.QueryID,
 			InitialAddress: c.conn.LocalAddr().String(),
 			OSUser:         "",
@@ -151,6 +151,14 @@ type Query struct {
 
 	// Settings are optional query-scoped settings. Can override client settings.
 	Settings []Setting
+
+	// Secret is optional inter-server per-cluster secret for Distributed queries.
+	//
+	// See https://clickhouse.com/docs/en/engines/table-engines/special/distributed/#distributed-clusters
+	Secret string
+
+	// InitialUser is optional initial user for Distributed queries.
+	InitialUser string
 
 	// ExternalData is optional data for server to load.
 	//
