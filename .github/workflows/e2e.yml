@@ -23,6 +23,7 @@ jobs:
           - 21.11.10.1-stable
           - 21.12.2.17-stable
           - 21.12.3.32-stable
+          - 22.1.1.2542-prestable
     steps:
       - uses: actions/checkout@v2
 
