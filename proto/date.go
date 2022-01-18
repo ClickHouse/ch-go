@@ -31,12 +31,12 @@ func (d Date) String() string {
 	return d.Time().UTC().Format(DateLayout)
 }
 
-// TimeToDate returns Date of time.Time in UTC.
-func TimeToDate(t time.Time) Date {
+// ToDate returns Date of time.Time in UTC.
+func ToDate(t time.Time) Date {
 	return Date(t.Unix() / secInDay)
 }
 
 // NewDate returns the Date corresponding to year, month and day in UTC.
 func NewDate(year int, month time.Month, day int) Date {
-	return TimeToDate(time.Date(year, month, day, 0, 0, 0, 0, time.UTC))
+	return ToDate(time.Date(year, month, day, 0, 0, 0, 0, time.UTC))
 }

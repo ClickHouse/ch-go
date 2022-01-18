@@ -26,12 +26,12 @@ func (d Date32) String() string {
 	return d.Time().Format(DateLayout)
 }
 
-// TimeToDate32 returns Date32 of time.Time in UTC.
-func TimeToDate32(t time.Time) Date32 {
+// ToDate32 returns Date32 of time.Time in UTC.
+func ToDate32(t time.Time) Date32 {
 	return Date32((t.Unix() - date32Epoch) / secInDay)
 }
 
 // NewDate32 returns the Date32 corresponding to year, month and day in UTC.
 func NewDate32(year int, month time.Month, day int) Date32 {
-	return TimeToDate32(time.Date(year, month, day, 0, 0, 0, 0, time.UTC))
+	return ToDate32(time.Date(year, month, day, 0, 0, 0, 0, time.UTC))
 }
