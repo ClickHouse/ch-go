@@ -80,3 +80,48 @@ func TestConnect(t *testing.T) {
 		require.Equal(t, byte(1), data[0])
 	})
 }
+
+func TestCluster(t *testing.T) {
+	var (
+		alphaPort = cht.Port(t)
+		betaPort  = cht.Port(t)
+	)
+	clusters := cht.Clusters{
+		"nexus": cht.Cluster{
+			Shards: []cht.Shard{
+				{
+					Replicas: []cht.Replica{
+						{Host: "localhost", Port: alphaPort},
+						{Host: "localhost", Port: betaPort},
+					},
+				},
+			},
+		},
+	}
+	var (
+		withCluster = cht.WithClusters(clusters)
+		alpha       = cht.New(t, cht.WithTCP(alphaPort), withCluster)
+		beta        = cht.New(t, cht.WithTCP(betaPort), withCluster)
+		ctx         = context.Background()
+	)
+	t.Run("Clusters", func(t *testing.T) {
+		client, err := ch.Dial(ctx, alpha.TCP, ch.Options{})
+		require.NoError(t, err)
+		defer client.Close()
+
+		var data proto.Results
+		getClusters := ch.Query{
+			Body:   "SELECT * FROM system.clusters",
+			Result: data.Auto(),
+		}
+		require.NoError(t, client.Do(ctx, getClusters))
+		require.Equal(t, 2, data.Rows())
+	})
+	t.Run("Beta", func(t *testing.T) {
+		client, err := ch.Dial(ctx, beta.TCP, ch.Options{})
+		require.NoError(t, err)
+		defer client.Close()
+
+		require.NoError(t, client.Ping(ctx))
+	})
+}

@@ -6,10 +6,12 @@ import (
 	"context"
 	_ "embed"
 	"encoding/xml"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -125,8 +127,9 @@ func Bin() (string, error) {
 
 // Server represents testing ClickHouse server.
 type Server struct {
-	TCP  string
-	HTTP string
+	TCP    string
+	HTTP   string
+	Config Config
 }
 
 func writeXML(t testing.TB, name string, v interface{}) {
@@ -137,6 +140,47 @@ func writeXML(t testing.TB, name string, v interface{}) {
 	require.NoError(t, os.WriteFile(name, buf.Bytes(), 0o600))
 }
 
+func portOf(t testing.TB, addr string) int {
+	t.Helper()
+
+	addr = strings.TrimPrefix(addr, "http://")
+
+	_, port, err := net.SplitHostPort(addr)
+	require.NoError(t, err)
+	v, err := strconv.Atoi(port)
+	require.NoError(t, err)
+
+	return v
+}
+
+func Port(t testing.TB) int {
+	ln, err := net.Listen("tcp4", "127.0.0.1:0")
+	require.NoError(t, err)
+	port := ln.Addr().(*net.TCPAddr).Port
+	require.NoError(t, ln.Close())
+	return port
+}
+
+type options struct {
+	tcp      int
+	http     int
+	clusters Clusters
+}
+
+type Option func(o *options)
+
+func WithClusters(c Clusters) Option {
+	return func(o *options) {
+		o.clusters = c
+	}
+}
+
+func WithTCP(port int) Option {
+	return func(o *options) {
+		o.tcp = port
+	}
+}
+
 // New creates new ClickHouse server and returns it.
 //
 // Skip tests if CH_E2E variable is set to 0.
@@ -145,7 +189,13 @@ func writeXML(t testing.TB, name string, v interface{}) {
 //
 // Override binary with CH_BIN.
 // Can be clickhouse-server or clickhouse.
-func New(t testing.TB) Server {
+func New(t testing.TB, opts ...Option) Server {
+	var o options
+
+	for _, opt := range opts {
+		opt(&o)
+	}
+
 	status := e2e.Get(t)
 	if status == e2e.Disabled {
 		t.Skip("E2E: Disabled")
@@ -173,9 +223,8 @@ func New(t testing.TB) Server {
 			Console: 1,
 		},
 
-		// Automatically pick port.
-		HTTP: 0,
-		TCP:  0,
+		HTTP: o.http,
+		TCP:  o.tcp,
 
 		Host: "127.0.0.1",
 
@@ -191,6 +240,8 @@ func New(t testing.TB) Server {
 				Path: userCfgPath,
 			},
 		},
+
+		RemoteServers: o.clusters,
 	}
 	writeXML(t, cfgPath, cfg)
 	for _, dir := range []string{
@@ -226,8 +277,10 @@ func New(t testing.TB) Server {
 		}
 		if strings.HasPrefix(info.Addr, "http:") {
 			httpAddr = info.Addr
+			cfg.HTTP = portOf(t, httpAddr)
 		} else {
 			tcpAddr = info.Addr
+			cfg.TCP = portOf(t, tcpAddr)
 		}
 	}
 	cmd.Stdout = logProxy(onAddr)
@@ -263,7 +316,8 @@ func New(t testing.TB) Server {
 	})
 
 	return Server{
-		TCP:  tcpAddr,
-		HTTP: httpAddr,
+		TCP:    tcpAddr,
+		HTTP:   httpAddr,
+		Config: cfg,
 	}
 }
