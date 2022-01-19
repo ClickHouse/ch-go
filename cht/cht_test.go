@@ -102,9 +102,17 @@ func TestCluster(t *testing.T) {
 	var (
 		withCluster = cht.WithClusters(clusters)
 		lg          = ztest.NewLogger(t)
-		alpha       = cht.New(t, cht.WithTCP(alphaPort), withCluster, cht.WithLog(lg.Named("alpha")))
-		beta        = cht.New(t, cht.WithTCP(betaPort), withCluster, cht.WithLog(lg.Named("beta")))
-		ctx         = context.Background()
+		servers     = cht.Many(t,
+			cht.With(
+				cht.WithTCP(alphaPort), withCluster, cht.WithLog(lg.Named("alpha")),
+			),
+			cht.With(
+				cht.WithTCP(betaPort), withCluster, cht.WithLog(lg.Named("beta")),
+			),
+		)
+		alpha = servers[0]
+		beta  = servers[1]
+		ctx   = context.Background()
 	)
 	t.Run("Clusters", func(t *testing.T) {
 		client, err := ch.Dial(ctx, alpha.TCP, ch.Options{})

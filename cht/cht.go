@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -106,6 +107,37 @@ func WithLog(lg *zap.Logger) Option {
 	return func(o *options) {
 		o.lg = lg
 	}
+}
+
+// With composes opts into single Option.
+//
+// Useful for Many calls.
+func With(opts ...Option) Option {
+	return func(o *options) {
+		for _, opt := range opts {
+			opt(o)
+		}
+	}
+}
+
+// Many concurrent calls to New.
+func Many(t testing.TB, opts ...Option) []Server {
+	if len(opts) == 0 {
+		t.Fatal("Many(t) is invalid")
+	}
+	var wg sync.WaitGroup
+	out := make([]Server, len(opts))
+	for i := range opts {
+		wg.Add(1)
+		o := opts[i]
+		idx := i
+		go func() {
+			defer wg.Done()
+			out[idx] = New(t, o)
+		}()
+	}
+	wg.Wait()
+	return out
 }
 
 // New creates new ClickHouse server and returns it.
