@@ -140,23 +140,13 @@ func Many(t testing.TB, opts ...Option) []Server {
 	return out
 }
 
-// New creates new ClickHouse server and returns it.
-//
-// Skip tests if CH_E2E variable is set to 0.
-// Fails if CH_E2E is 1, but no binary is available.
-// Skips if CH_E2E is unset and no binary.
-//
-// Override binary with CH_BIN.
-// Can be clickhouse-server or clickhouse.
-func New(t testing.TB, opts ...Option) Server {
-	o := options{
-		lg: zap.NewNop(),
-	}
+// Skip test if e2e is not available.
+func Skip(t testing.TB) {
+	_ = BinOrSkip(t)
+}
 
-	for _, opt := range opts {
-		opt(&o)
-	}
-
+// BinOrSkip returns binary path or skips test.
+func BinOrSkip(t testing.TB) string {
 	status := e2e.Get(t)
 	if status == e2e.Disabled {
 		t.Skip("E2E: Disabled")
@@ -170,8 +160,28 @@ func New(t testing.TB, opts ...Option) Server {
 			t.Fatalf("E2E: No binary: %v", err)
 		}
 	}
-
 	require.NoError(t, err)
+	return binaryPath
+}
+
+// New creates new ClickHouse server and returns it.
+// Use Many to start multiple servers at once.
+//
+// Skips tests if CH_E2E variable is set to 0.
+// Fails if CH_E2E is 1, but no binary is available.
+// Skips if CH_E2E is unset and no binary.
+//
+// Override binary with CH_BIN.
+// Can be clickhouse-server or clickhouse.
+func New(t testing.TB, opts ...Option) Server {
+	o := options{
+		lg: zap.NewNop(),
+	}
+	for _, opt := range opts {
+		opt(&o)
+	}
+
+	binaryPath := BinOrSkip(t)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Setup data directory and config.

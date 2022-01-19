@@ -83,6 +83,7 @@ func TestConnect(t *testing.T) {
 }
 
 func TestCluster(t *testing.T) {
+	cht.Skip(t)
 	var (
 		alphaPort = cht.Port(t)
 		betaPort  = cht.Port(t)

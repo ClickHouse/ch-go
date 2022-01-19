@@ -8,16 +8,19 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/go-faster/ch/cht"
+	"github.com/go-faster/ch/internal/ztest"
 )
 
 func TestServer_Serve(t *testing.T) {
+	cht.Skip(t)
+
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	lg := zaptest.NewLogger(t)
-
+	lg := ztest.NewLogger(t)
 	done := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
