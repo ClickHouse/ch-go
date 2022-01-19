@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/cht"
@@ -102,7 +101,7 @@ func TestCluster(t *testing.T) {
 	}
 	var (
 		withCluster = cht.WithClusters(clusters)
-		lg          = zaptest.NewLogger(t)
+		lg          = ztest.NewLogger(t)
 		alpha       = cht.New(t, cht.WithTCP(alphaPort), withCluster, cht.WithLog(lg.Named("alpha")))
 		beta        = cht.New(t, cht.WithTCP(betaPort), withCluster, cht.WithLog(lg.Named("beta")))
 		ctx         = context.Background()
