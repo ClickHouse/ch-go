@@ -7,9 +7,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
 
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/cht"
+	"github.com/go-faster/ch/internal/ztest"
 	"github.com/go-faster/ch/proto"
 )
 
@@ -46,7 +48,7 @@ func TestXML(t *testing.T) {
 
 func TestConnect(t *testing.T) {
 	ctx := context.Background()
-	server := cht.New(t)
+	server := cht.New(t, cht.WithLog(ztest.NewLogger(t)))
 
 	client, err := ch.Dial(ctx, server.TCP, ch.Options{})
 	require.NoError(t, err)
@@ -100,8 +102,9 @@ func TestCluster(t *testing.T) {
 	}
 	var (
 		withCluster = cht.WithClusters(clusters)
-		alpha       = cht.New(t, cht.WithTCP(alphaPort), withCluster)
-		beta        = cht.New(t, cht.WithTCP(betaPort), withCluster)
+		lg          = zaptest.NewLogger(t)
+		alpha       = cht.New(t, cht.WithTCP(alphaPort), withCluster, cht.WithLog(lg.Named("alpha")))
+		beta        = cht.New(t, cht.WithTCP(betaPort), withCluster, cht.WithLog(lg.Named("beta")))
 		ctx         = context.Background()
 	)
 	t.Run("Clusters", func(t *testing.T) {

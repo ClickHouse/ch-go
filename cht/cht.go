@@ -18,6 +18,7 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/go-faster/ch/internal/e2e"
 )
@@ -84,6 +85,7 @@ type options struct {
 	tcp      int
 	http     int
 	clusters Clusters
+	lg       *zap.Logger
 }
 
 type Option func(o *options)
@@ -100,6 +102,12 @@ func WithTCP(port int) Option {
 	}
 }
 
+func WithLog(lg *zap.Logger) Option {
+	return func(o *options) {
+		o.lg = lg
+	}
+}
+
 // New creates new ClickHouse server and returns it.
 //
 // Skip tests if CH_E2E variable is set to 0.
@@ -109,7 +117,9 @@ func WithTCP(port int) Option {
 // Override binary with CH_BIN.
 // Can be clickhouse-server or clickhouse.
 func New(t testing.TB, opts ...Option) Server {
-	var o options
+	o := options{
+		lg: zap.NewNop(),
+	}
 
 	for _, opt := range opts {
 		opt(&o)
@@ -202,8 +212,8 @@ func New(t testing.TB, opts ...Option) Server {
 			cfg.TCP = portOf(t, tcpAddr)
 		}
 	}
-	cmd.Stdout = logProxy(onAddr)
-	cmd.Stderr = logProxy(onAddr)
+	cmd.Stdout = logProxy(o.lg, onAddr)
+	cmd.Stderr = logProxy(o.lg, onAddr)
 
 	start := time.Now()
 	require.NoError(t, cmd.Start())
