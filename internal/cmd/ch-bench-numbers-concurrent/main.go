@@ -55,7 +55,7 @@ func run(ctx context.Context) (re error) {
 	start := time.Now()
 	for i := 0; i < arg.Jobs; i++ {
 		g.Go(func() error {
-			c, err := ch.Dial(ctx, "localhost:9000", ch.Options{})
+			c, err := ch.Dial(ctx, ch.Options{})
 			if err != nil {
 				return errors.Wrap(err, "dial")
 			}

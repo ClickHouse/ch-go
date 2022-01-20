@@ -29,7 +29,8 @@ func ConnOpt(t testing.TB, opt Options) *Client {
 		opt.Logger = zaptest.NewLogger(t)
 	}
 
-	client, err := Dial(ctx, server.TCP, opt)
+	opt.Address = server.TCP
+	client, err := Dial(ctx, opt)
 	require.NoError(t, err)
 
 	t.Log("Connected", client.serverInfo(), client.Location())

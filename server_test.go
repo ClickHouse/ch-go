@@ -34,8 +34,9 @@ func TestServer_Serve(t *testing.T) {
 	})
 	g.Go(func() error {
 		defer close(done)
-		c, err := Dial(ctx, ln.Addr().String(), Options{
-			Logger: lg.Named("usr"),
+		c, err := Dial(ctx, Options{
+			Logger:  lg.Named("usr"),
+			Address: ln.Addr().String(),
 		})
 		if err != nil {
 			return errors.Wrap(err, "dial")

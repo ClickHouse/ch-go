@@ -67,7 +67,7 @@ func run(ctx context.Context) (re error) {
 		defer trace.Stop()
 	}
 
-	c, err := ch.Dial(ctx, arg.Address, ch.Options{
+	c, err := ch.Dial(ctx, ch.Options{
 		Settings: []ch.Setting{
 			ch.SettingInt("max_block_size", arg.BlockSize),
 		},

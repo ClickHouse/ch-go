@@ -49,7 +49,7 @@ func TestConnect(t *testing.T) {
 	ctx := context.Background()
 	server := cht.New(t, cht.WithLog(ztest.NewLogger(t)))
 
-	client, err := ch.Dial(ctx, server.TCP, ch.Options{})
+	client, err := ch.Dial(ctx, ch.Options{Address: server.TCP})
 	require.NoError(t, err)
 
 	t.Log("Connected", client.Location())
@@ -116,7 +116,7 @@ func TestCluster(t *testing.T) {
 		ctx   = context.Background()
 	)
 	t.Run("Clusters", func(t *testing.T) {
-		client, err := ch.Dial(ctx, alpha.TCP, ch.Options{})
+		client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP})
 		require.NoError(t, err)
 		defer client.Close()
 
@@ -129,7 +129,7 @@ func TestCluster(t *testing.T) {
 		require.Equal(t, 2, data.Rows())
 	})
 	t.Run("Beta", func(t *testing.T) {
-		client, err := ch.Dial(ctx, beta.TCP, ch.Options{})
+		client, err := ch.Dial(ctx, ch.Options{Address: beta.TCP})
 		require.NoError(t, err)
 		defer client.Close()
 

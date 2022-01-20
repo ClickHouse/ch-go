@@ -10,7 +10,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	c, err := ch.Dial(ctx, "localhost:9000", ch.Options{})
+	c, err := ch.Dial(ctx, ch.Options{})
 	if err != nil {
 		panic(err)
 	}

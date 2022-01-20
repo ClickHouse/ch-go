@@ -271,25 +271,37 @@ const (
 	CompressionNone
 )
 
-// Options for Client.
+// Options for Client. Zero value is valid.
 type Options struct {
-	Logger      *zap.Logger
-	Database    string
-	User        string
-	Password    string
+	Logger      *zap.Logger // defaults to Nop.
+	Address     string      // 127.0.0.1:9000
+	Database    string      // "default"
+	User        string      // "default"
+	Password    string      // blank string by default
+	Compression Compression // disabled by default
 	Settings    []Setting
-	Compression Compression
 }
+
+// Defaults for connection.
+const (
+	DefaultDatabase = "default"
+	DefaultUser     = "default"
+	DefaultHost     = "127.0.0.1"
+	DefaultPort     = 9000
+)
 
 func (o *Options) setDefaults() {
 	if o.Database == "" {
-		o.Database = "default"
+		o.Database = DefaultDatabase
 	}
 	if o.User == "" {
-		o.User = "default"
+		o.User = DefaultUser
 	}
 	if o.Logger == nil {
 		o.Logger = zap.NewNop()
+	}
+	if o.Address == "" {
+		o.Address = net.JoinHostPort(DefaultHost, strconv.Itoa(DefaultPort))
 	}
 }
 
@@ -349,10 +361,10 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 
 // Dial dials requested address and establishes TCP connection to ClickHouse
 // server, performing handshake.
-func Dial(ctx context.Context, addr string, opt Options) (*Client, error) {
+func Dial(ctx context.Context, opt Options) (*Client, error) {
+	opt.setDefaults()
 	var d net.Dialer
-
-	conn, err := d.DialContext(ctx, "tcp", addr)
+	conn, err := d.DialContext(ctx, "tcp", opt.Address)
 	if err != nil {
 		return nil, errors.Wrap(err, "dial")
 	}
