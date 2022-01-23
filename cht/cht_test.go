@@ -48,6 +48,7 @@ func TestXML(t *testing.T) {
 func TestConnect(t *testing.T) {
 	ctx := context.Background()
 	server := cht.New(t, cht.WithLog(ztest.NewLogger(t)))
+	t.Parallel()
 
 	client, err := ch.Dial(ctx, ch.Options{Address: server.TCP})
 	require.NoError(t, err)
@@ -99,6 +100,7 @@ func TestCluster(t *testing.T) {
 		gammaKeeperPort   = ports[7]
 		gammaInternalPort = ports[8]
 	)
+	t.Parallel()
 	const host = "127.0.0.1"
 	clusters := cht.Clusters{
 		"nexus": cht.Cluster{
