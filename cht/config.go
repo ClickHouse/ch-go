@@ -84,6 +84,8 @@ type Config struct {
 	MarkCacheSize int64 `xml:"mark_cache_size"`
 	MMAPCacheSize int64 `xml:"mmap_cache_size"`
 
+	Keeper *KeeperConfig `xml:"keeper_server,omitempty"`
+
 	RemoteServers Clusters `xml:"remote_servers,omitempty"`
 }
 
@@ -107,12 +109,11 @@ type RaftConfig struct {
 //
 // https://clickhouse.com/docs/en/operations/clickhouse-keeper/
 type KeeperConfig struct {
-	XMLName             xml.Name `xml:"keeper_server"`
-	TCPPort             int      `xml:"tcp_port"`
-	ServerID            int      `xml:"server_id"`
-	LogStoragePath      string   `json:"log_storage_path"`
-	SnapshotStoragePath string   `json:"snapshot_storage_path"`
-
-	Coordination CoordinationConfig `xml:"coordination_settings"`
-	Raft         RaftConfig         `xml:"raft_configuration"`
+	XMLName             xml.Name           `xml:"keeper_server"`
+	TCPPort             int                `xml:"tcp_port"`
+	ServerID            int                `xml:"server_id"`
+	LogStoragePath      string             `xml:"log_storage_path"`
+	SnapshotStoragePath string             `xml:"snapshot_storage_path"`
+	Coordination        CoordinationConfig `xml:"coordination_settings"`
+	Raft                RaftConfig         `xml:"raft_configuration"`
 }

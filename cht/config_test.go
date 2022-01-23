@@ -31,6 +31,10 @@ func TestKeeperConfig(t *testing.T) {
 			},
 		},
 	}
-
-	logXML(t, v)
+	t.Run("Standalone", func(t *testing.T) {
+		logXML(t, v)
+	})
+	t.Run("Embedded", func(t *testing.T) {
+		logXML(t, Config{Keeper: &v})
+	})
 }
