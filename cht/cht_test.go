@@ -85,16 +85,37 @@ func TestConnect(t *testing.T) {
 func TestCluster(t *testing.T) {
 	cht.Skip(t)
 	var (
-		alphaPort = cht.Port(t)
-		betaPort  = cht.Port(t)
+		ports = cht.Ports(t, 3*3)
+
+		alphaPort         = ports[0]
+		alphaKeeperPort   = ports[1]
+		alphaInternalPort = ports[2]
+
+		betaPort         = ports[3]
+		betaKeeperPort   = ports[4]
+		betaInternalPort = ports[5]
+
+		gammaPort         = ports[6]
+		gammaKeeperPort   = ports[7]
+		gammaInternalPort = ports[8]
 	)
+	const host = "127.0.0.1"
 	clusters := cht.Clusters{
 		"nexus": cht.Cluster{
 			Shards: []cht.Shard{
 				{
 					Replicas: []cht.Replica{
-						{Host: "localhost", Port: alphaPort},
-						{Host: "localhost", Port: betaPort},
+						{Host: host, Port: alphaPort},
+					},
+				},
+				{
+					Replicas: []cht.Replica{
+						{Host: host, Port: betaPort},
+					},
+				},
+				{
+					Replicas: []cht.Replica{
+						{Host: host, Port: gammaPort},
 					},
 				},
 			},
@@ -103,16 +124,57 @@ func TestCluster(t *testing.T) {
 	var (
 		withCluster = cht.WithClusters(clusters)
 		lg          = ztest.NewLogger(t)
-		servers     = cht.Many(t,
+		nodes       = []cht.ZooKeeperNode{
+			{Index: 1, Host: host, Port: alphaKeeperPort},
+			{Index: 2, Host: host, Port: betaKeeperPort},
+			{Index: 3, Host: host, Port: gammaKeeperPort},
+		}
+		raft = cht.RaftConfig{
+			Servers: []cht.RaftServer{
+				{ID: 1, Hostname: host, Port: alphaInternalPort},
+				{ID: 2, Hostname: host, Port: betaInternalPort},
+				{ID: 3, Hostname: host, Port: gammaInternalPort},
+			},
+		}
+		withZooKeeper = cht.WithZooKeeper(nodes)
+		servers       = cht.Many(t,
 			cht.With(
-				cht.WithTCP(alphaPort), withCluster, cht.WithLog(lg.Named("alpha")),
+				cht.WithKeeper(cht.KeeperConfig{
+					Raft:     raft,
+					ServerID: 1,
+					TCPPort:  alphaKeeperPort,
+
+					LogStoragePath:      t.TempDir(),
+					SnapshotStoragePath: t.TempDir(),
+				}),
+				cht.WithTCP(alphaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("alpha")),
 			),
 			cht.With(
-				cht.WithTCP(betaPort), withCluster, cht.WithLog(lg.Named("beta")),
+				cht.WithKeeper(cht.KeeperConfig{
+					Raft:     raft,
+					ServerID: 2,
+					TCPPort:  betaKeeperPort,
+
+					LogStoragePath:      t.TempDir(),
+					SnapshotStoragePath: t.TempDir(),
+				}),
+				cht.WithTCP(betaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("beta")),
+			),
+			cht.With(
+				cht.WithKeeper(cht.KeeperConfig{
+					Raft:     raft,
+					ServerID: 3,
+					TCPPort:  gammaKeeperPort,
+
+					LogStoragePath:      t.TempDir(),
+					SnapshotStoragePath: t.TempDir(),
+				}),
+				cht.WithTCP(gammaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("gamma")),
 			),
 		)
 		alpha = servers[0]
 		beta  = servers[1]
+		gamma = servers[2]
 		ctx   = context.Background()
 	)
 	t.Run("Clusters", func(t *testing.T) {
@@ -126,10 +188,17 @@ func TestCluster(t *testing.T) {
 			Result: data.Auto(),
 		}
 		require.NoError(t, client.Do(ctx, getClusters))
-		require.Equal(t, 2, data.Rows())
+		require.Equal(t, 3, data.Rows())
 	})
 	t.Run("Beta", func(t *testing.T) {
 		client, err := ch.Dial(ctx, ch.Options{Address: beta.TCP})
+		require.NoError(t, err)
+		defer client.Close()
+
+		require.NoError(t, client.Ping(ctx))
+	})
+	t.Run("Gamma", func(t *testing.T) {
+		client, err := ch.Dial(ctx, ch.Options{Address: gamma.TCP})
 		require.NoError(t, err)
 		defer client.Close()
 

@@ -74,19 +74,41 @@ func portOf(t testing.TB, addr string) int {
 	return v
 }
 
-func Port(t testing.TB) int {
-	ln, err := net.Listen("tcp4", "127.0.0.1:0")
-	require.NoError(t, err)
-	port := ln.Addr().(*net.TCPAddr).Port
-	require.NoError(t, ln.Close())
-	return port
+// Ports allocates n free ports.
+func Ports(t testing.TB, n int) []int {
+	ports := make([]int, n)
+	var listeners []net.Listener
+	for i := 0; i < n; i++ {
+		ln, err := net.Listen("tcp4", "127.0.0.1:0")
+		require.NoError(t, err)
+		listeners = append(listeners, ln)
+		ports[i] = ln.Addr().(*net.TCPAddr).Port
+	}
+	for _, ln := range listeners {
+		require.NoError(t, ln.Close())
+	}
+	return ports
 }
 
 type options struct {
-	tcp      int
-	http     int
-	clusters Clusters
-	lg       *zap.Logger
+	tcp       int
+	http      int
+	clusters  Clusters
+	lg        *zap.Logger
+	zooKeeper []ZooKeeperNode
+	keeper    *KeeperConfig
+}
+
+func WithKeeper(cfg KeeperConfig) Option {
+	return func(o *options) {
+		o.keeper = &cfg
+	}
+}
+
+func WithZooKeeper(nodes []ZooKeeperNode) Option {
+	return func(o *options) {
+		o.zooKeeper = nodes
+	}
 }
 
 type Option func(o *options)
@@ -212,6 +234,8 @@ func New(t testing.TB, opts ...Option) Server {
 			},
 		},
 
+		Keeper:        o.keeper,
+		ZooKeeper:     o.zooKeeper,
 		RemoteServers: o.clusters,
 	}
 	writeXML(t, cfgPath, cfg)
@@ -260,9 +284,17 @@ func New(t testing.TB, opts ...Option) Server {
 	start := time.Now()
 	require.NoError(t, cmd.Start())
 
+	wait := make(chan error)
+	go func() {
+		defer close(wait)
+		wait <- cmd.Wait()
+	}()
+
 	select {
 	case <-started:
 		t.Log("Started", time.Since(start).Round(time.Millisecond), tcpAddr, httpAddr)
+	case err := <-wait:
+		t.Fatal(err)
 	case <-time.After(time.Second * 10):
 		t.Fatal("Clickhouse timed out to start")
 	}
@@ -276,7 +308,7 @@ func New(t testing.TB, opts ...Option) Server {
 		t.Log("Shutting down")
 		startClose := time.Now()
 
-		if err := cmd.Wait(); err != nil {
+		if err := <-wait; err != nil {
 			// Check for SIGKILL.
 			var exitErr *exec.ExitError
 			require.ErrorAs(t, err, &exitErr)

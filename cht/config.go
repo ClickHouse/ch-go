@@ -74,7 +74,7 @@ type Config struct {
 	Logger  Logger   `xml:"logger"`
 	HTTP    int      `xml:"http_port"`
 	TCP     int      `xml:"tcp_port"`
-	Host    string   `xml:"host"`
+	Host    string   `xml:"listen_host"`
 
 	Path            string  `xml:"path"`
 	TempPath        string  `xml:"tmp_path"`
@@ -94,9 +94,9 @@ type Config struct {
 }
 
 type CoordinationConfig struct {
-	OperationTimeoutMs int    `xml:"operation_timeout_ms"`
-	SessionTimeoutMs   int    `xml:"session_timeout_ms"`
-	RaftLogsLevel      string `xml:"raft_logs_level"`
+	OperationTimeoutMs int    `xml:"operation_timeout_ms,omitempty"`
+	SessionTimeoutMs   int    `xml:"session_timeout_ms,omitempty"`
+	RaftLogsLevel      string `xml:"raft_logs_level,omitempty"`
 }
 
 type RaftServer struct {
@@ -114,10 +114,10 @@ type RaftConfig struct {
 // https://clickhouse.com/docs/en/operations/clickhouse-keeper/
 type KeeperConfig struct {
 	XMLName             xml.Name           `xml:"keeper_server"`
-	TCPPort             int                `xml:"tcp_port"`
-	ServerID            int                `xml:"server_id"`
-	LogStoragePath      string             `xml:"log_storage_path"`
-	SnapshotStoragePath string             `xml:"snapshot_storage_path"`
+	TCPPort             int                `xml:"tcp_port,omitempty"`
+	ServerID            int                `xml:"server_id,omitempty"`
+	LogStoragePath      string             `xml:"log_storage_path,omitempty"`
+	SnapshotStoragePath string             `xml:"snapshot_storage_path,omitempty"`
 	Coordination        CoordinationConfig `xml:"coordination_settings"`
 	Raft                RaftConfig         `xml:"raft_configuration"`
 }
