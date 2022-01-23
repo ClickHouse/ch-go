@@ -94,9 +94,13 @@ type Config struct {
 }
 
 type CoordinationConfig struct {
-	OperationTimeoutMs int    `xml:"operation_timeout_ms,omitempty"`
-	SessionTimeoutMs   int    `xml:"session_timeout_ms,omitempty"`
-	RaftLogsLevel      string `xml:"raft_logs_level,omitempty"`
+	OperationTimeoutMs          int    `xml:"operation_timeout_ms,omitempty"`
+	SessionTimeoutMs            int    `xml:"session_timeout_ms,omitempty"`
+	RaftLogsLevel               string `xml:"raft_logs_level,omitempty"`
+	HeartBeatIntervalMs         int    `xml:"heart_beat_interval_ms,omitempty"`
+	DeadSessionCheckPeriodMs    int    `xml:"dead_session_check_period_ms,omitempty"`
+	ElectionTimeoutLowerBoundMs int    `xml:"election_timeout_lower_bound_ms,omitempty"`
+	ElectionTimeoutUpperBoundMs int    `xml:"election_timeout_upper_bound_ms,omitempty"`
 }
 
 type RaftServer struct {

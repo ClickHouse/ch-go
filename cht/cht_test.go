@@ -137,12 +137,19 @@ func TestCluster(t *testing.T) {
 			},
 		}
 		withZooKeeper = cht.WithZooKeeper(nodes)
-		servers       = cht.Many(t,
+		coordination  = cht.CoordinationConfig{
+			ElectionTimeoutLowerBoundMs: 50,
+			ElectionTimeoutUpperBoundMs: 60,
+			HeartBeatIntervalMs:         10,
+			DeadSessionCheckPeriodMs:    10,
+		}
+		servers = cht.Many(t,
 			cht.With(
 				cht.WithKeeper(cht.KeeperConfig{
-					Raft:     raft,
-					ServerID: 1,
-					TCPPort:  alphaKeeperPort,
+					Raft:         raft,
+					ServerID:     1,
+					TCPPort:      alphaKeeperPort,
+					Coordination: coordination,
 
 					LogStoragePath:      t.TempDir(),
 					SnapshotStoragePath: t.TempDir(),
@@ -151,9 +158,10 @@ func TestCluster(t *testing.T) {
 			),
 			cht.With(
 				cht.WithKeeper(cht.KeeperConfig{
-					Raft:     raft,
-					ServerID: 2,
-					TCPPort:  betaKeeperPort,
+					Raft:         raft,
+					ServerID:     2,
+					TCPPort:      betaKeeperPort,
+					Coordination: coordination,
 
 					LogStoragePath:      t.TempDir(),
 					SnapshotStoragePath: t.TempDir(),
@@ -162,9 +170,10 @@ func TestCluster(t *testing.T) {
 			),
 			cht.With(
 				cht.WithKeeper(cht.KeeperConfig{
-					Raft:     raft,
-					ServerID: 3,
-					TCPPort:  gammaKeeperPort,
+					Raft:         raft,
+					ServerID:     3,
+					TCPPort:      gammaKeeperPort,
+					Coordination: coordination,
 
 					LogStoragePath:      t.TempDir(),
 					SnapshotStoragePath: t.TempDir(),
