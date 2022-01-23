@@ -8,6 +8,7 @@ require (
 	github.com/go-faster/city v1.0.0
 	github.com/go-faster/errors v0.5.0
 	github.com/google/uuid v1.3.0
+	github.com/hashicorp/go-version v1.4.0
 	github.com/klauspost/compress v1.14.1
 	github.com/pierrec/lz4/v4 v4.1.12
 	github.com/stretchr/testify v1.7.0
@@ -22,7 +23,6 @@ require (
 require (
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/hashicorp/go-version v1.4.0 // indirect
 	github.com/pascaldekloe/name v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.opentelemetry.io/otel v1.3.0 // indirect
