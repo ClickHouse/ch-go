@@ -109,7 +109,9 @@ func logProxy(lg *zap.Logger, f func(info logInfo)) io.Writer {
 					fields = append(fields, zap.String("qid", e.QueryID))
 				}
 				if e.ThreadID != 0 {
-					fields = append(fields, zap.Uint64("tid", e.ThreadID))
+					// Using "pid" to be consistent with ClickHouse log, e.g.:
+					// "Will watch for the process with pid 260134"
+					fields = append(fields, zap.Uint64("pid", e.ThreadID))
 				}
 				if e.Name != "" {
 					fields = append(fields, zap.String("name", e.Name))
