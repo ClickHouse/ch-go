@@ -76,9 +76,9 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 		Settings:    c.querySettings(q),
 		Info: proto.ClientInfo{
 			ProtocolVersion: c.protocolVersion,
-			Major:           c.info.Major,
-			Minor:           c.info.Minor,
-			Patch:           0,
+			Major:           c.version.Major,
+			Minor:           c.version.Minor,
+			Patch:           c.version.Patch,
 			Interface:       proto.InterfaceTCP,
 			Query:           proto.ClientQueryInitial,
 

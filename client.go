@@ -11,23 +11,26 @@ import (
 	"time"
 
 	"github.com/go-faster/errors"
+	"github.com/hashicorp/go-version"
 	"go.uber.org/zap"
 
 	"github.com/go-faster/ch/internal/compress"
+	pkgVersion "github.com/go-faster/ch/internal/version"
 	"github.com/go-faster/ch/proto"
 )
 
 // Client implements ClickHouse binary protocol client on top of
 // single TCP connection.
 type Client struct {
-	lg     *zap.Logger
-	conn   net.Conn
-	mux    sync.Mutex
-	buf    *proto.Buffer
-	reader *proto.Reader
-	info   proto.ClientHello
-	server proto.ServerHello
-	tz     *time.Location
+	lg      *zap.Logger
+	conn    net.Conn
+	mux     sync.Mutex
+	buf     *proto.Buffer
+	reader  *proto.Reader
+	info    proto.ClientHello
+	server  proto.ServerHello
+	tz      *time.Location
+	version clientVersion
 
 	// TCP Binary protocol version.
 	protocolVersion int
@@ -305,11 +308,28 @@ func (o *Options) setDefaults() {
 	}
 }
 
+type clientVersion struct {
+	Major int
+	Minor int
+	Patch int
+}
+
 // Connect performs handshake with ClickHouse server and initializes
 // application level connection.
 func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	opt.setDefaults()
 
+	ver := clientVersion{
+		Major: proto.Major,
+		Minor: proto.Minor,
+		Patch: proto.Patch,
+	}
+	if v, err := version.NewVersion(pkgVersion.Get()); err == nil {
+		seg := v.Segments()
+		if len(seg) > 2 {
+			ver.Major, ver.Minor, ver.Patch = seg[0], seg[1], seg[2]
+		}
+	}
 	c := &Client{
 		conn:     conn,
 		buf:      new(proto.Buffer),
@@ -319,11 +339,12 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 
 		compressor: compress.NewWriter(),
 
+		version:         ver,
 		protocolVersion: proto.Version,
 		info: proto.ClientHello{
 			Name:  proto.Name,
-			Major: proto.Major,
-			Minor: proto.Minor,
+			Major: ver.Major,
+			Minor: ver.Minor,
 
 			ProtocolVersion: proto.Version,
 
