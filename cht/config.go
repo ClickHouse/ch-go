@@ -84,6 +84,10 @@ type Config struct {
 	MarkCacheSize int64 `xml:"mark_cache_size"`
 	MMAPCacheSize int64 `xml:"mmap_cache_size"`
 
+	// ZooKeeper configures ZooKeeper nodes.
+	ZooKeeper []ZooKeeperNode `xml:"zookeeper>node,omitempty"`
+
+	// Keeper is config for clickhouse-keeper server.
 	Keeper *KeeperConfig `xml:"keeper_server,omitempty"`
 
 	RemoteServers Clusters `xml:"remote_servers,omitempty"`
@@ -116,4 +120,10 @@ type KeeperConfig struct {
 	SnapshotStoragePath string             `xml:"snapshot_storage_path"`
 	Coordination        CoordinationConfig `xml:"coordination_settings"`
 	Raft                RaftConfig         `xml:"raft_configuration"`
+}
+
+type ZooKeeperNode struct {
+	Index int    `xml:"index,omitempty,attr"`
+	Host  string `xml:"host,omitempty"`
+	Port  int    `xml:"port,omitempty"`
 }
