@@ -61,13 +61,19 @@ func (c *Client) handshake(ctx context.Context) error {
 		}
 
 		c.lg.Debug("Connected",
-			zap.Int("client.protocol_version", c.info.ProtocolVersion),
-			zap.Int("server.revision", c.server.Revision),
 			zap.Int("protocol_version", c.protocolVersion),
+
+			zap.Int("server.revision", c.server.Revision),
 			zap.Int("server.major", c.server.Major),
 			zap.Int("server.minor", c.server.Minor),
 			zap.Int("server.patch", c.server.Patch),
-			zap.String("server", c.server.String()),
+			zap.String("server.name", c.server.String()),
+
+			zap.Int("client.protocol_version", c.info.ProtocolVersion),
+			zap.Int("client.major", c.version.Major),
+			zap.Int("client.minor", c.version.Minor),
+			zap.Int("client.patch", c.version.Patch),
+			zap.String("client.name", c.version.Name),
 		)
 
 		return nil

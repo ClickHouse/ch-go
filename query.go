@@ -87,7 +87,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 			InitialAddress: c.conn.LocalAddr().String(),
 			OSUser:         "",
 			ClientHostname: "",
-			ClientName:     c.info.Name,
+			ClientName:     c.version.Name,
 
 			Span:     trace.SpanContextFromContext(ctx),
 			QuotaKey: q.QuotaKey,

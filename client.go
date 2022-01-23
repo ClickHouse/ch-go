@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/go-faster/errors"
-	"github.com/hashicorp/go-version"
 	"go.uber.org/zap"
 
 	"github.com/go-faster/ch/internal/compress"
@@ -309,6 +308,7 @@ func (o *Options) setDefaults() {
 }
 
 type clientVersion struct {
+	Name  string
 	Major int
 	Minor int
 	Patch int
@@ -319,16 +319,15 @@ type clientVersion struct {
 func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	opt.setDefaults()
 
+	pkg := pkgVersion.Get()
 	ver := clientVersion{
-		Major: proto.Major,
-		Minor: proto.Minor,
-		Patch: proto.Patch,
+		Name:  proto.Name,
+		Major: pkg.Major,
+		Minor: pkg.Minor,
+		Patch: pkg.Patch,
 	}
-	if v, err := version.NewVersion(pkgVersion.Get()); err == nil {
-		seg := v.Segments()
-		if len(seg) > 2 {
-			ver.Major, ver.Minor, ver.Patch = seg[0], seg[1], seg[2]
-		}
+	if pkg.Name != "" {
+		ver.Name = fmt.Sprintf("%s (%s)", proto.Name, pkg.Name)
 	}
 	c := &Client{
 		conn:     conn,
@@ -342,7 +341,7 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		version:         ver,
 		protocolVersion: proto.Version,
 		info: proto.ClientHello{
-			Name:  proto.Name,
+			Name:  ver.Name,
 			Major: ver.Major,
 			Minor: ver.Minor,
 
