@@ -37,6 +37,10 @@ func TestKeeperConfig(t *testing.T) {
 	t.Run("Embedded", func(t *testing.T) {
 		logXML(t, Config{
 			Keeper: &v,
+			Macros: Map{
+				"shard":   "01",
+				"replica": "01",
+			},
 			ZooKeeper: []ZooKeeperNode{
 				{Port: 2181, Host: "127.0.0.1"},
 			},

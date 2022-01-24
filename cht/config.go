@@ -68,6 +68,33 @@ type Cluster struct {
 	Shards []Shard `xml:"shard"`
 }
 
+type Map map[string]string
+
+func (m Map) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	// Sort for deterministic marshaling.
+	var keys []string
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	if err := e.EncodeToken(start); err != nil {
+		return errors.Wrap(err, "end")
+	}
+	for _, k := range keys {
+		if err := e.EncodeElement(m[k], xml.StartElement{
+			Name: xml.Name{Local: k},
+		}); err != nil {
+			return errors.Wrap(err, "elem")
+		}
+	}
+	if err := e.EncodeToken(start.End()); err != nil {
+		return errors.Wrap(err, "end")
+	}
+
+	return e.Flush()
+}
+
 // Config for ClickHouse.
 type Config struct {
 	XMLName xml.Name `xml:"clickhouse"`
@@ -86,6 +113,7 @@ type Config struct {
 
 	// ZooKeeper configures ZooKeeper nodes.
 	ZooKeeper []ZooKeeperNode `xml:"zookeeper>node,omitempty"`
+	Macros    Map             `xml:"macros,omitempty"`
 
 	// Keeper is config for clickhouse-keeper server.
 	Keeper *KeeperConfig `xml:"keeper_server,omitempty"`
