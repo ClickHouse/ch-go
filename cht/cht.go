@@ -97,6 +97,7 @@ type options struct {
 	lg        *zap.Logger
 	zooKeeper []ZooKeeperNode
 	keeper    *KeeperConfig
+	macros    Map
 }
 
 func WithKeeper(cfg KeeperConfig) Option {
@@ -122,6 +123,12 @@ func WithClusters(c Clusters) Option {
 func WithTCP(port int) Option {
 	return func(o *options) {
 		o.tcp = port
+	}
+}
+
+func WithMacros(m Map) Option {
+	return func(o *options) {
+		o.macros = m
 	}
 }
 
@@ -237,6 +244,7 @@ func New(t testing.TB, opts ...Option) Server {
 		Keeper:        o.keeper,
 		ZooKeeper:     o.zooKeeper,
 		RemoteServers: o.clusters,
+		Macros:        o.macros,
 	}
 	writeXML(t, cfgPath, cfg)
 	for _, dir := range []string{
