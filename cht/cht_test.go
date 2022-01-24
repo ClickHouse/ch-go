@@ -210,7 +210,7 @@ func TestCluster(t *testing.T) {
 		ctx   = context.Background()
 	)
 
-	client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP})
+	client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP, Logger: lg.Named("client")})
 	require.NoError(t, err)
 	defer client.Close()
 
