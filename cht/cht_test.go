@@ -315,7 +315,7 @@ ENGINE = Distributed('nexus', default, hits, rand())`,
 	})
 	t.Run("Gamma", func(t *testing.T) {
 		t.Parallel()
-		
+
 		client, err := ch.Dial(ctx, ch.Options{Address: gamma.TCP})
 		require.NoError(t, err)
 		defer client.Close()
