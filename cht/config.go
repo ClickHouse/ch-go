@@ -103,6 +103,8 @@ type Config struct {
 	TCP     int      `xml:"tcp_port"`
 	Host    string   `xml:"listen_host"`
 
+	InterServerHTTP *int `xml:"interserver_http_port,omitempty"`
+
 	Path            string  `xml:"path"`
 	TempPath        string  `xml:"tmp_path"`
 	UserFilesPath   string  `xml:"user_files_path"`

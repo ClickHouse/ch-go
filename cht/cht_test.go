@@ -98,19 +98,22 @@ func withTableMacros(shard, replica int) cht.Option {
 func TestCluster(t *testing.T) {
 	cht.Skip(t)
 	var (
-		ports = cht.Ports(t, 3*3)
+		ports = cht.Ports(t, 3*4)
 
-		alphaPort         = ports[0]
-		alphaKeeperPort   = ports[1]
-		alphaInternalPort = ports[2]
+		alphaPort            = ports[0]
+		alphaKeeperPort      = ports[1]
+		alphaInternalPort    = ports[2]
+		alphaInterServerPort = ports[3]
 
-		betaPort         = ports[3]
-		betaKeeperPort   = ports[4]
-		betaInternalPort = ports[5]
+		betaPort            = ports[4]
+		betaKeeperPort      = ports[5]
+		betaInternalPort    = ports[6]
+		betaInterServerPort = ports[7]
 
-		gammaPort         = ports[6]
-		gammaKeeperPort   = ports[7]
-		gammaInternalPort = ports[8]
+		gammaPort            = ports[8]
+		gammaKeeperPort      = ports[9]
+		gammaInternalPort    = ports[10]
+		gammaInterServerPort = ports[11]
 	)
 	t.Parallel()
 	const host = "127.0.0.1"
@@ -169,6 +172,7 @@ func TestCluster(t *testing.T) {
 					SnapshotStoragePath: t.TempDir(),
 				}),
 				withTableMacros(1, 1),
+				cht.WithInterServerHTTP(alphaInterServerPort),
 				cht.WithTCP(alphaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("alpha")),
 			),
 			cht.With(
@@ -182,6 +186,7 @@ func TestCluster(t *testing.T) {
 					SnapshotStoragePath: t.TempDir(),
 				}),
 				withTableMacros(2, 1),
+				cht.WithInterServerHTTP(betaInterServerPort),
 				cht.WithTCP(betaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("beta")),
 			),
 			cht.With(
@@ -195,6 +200,7 @@ func TestCluster(t *testing.T) {
 					SnapshotStoragePath: t.TempDir(),
 				}),
 				withTableMacros(3, 1),
+				cht.WithInterServerHTTP(gammaInterServerPort),
 				cht.WithTCP(gammaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("gamma")),
 			),
 		)
