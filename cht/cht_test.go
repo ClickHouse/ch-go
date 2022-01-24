@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/cht"
@@ -121,16 +122,19 @@ func TestCluster(t *testing.T) {
 		"nexus": cht.Cluster{
 			Shards: []cht.Shard{
 				{
+					InternalReplication: true,
 					Replicas: []cht.Replica{
 						{Host: host, Port: alphaPort},
 					},
 				},
 				{
+					InternalReplication: true,
 					Replicas: []cht.Replica{
 						{Host: host, Port: betaPort},
 					},
 				},
 				{
+					InternalReplication: true,
 					Replicas: []cht.Replica{
 						{Host: host, Port: gammaPort},
 					},
@@ -153,14 +157,21 @@ func TestCluster(t *testing.T) {
 				{ID: 3, Hostname: host, Port: gammaInternalPort},
 			},
 		}
+		withDDL = cht.WithDistributedDDL(cht.DistributedDDL{
+			PoolSize: 1,
+			Profile:  "default",
+			Path:     "/nexus/task_queue/ddl",
+		})
 		withZooKeeper = cht.WithZooKeeper(nodes)
 		coordination  = cht.CoordinationConfig{
+			OperationTimeoutMs:          100,
 			ElectionTimeoutLowerBoundMs: 50,
 			ElectionTimeoutUpperBoundMs: 60,
 			HeartBeatIntervalMs:         10,
 			DeadSessionCheckPeriodMs:    10,
 		}
-		servers = cht.Many(t,
+		withOptions = cht.With(withCluster, withZooKeeper, withDDL)
+		servers     = cht.Many(t,
 			cht.With(
 				cht.WithKeeper(cht.KeeperConfig{
 					Raft:         raft,
@@ -173,7 +184,7 @@ func TestCluster(t *testing.T) {
 				}),
 				withTableMacros(1, 1),
 				cht.WithInterServerHTTP(alphaInterServerPort),
-				cht.WithTCP(alphaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("alpha")),
+				cht.WithTCP(alphaPort), withOptions, cht.WithLog(lg.Named("alpha")),
 			),
 			cht.With(
 				cht.WithKeeper(cht.KeeperConfig{
@@ -187,7 +198,7 @@ func TestCluster(t *testing.T) {
 				}),
 				withTableMacros(2, 1),
 				cht.WithInterServerHTTP(betaInterServerPort),
-				cht.WithTCP(betaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("beta")),
+				cht.WithTCP(betaPort), withOptions, cht.WithLog(lg.Named("beta")),
 			),
 			cht.With(
 				cht.WithKeeper(cht.KeeperConfig{
@@ -201,7 +212,7 @@ func TestCluster(t *testing.T) {
 				}),
 				withTableMacros(3, 1),
 				cht.WithInterServerHTTP(gammaInterServerPort),
-				cht.WithTCP(gammaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("gamma")),
+				cht.WithTCP(gammaPort), withOptions, cht.WithLog(lg.Named("gamma")),
 			),
 		)
 		alpha = servers[0]
@@ -223,6 +234,17 @@ func TestCluster(t *testing.T) {
 		require.Equal(t, 3, data.Rows())
 	})
 	t.Run("Create distributed table", func(t *testing.T) {
+		var results proto.Results
+		logResult := func(ctx context.Context, block proto.Block) error {
+			lg.Info("Got results")
+			for _, col := range results {
+				lg.Info("Column",
+					zap.String("column.type", col.Data.Type().String()),
+					zap.String("column.name", col.Name),
+				)
+			}
+			return nil
+		}
 		require.NoError(t, client.Do(ctx, ch.Query{
 			Body: `CREATE TABLE events
 (
@@ -233,6 +255,25 @@ func TestCluster(t *testing.T) {
 PARTITION BY toYYYYMM(EventDate)
 ORDER BY (CounterID, EventDate, intHash32(UserID))
 SAMPLE BY intHash32(UserID)`,
+		}))
+		require.NoError(t, client.Do(ctx, ch.Query{
+			Result:   results.Auto(),
+			OnResult: logResult,
+			Body: `CREATE TABLE hits ON CLUSTER 'nexus'
+(
+    EventDate DateTime,
+    CounterID UInt32,
+    UserID    UInt32
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMM(EventDate)
+ORDER BY (CounterID, EventDate, intHash32(UserID))
+SAMPLE BY intHash32(UserID)`,
+		}))
+		require.NoError(t, client.Do(ctx, ch.Query{
+			Result:   results.Auto(),
+			OnResult: logResult,
+			Body: `CREATE TABLE hits_distributed ON CLUSTER 'nexus' AS hits
+ENGINE = Distributed('nexus', default, hits, rand())`,
 		}))
 	})
 	t.Run("Beta", func(t *testing.T) {
