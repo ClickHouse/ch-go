@@ -99,11 +99,18 @@ type options struct {
 	zooKeeper    []ZooKeeperNode
 	keeper       *KeeperConfig
 	macros       Map
+	ddl          *DistributedDDL
 }
 
 func WithKeeper(cfg KeeperConfig) Option {
 	return func(o *options) {
 		o.keeper = &cfg
+	}
+}
+
+func WithDistributedDDL(ddl DistributedDDL) Option {
+	return func(o *options) {
+		o.ddl = &ddl
 	}
 }
 
@@ -250,10 +257,11 @@ func New(t testing.TB, opts ...Option) Server {
 			},
 		},
 
-		Keeper:        o.keeper,
-		ZooKeeper:     o.zooKeeper,
-		RemoteServers: o.clusters,
-		Macros:        o.macros,
+		Keeper:         o.keeper,
+		ZooKeeper:      o.zooKeeper,
+		RemoteServers:  o.clusters,
+		Macros:         o.macros,
+		DistributedDDL: o.ddl,
 	}
 	writeXML(t, cfgPath, cfg)
 	for _, dir := range []string{

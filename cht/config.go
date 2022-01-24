@@ -114,13 +114,23 @@ type Config struct {
 	MMAPCacheSize int64 `xml:"mmap_cache_size"`
 
 	// ZooKeeper configures ZooKeeper nodes.
-	ZooKeeper []ZooKeeperNode `xml:"zookeeper>node,omitempty"`
-	Macros    Map             `xml:"macros,omitempty"`
+	ZooKeeper      []ZooKeeperNode `xml:"zookeeper>node,omitempty"`
+	Macros         Map             `xml:"macros,omitempty"`
+	DistributedDDL *DistributedDDL `xml:"distributed_ddl,omitempty"`
 
 	// Keeper is config for clickhouse-keeper server.
 	Keeper *KeeperConfig `xml:"keeper_server,omitempty"`
 
 	RemoteServers Clusters `xml:"remote_servers,omitempty"`
+}
+
+type DistributedDDL struct {
+	Path               string `xml:"path,omitempty"`
+	Profile            string `xml:"profile,omitempty"`
+	PoolSize           int    `xml:"pool_size"`
+	TaskMaxLifetime    int    `xml:"task_max_lifetime,omitempty"`
+	CleanupDelayPeriod int    `xml:"cleanup_delay_period,omitempty"`
+	MaxTasksInQueue    int    `xml:"max_tasks_in_queue,omitempty"`
 }
 
 type CoordinationConfig struct {
