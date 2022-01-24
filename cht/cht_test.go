@@ -6,9 +6,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/cht"
@@ -234,31 +234,9 @@ func TestCluster(t *testing.T) {
 		require.Equal(t, 3, data.Rows())
 	})
 	t.Run("Create distributed table", func(t *testing.T) {
-		var results proto.Results
-		logResult := func(ctx context.Context, block proto.Block) error {
-			lg.Info("Got results")
-			for _, col := range results {
-				lg.Info("Column",
-					zap.String("column.type", col.Data.Type().String()),
-					zap.String("column.name", col.Name),
-				)
-			}
-			return nil
-		}
 		require.NoError(t, client.Do(ctx, ch.Query{
-			Body: `CREATE TABLE events
-(
-    EventDate DateTime,
-    CounterID UInt32,
-    UserID    UInt32
-) ENGINE = ReplicatedReplacingMergeTree('/nexus/tables/{shard}/table_name', '{replica}')
-PARTITION BY toYYYYMM(EventDate)
-ORDER BY (CounterID, EventDate, intHash32(UserID))
-SAMPLE BY intHash32(UserID)`,
-		}))
-		require.NoError(t, client.Do(ctx, ch.Query{
-			Result:   results.Auto(),
-			OnResult: logResult,
+			Result:   (&proto.Results{}).Auto(),
+			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
 			Body: `CREATE TABLE hits ON CLUSTER 'nexus'
 (
     EventDate DateTime,
@@ -270,11 +248,56 @@ ORDER BY (CounterID, EventDate, intHash32(UserID))
 SAMPLE BY intHash32(UserID)`,
 		}))
 		require.NoError(t, client.Do(ctx, ch.Query{
-			Result:   results.Auto(),
-			OnResult: logResult,
+			Result:   (&proto.Results{}).Auto(),
+			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
 			Body: `CREATE TABLE hits_distributed ON CLUSTER 'nexus' AS hits
 ENGINE = Distributed('nexus', default, hits, rand())`,
 		}))
+		t.Run("Insert", func(t *testing.T) {
+			for i := 0; i < 20; i++ {
+				require.NoError(t, client.Do(ctx, ch.Query{
+					Body: `INSERT INTO hits_distributed VALUES`,
+					Input: proto.Input{
+						{
+							Name: "EventDate",
+							Data: proto.ColDateTime{
+								proto.ToDateTime(time.Now()),
+							},
+						},
+						{
+							Name: "CounterID",
+							Data: proto.ColUInt32{
+								10,
+							},
+						},
+						{
+							Name: "UserID",
+							Data: proto.ColUInt32{
+								uint32(i),
+							},
+						},
+					},
+				}))
+			}
+			t.Run("Select", func(t *testing.T) {
+				// Waiting until distributed table is fully propagated.
+				for i := 0; i < 50; i++ {
+					var count proto.ColUInt64
+					require.NoError(t, client.Do(ctx, ch.Query{
+						Body: `SELECT count(1) as total FROM hits_distributed`,
+						Result: proto.Results{
+							{Name: "total", Data: &count},
+						},
+					}))
+					if len(count) > 0 && count[0] == 20 {
+						t.Log("Got target count")
+						return
+					}
+					time.Sleep(time.Millisecond * 50)
+				}
+				t.Error("Timed out waiting until target count")
+			})
+		})
 	})
 	t.Run("Beta", func(t *testing.T) {
 		client, err := ch.Dial(ctx, ch.Options{Address: beta.TCP})
