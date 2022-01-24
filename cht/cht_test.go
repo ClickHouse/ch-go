@@ -164,7 +164,7 @@ func TestCluster(t *testing.T) {
 		})
 		withZooKeeper = cht.WithZooKeeper(nodes)
 		coordination  = cht.CoordinationConfig{
-			OperationTimeoutMs:          100,
+			OperationTimeoutMs:          1000,
 			ElectionTimeoutLowerBoundMs: 50,
 			ElectionTimeoutUpperBoundMs: 60,
 			HeartBeatIntervalMs:         10,
