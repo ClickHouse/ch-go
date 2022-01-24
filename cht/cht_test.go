@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/xml"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -83,6 +84,17 @@ func TestConnect(t *testing.T) {
 	})
 }
 
+func tableMacros(shard, replica int) cht.Map {
+	return cht.Map{
+		"shard":   fmt.Sprintf("%02d", shard),
+		"replica": fmt.Sprintf("%02d", replica),
+	}
+}
+
+func withTableMacros(shard, replica int) cht.Option {
+	return cht.WithMacros(tableMacros(shard, replica))
+}
+
 func TestCluster(t *testing.T) {
 	cht.Skip(t)
 	var (
@@ -156,6 +168,7 @@ func TestCluster(t *testing.T) {
 					LogStoragePath:      t.TempDir(),
 					SnapshotStoragePath: t.TempDir(),
 				}),
+				withTableMacros(1, 1),
 				cht.WithTCP(alphaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("alpha")),
 			),
 			cht.With(
@@ -168,6 +181,7 @@ func TestCluster(t *testing.T) {
 					LogStoragePath:      t.TempDir(),
 					SnapshotStoragePath: t.TempDir(),
 				}),
+				withTableMacros(2, 1),
 				cht.WithTCP(betaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("beta")),
 			),
 			cht.With(
@@ -180,6 +194,7 @@ func TestCluster(t *testing.T) {
 					LogStoragePath:      t.TempDir(),
 					SnapshotStoragePath: t.TempDir(),
 				}),
+				withTableMacros(3, 1),
 				cht.WithTCP(gammaPort), withCluster, withZooKeeper, cht.WithLog(lg.Named("gamma")),
 			),
 		)
@@ -188,18 +203,31 @@ func TestCluster(t *testing.T) {
 		gamma = servers[2]
 		ctx   = context.Background()
 	)
-	t.Run("Clusters", func(t *testing.T) {
-		client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP})
-		require.NoError(t, err)
-		defer client.Close()
 
+	client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP})
+	require.NoError(t, err)
+	defer client.Close()
+
+	t.Run("Clusters", func(t *testing.T) {
 		var data proto.Results
-		getClusters := ch.Query{
+		require.NoError(t, client.Do(ctx, ch.Query{
 			Body:   "SELECT * FROM system.clusters",
 			Result: data.Auto(),
-		}
-		require.NoError(t, client.Do(ctx, getClusters))
+		}))
 		require.Equal(t, 3, data.Rows())
+	})
+	t.Run("Create distributed table", func(t *testing.T) {
+		require.NoError(t, client.Do(ctx, ch.Query{
+			Body: `CREATE TABLE events
+(
+    EventDate DateTime,
+    CounterID UInt32,
+    UserID    UInt32
+) ENGINE = ReplicatedReplacingMergeTree('/nexus/tables/{shard}/table_name', '{replica}')
+PARTITION BY toYYYYMM(EventDate)
+ORDER BY (CounterID, EventDate, intHash32(UserID))
+SAMPLE BY intHash32(UserID)`,
+		}))
 	})
 	t.Run("Beta", func(t *testing.T) {
 		client, err := ch.Dial(ctx, ch.Options{Address: beta.TCP})
