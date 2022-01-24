@@ -221,11 +221,11 @@ func TestCluster(t *testing.T) {
 		ctx   = context.Background()
 	)
 
-	client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP, Logger: lg.Named("client")})
-	require.NoError(t, err)
-	defer client.Close()
-
 	t.Run("Clusters", func(t *testing.T) {
+		t.Parallel()
+		client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP, Logger: lg.Named("client")})
+		require.NoError(t, err)
+		defer client.Close()
 		var data proto.Results
 		require.NoError(t, client.Do(ctx, ch.Query{
 			Body:   "SELECT * FROM system.clusters",
@@ -234,6 +234,11 @@ func TestCluster(t *testing.T) {
 		require.Equal(t, 3, data.Rows())
 	})
 	t.Run("Create distributed table", func(t *testing.T) {
+		t.Parallel()
+
+		client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP, Logger: lg.Named("client")})
+		require.NoError(t, err)
+		defer client.Close()
 		require.NoError(t, client.Do(ctx, ch.Query{
 			Result:   (&proto.Results{}).Auto(),
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
@@ -300,6 +305,8 @@ ENGINE = Distributed('nexus', default, hits, rand())`,
 		})
 	})
 	t.Run("Beta", func(t *testing.T) {
+		t.Parallel()
+
 		client, err := ch.Dial(ctx, ch.Options{Address: beta.TCP})
 		require.NoError(t, err)
 		defer client.Close()
@@ -307,6 +314,8 @@ ENGINE = Distributed('nexus', default, hits, rand())`,
 		require.NoError(t, client.Ping(ctx))
 	})
 	t.Run("Gamma", func(t *testing.T) {
+		t.Parallel()
+		
 		client, err := ch.Dial(ctx, ch.Options{Address: gamma.TCP})
 		require.NoError(t, err)
 		defer client.Close()
