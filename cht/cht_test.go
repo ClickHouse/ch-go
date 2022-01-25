@@ -164,10 +164,10 @@ func TestCluster(t *testing.T) {
 		})
 		withZooKeeper = cht.WithZooKeeper(nodes)
 		coordination  = cht.CoordinationConfig{
-			ElectionTimeoutLowerBoundMs: 50,
-			ElectionTimeoutUpperBoundMs: 60,
-			HeartBeatIntervalMs:         10,
-			DeadSessionCheckPeriodMs:    10,
+			ElectionTimeoutLowerBoundMs: 200,
+			ElectionTimeoutUpperBoundMs: 350,
+			HeartBeatIntervalMs:         100,
+			DeadSessionCheckPeriodMs:    100,
 		}
 		withOptions = cht.With(withCluster, withZooKeeper, withDDL)
 		servers     = cht.Many(t,
