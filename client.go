@@ -230,7 +230,6 @@ func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
 	}
 	if len(b.Buf) == 0 {
 		// Nothing to flush.
-		c.lg.Debug("Flush (buffer is blank)")
 		return nil
 	}
 	if deadline, ok := ctx.Deadline(); ok {
