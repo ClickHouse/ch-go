@@ -228,6 +228,11 @@ func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
 	if err := ctx.Err(); err != nil {
 		return errors.Wrap(err, "context")
 	}
+	if len(b.Buf) == 0 {
+		// Nothing to flush.
+		c.lg.Debug("Flush (buffer is blank)")
+		return nil
+	}
 	if deadline, ok := ctx.Deadline(); ok {
 		if err := c.conn.SetWriteDeadline(deadline); err != nil {
 			return errors.Wrap(err, "set write deadline")
