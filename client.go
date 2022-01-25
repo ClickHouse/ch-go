@@ -281,7 +281,8 @@ type Options struct {
 	User        string      // "default"
 	Password    string      // blank string by default
 	Compression Compression // disabled by default
-	Settings    []Setting
+	Dialer      Dialer      // defaults to net.Dialer
+	Settings    []Setting   // none by default
 }
 
 // Defaults for connection.
@@ -304,6 +305,9 @@ func (o *Options) setDefaults() {
 	}
 	if o.Address == "" {
 		o.Address = net.JoinHostPort(DefaultHost, strconv.Itoa(DefaultPort))
+	}
+	if o.Dialer == nil {
+		o.Dialer = &net.Dialer{}
 	}
 }
 
@@ -379,12 +383,17 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	return c, nil
 }
 
+// A Dialer dials using a context.
+type Dialer interface {
+	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+}
+
 // Dial dials requested address and establishes TCP connection to ClickHouse
 // server, performing handshake.
 func Dial(ctx context.Context, opt Options) (*Client, error) {
 	opt.setDefaults()
-	var d net.Dialer
-	conn, err := d.DialContext(ctx, "tcp", opt.Address)
+
+	conn, err := opt.Dialer.DialContext(ctx, "tcp", opt.Address)
 	if err != nil {
 		return nil, errors.Wrap(err, "dial")
 	}
