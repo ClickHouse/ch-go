@@ -26,7 +26,7 @@ func (c *ColUUID) DecodeColumn(r *Reader, rows int) error {
 	if err := r.ReadFull(dst); err != nil {
 		return errors.Wrap(err, "read full")
 	}
-	bswap.Swap64(dst) // LE <-> BE
+	bswap.Swap64(dst) // BE <-> LE
 
 	return nil
 }
@@ -45,5 +45,5 @@ func (c ColUUID) EncodeColumn(b *Buffer) {
 	src := *(*[]byte)(unsafe.Pointer(&s)) // #nosec: G103 // memory layout matches
 	dst := b.Buf[offset:]
 	copy(dst, src)
-	bswap.Swap64(dst) // LE <-> BE
+	bswap.Swap64(dst) // BE <-> LE
 }
