@@ -407,7 +407,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		var data proto.ColIPv4
 		require.NoError(t, Conn(t).Do(ctx, Query{
-			Body: `SELECT '10.10.0.1'::IPv4 as v`,
+			Body: `SELECT toIPv4('10.10.0.1') as v`,
 			Result: proto.Results{
 				{Name: "v", Data: &data},
 			},
