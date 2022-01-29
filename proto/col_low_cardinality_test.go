@@ -10,6 +10,75 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestArrLowCardinalityStr(t *testing.T) {
+	// Array(LowCardinality(String))
+	data := [][]string{
+		{"foo", "bar", "baz"},
+		{"foo"},
+		{"bar", "bar"},
+		{"foo", "foo"},
+		{"bar", "bar", "bar", "bar"},
+	}
+	str := &ColStr{}
+	idx := &ColLowCardinality{Index: str, Key: KeyUInt8}
+	col := &ColArr{Data: idx}
+	rows := len(data)
+
+	kv := map[string]int{} // creating index
+	for _, v := range data {
+		for _, s := range v {
+			if _, ok := kv[s]; ok {
+				continue
+			}
+			kv[s] = str.Rows()
+			str.Append(s)
+		}
+	}
+	for _, v := range data {
+		var keys []int
+		for _, k := range v {
+			keys = append(keys, kv[k]) // mapping indexes
+		}
+		col.AppendLowCardinality(keys) // adding row
+	}
+
+	var buf Buffer
+	col.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_arr_low_cardinality_u8_str")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+
+		strDec := &ColStr{}
+		idxDec := &ColLowCardinality{Index: strDec}
+		dec := &ColArr{Data: idxDec}
+
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, col, dec)
+		require.Equal(t, str, strDec)
+		require.Equal(t, idx, idxDec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, ColumnType("Array(LowCardinality(String))"), dec.Type())
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+		strDec := &ColStr{}
+		idxDec := &ColLowCardinality{Index: strDec}
+		dec := &ColArr{Data: idxDec}
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		strDec := &ColStr{}
+		idxDec := &ColLowCardinality{Index: strDec}
+		dec := &ColArr{Data: idxDec}
+		requireNoShortRead(t, buf.Buf, colAware(dec, rows))
+	})
+}
+
 func TestColLowCardinality_DecodeColumn(t *testing.T) {
 	t.Run("Str", func(t *testing.T) {
 		const rows = 25

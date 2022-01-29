@@ -83,6 +83,14 @@ func (c *ColLowCardinality) AppendKey(i int) {
 	}
 }
 
+func (c *ColArr) AppendLowCardinality(data []int) {
+	d := c.Data.(*ColLowCardinality)
+	for _, v := range data {
+		d.AppendKey(v)
+	}
+	c.Offsets = append(c.Offsets, uint64(d.Keys().Rows()))
+}
+
 func (c *ColLowCardinality) Keys() Column {
 	switch c.Key {
 	case KeyUInt8:
