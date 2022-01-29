@@ -219,25 +219,21 @@ func TestCluster(t *testing.T) {
 		gamma = servers[2]
 		ctx   = context.Background()
 	)
-
-	t.Run("Clusters", func(t *testing.T) {
-		t.Parallel()
-		client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP, Logger: lg.Named("client")})
-		require.NoError(t, err)
-		defer client.Close()
-		var data proto.Results
-		require.NoError(t, client.Do(ctx, ch.Query{
-			Body:   "SELECT * FROM system.clusters",
-			Result: data.Auto(),
-		}))
-		require.Equal(t, 3, data.Rows())
-	})
+	
 	t.Run("Create distributed table", func(t *testing.T) {
 		t.Parallel()
 
 		client, err := ch.Dial(ctx, ch.Options{Address: alpha.TCP, Logger: lg.Named("client")})
 		require.NoError(t, err)
 		defer client.Close()
+
+		var data proto.Results
+		require.NoError(t, client.Do(ctx, ch.Query{
+			Body:   "SELECT * FROM system.clusters",
+			Result: data.Auto(),
+		}))
+		require.Equal(t, 3, data.Rows())
+
 		require.NoError(t, client.Do(ctx, ch.Query{
 			Result:   (&proto.Results{}).Auto(),
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
