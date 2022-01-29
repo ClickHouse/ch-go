@@ -2,7 +2,10 @@
 
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+	"github.com/segmentio/asm/bswap"
+)
 
 func (c *ColUUID) DecodeColumn(r *Reader, rows int) error {
 	const size = 16
@@ -11,10 +14,10 @@ func (c *ColUUID) DecodeColumn(r *Reader, rows int) error {
 		return errors.Wrap(err, "read")
 	}
 	v := *c
+	bswap.Swap64(data) // BE <-> LE
 	for i := 0; i < len(data); i += size {
 		// In-place conversion from slice to array.
 		// https://go.dev/ref/spec#Conversions_from_slice_to_array_pointer
-		convEndian16(data[i : i+size])
 		v = append(v, *(*[size]byte)(data[i : i+size]))
 	}
 	*c = v
@@ -27,7 +30,7 @@ func (c ColUUID) EncodeColumn(b *Buffer) {
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
 	for _, v := range c {
 		copy(b.Buf[offset:offset+size], v[:])
-		convEndian16(b.Buf[offset : offset+size])
 		offset += size
 	}
+	bswap.Swap64(b.Buf) // BE <-> LE
 }

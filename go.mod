@@ -12,6 +12,7 @@ require (
 	github.com/hashicorp/go-version v1.4.0
 	github.com/klauspost/compress v1.14.2
 	github.com/pierrec/lz4/v4 v4.1.12
+	github.com/segmentio/asm v1.1.3
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/otel/trace v1.3.0
 	go.uber.org/atomic v1.9.0
@@ -30,7 +31,7 @@ require (
 	go4.org/intern v0.0.0-20211027215823-ae77deb06f29 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37 // indirect
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
+	golang.org/x/sys v0.0.0-20211110154304-99a53858aa08 // indirect
 	golang.org/x/tools v0.1.5 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
+	"github.com/segmentio/asm/bswap"
 )
 
 func (c *ColUUID) DecodeColumn(r *Reader, rows int) error {
@@ -25,9 +26,7 @@ func (c *ColUUID) DecodeColumn(r *Reader, rows int) error {
 	if err := r.ReadFull(dst); err != nil {
 		return errors.Wrap(err, "read full")
 	}
-	for i := 0; i < len(dst); i += size {
-		convEndian16(dst[i : i+size])
-	}
+	bswap.Swap64(dst) // LE <-> BE
 
 	return nil
 }
@@ -46,7 +45,5 @@ func (c ColUUID) EncodeColumn(b *Buffer) {
 	src := *(*[]byte)(unsafe.Pointer(&s)) // #nosec: G103 // memory layout matches
 	dst := b.Buf[offset:]
 	copy(dst, src)
-	for i := 0; i < len(dst); i += size {
-		convEndian16(dst[i : i+size])
-	}
+	bswap.Swap64(dst) // LE <-> BE
 }
