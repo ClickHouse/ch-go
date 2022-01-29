@@ -47,6 +47,14 @@ func (c *Client) handshake(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "packet")
 		}
+		if code == proto.ServerCodeException {
+			// Bad password, etc.
+			e, err := c.exception()
+			if err != nil {
+				return errors.Wrap(err, "decode exception")
+			}
+			return errors.Wrap(e, "exception")
+		}
 		expected := proto.ServerCodeHello
 		if code != expected {
 			return errors.Errorf("got %s instead of %s", code, expected)
