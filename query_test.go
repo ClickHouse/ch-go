@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -388,6 +389,19 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exp.Equal(v))
 		t.Logf("%s %d", v, v.Unix())
+	})
+	t.Run("UUID", func(t *testing.T) {
+		t.Parallel()
+		v := uuid.MustParse(`9e1cf0cf-4b82-4237-a6ed-6ad549907fb0`)
+		var data proto.ColUUID
+		require.NoError(t, Conn(t).Do(ctx, Query{
+			Body: fmt.Sprintf(`SELECT '%s'::UUID as v`, v),
+			Result: proto.Results{
+				{Name: "v", Data: &data},
+			},
+		}))
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, v, data[0])
 	})
 	t.Run("InsertDateTime", func(t *testing.T) {
 		t.Parallel()

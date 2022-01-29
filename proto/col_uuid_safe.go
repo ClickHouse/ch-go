@@ -14,6 +14,7 @@ func (c *ColUUID) DecodeColumn(r *Reader, rows int) error {
 	for i := 0; i < len(data); i += size {
 		// In-place conversion from slice to array.
 		// https://go.dev/ref/spec#Conversions_from_slice_to_array_pointer
+		convEndian16(data[i : i+size])
 		v = append(v, *(*[size]byte)(data[i : i+size]))
 	}
 	*c = v
@@ -26,6 +27,7 @@ func (c ColUUID) EncodeColumn(b *Buffer) {
 	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
 	for _, v := range c {
 		copy(b.Buf[offset:offset+size], v[:])
+		convEndian16(b.Buf[offset : offset+size])
 		offset += size
 	}
 }
