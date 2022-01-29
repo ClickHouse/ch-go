@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-faster/ch/cht"
+	"github.com/go-faster/ch/proto"
 )
 
 func TestDial_Exception(t *testing.T) {
@@ -22,4 +23,5 @@ func TestDial_Exception(t *testing.T) {
 	var e *Exception
 	require.Nil(t, client)
 	require.ErrorAs(t, err, &e)
+	require.True(t, IsErr(err, proto.ErrAuthenticationFailed))
 }

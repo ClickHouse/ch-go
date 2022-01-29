@@ -371,4 +371,6 @@ const (
 	ErrUnknownException                             Error = 1002
 	ErrConditionalTreeParentNotFound                Error = 2001
 	ErrIllegalProjectionManipulator                 Error = 2002
+
+	ErrAuthenticationFailed Error = 516
 )
