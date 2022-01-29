@@ -3,6 +3,7 @@ module github.com/go-faster/ch
 go 1.18
 
 require (
+	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/dmarkham/enumer v1.5.3
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-faster/city v1.0.1

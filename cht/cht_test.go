@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-faster/ch"
@@ -168,7 +169,10 @@ func TestCluster(t *testing.T) {
 			ElectionTimeoutUpperBoundMs: 350,
 			HeartBeatIntervalMs:         100,
 			DeadSessionCheckPeriodMs:    100,
+			OperationTimeoutMs:          200,
 		}
+		retry = backoff.WithMaxRetries(backoff.NewConstantBackOff(time.Millisecond*20), 20)
+
 		withOptions = cht.With(withCluster, withZooKeeper, withDDL)
 		servers     = cht.Many(t,
 			cht.With(
@@ -233,7 +237,13 @@ func TestCluster(t *testing.T) {
 		}))
 		require.Equal(t, 3, data.Rows())
 
-		require.NoError(t, client.Do(ctx, ch.Query{
+		do := func(ctx context.Context, t testing.TB, q ch.Query) {
+			t.Helper()
+			require.NoError(t, backoff.Retry(func() error {
+				return client.Do(ctx, q)
+			}, retry))
+		}
+		do(ctx, t, ch.Query{
 			Result:   (&proto.Results{}).Auto(),
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
 			Body: `CREATE TABLE hits ON CLUSTER 'nexus'
@@ -245,7 +255,8 @@ func TestCluster(t *testing.T) {
 PARTITION BY toYYYYMM(EventDate)
 ORDER BY (CounterID, EventDate, intHash32(UserID))
 SAMPLE BY intHash32(UserID)`,
-		}))
+		})
+
 		require.NoError(t, client.Do(ctx, ch.Query{
 			Result:   (&proto.Results{}).Auto(),
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
