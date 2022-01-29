@@ -304,7 +304,9 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 	if f != nil && rows == 0 {
 		// Fetching initial input if no rows provided.
 		if err := f(ctx); err != nil {
-			// Not handling io.EOF here because input is expected.
+			if errors.Is(err, io.EOF) {
+				goto End // initial input was blank
+			}
 			return errors.Wrap(err, "input")
 		}
 	}
@@ -335,6 +337,7 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 			return errors.Wrap(err, "next input (server already persisted previous blocks)")
 		}
 	}
+End:
 	// End of input stream.
 	//
 	// Encoding that there are no more data.
