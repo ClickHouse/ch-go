@@ -219,7 +219,6 @@ func TestCluster(t *testing.T) {
 		gamma = servers[2]
 		ctx   = context.Background()
 	)
-	
 	t.Run("Create distributed table", func(t *testing.T) {
 		t.Parallel()
 
