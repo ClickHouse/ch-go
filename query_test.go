@@ -403,6 +403,18 @@ func TestClient_Query(t *testing.T) {
 		require.Equal(t, 1, data.Rows())
 		require.Equal(t, v, data[0])
 	})
+	t.Run("IPv4", func(t *testing.T) {
+		t.Parallel()
+		var data proto.ColIPv4
+		require.NoError(t, Conn(t).Do(ctx, Query{
+			Body: `SELECT '10.10.0.1'::IPv4 as v`,
+			Result: proto.Results{
+				{Name: "v", Data: &data},
+			},
+		}))
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, netaddr.MustParseIP("10.10.0.1"), data[0].ToIP())
+	})
 	t.Run("InsertDateTime", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
