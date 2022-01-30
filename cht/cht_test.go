@@ -256,13 +256,12 @@ PARTITION BY toYYYYMM(EventDate)
 ORDER BY (CounterID, EventDate, intHash32(UserID))
 SAMPLE BY intHash32(UserID)`,
 		})
-
-		require.NoError(t, client.Do(ctx, ch.Query{
+		do(ctx, t, ch.Query{
 			Result:   (&proto.Results{}).Auto(),
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
 			Body: `CREATE TABLE hits_distributed ON CLUSTER 'nexus' AS hits
 ENGINE = Distributed('nexus', default, hits, rand())`,
-		}))
+		})
 		t.Run("Insert", func(t *testing.T) {
 			for i := 0; i < 20; i++ {
 				require.NoError(t, client.Do(ctx, ch.Query{
