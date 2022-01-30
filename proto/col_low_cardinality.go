@@ -40,6 +40,32 @@ type ColLowCardinality struct {
 	Keys64 ColUInt64
 }
 
+func (c *ColLowCardinality) DecodeState(r *Reader) error {
+	keySerialization, err := r.Int64()
+	if err != nil {
+		return errors.Wrap(err, "version")
+	}
+	if keySerialization != int64(sharedDictionariesWithAdditionalKeys) {
+		return errors.Errorf("got version %d, expected %d",
+			keySerialization, sharedDictionariesWithAdditionalKeys,
+		)
+	}
+	if s, ok := c.Index.(StateDecoder); ok {
+		if err := s.DecodeState(r); err != nil {
+			return errors.Wrap(err, "state")
+		}
+	}
+	return nil
+}
+
+func (c ColLowCardinality) EncodeState(b *Buffer) {
+	// Writing key serialization version.
+	b.PutInt64(int64(sharedDictionariesWithAdditionalKeys))
+	if s, ok := c.Index.(StateEncoder); ok {
+		s.EncodeState(b)
+	}
+}
+
 // Constants for low cardinality metadata value that is represented as int64
 // consisted of bitflags and key type.
 //
@@ -119,15 +145,6 @@ func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
 		// Skipping entirely of no rows.
 		return nil
 	}
-	keySerialization, err := r.Int64()
-	if err != nil {
-		return errors.Wrap(err, "version")
-	}
-	if keySerialization != int64(sharedDictionariesWithAdditionalKeys) {
-		return errors.Errorf("got version %d, expected %d",
-			keySerialization, sharedDictionariesWithAdditionalKeys,
-		)
-	}
 	meta, err := r.Int64()
 	if err != nil {
 		return errors.Wrap(err, "meta")
@@ -183,9 +200,6 @@ func (c ColLowCardinality) EncodeColumn(b *Buffer) {
 		// Skipping encoding entirely.
 		return
 	}
-
-	// Writing key serialization version.
-	b.PutInt64(int64(sharedDictionariesWithAdditionalKeys))
 
 	// Meta encodes whether reader should update
 	// low cardinality metadata and keys column type.

@@ -528,6 +528,50 @@ func TestClient_Query(t *testing.T) {
 			assert.Equal(t, expected[i], got, "[%d]", i)
 		}
 	})
+	t.Run("InsertArrayLowCardinalityString", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = TinyLog",
+		}), "create table")
+
+		data := [][]string{
+			{"foo", "bar", "baz"},
+			{"foo"},
+			{"bar", "bar"},
+			{"foo", "foo"},
+			{"bar", "bar", "bar", "bar"},
+		}
+		str := &proto.ColStr{}
+		idx := &proto.ColLowCardinality{Index: str, Key: proto.KeyUInt8}
+		col := &proto.ColArr{Data: idx}
+
+		kv := map[string]int{} // creating index
+		for _, v := range data {
+			for _, s := range v {
+				if _, ok := kv[s]; ok {
+					continue
+				}
+				kv[s] = str.Rows()
+				str.Append(s)
+			}
+		}
+		for _, v := range data {
+			var keys []int
+			for _, k := range v {
+				keys = append(keys, kv[k]) // mapping indexes
+			}
+			col.AppendLowCardinality(keys) // adding row
+		}
+
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: col},
+			},
+		}), "insert")
+	})
 	t.Run("InsertMapStringString", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
@@ -587,6 +631,22 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Equal(t, data.Rows(), gotData.Rows())
 		require.Equal(t, data, gotData)
+	})
+	t.Run("SelectArray", func(t *testing.T) {
+		t.Parallel()
+		data := proto.ColUInt8{}
+		arr := proto.ColArr{Data: &data}
+		selectArr := Query{
+			Body: "SELECT [1, 2, 3, 4]::Array(UInt8) as v",
+			Result: proto.Results{
+				{
+					Name: "v",
+					Data: &arr,
+				},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectArr))
+		require.Equal(t, proto.ColUInt8{1, 2, 3, 4}, data)
 	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()

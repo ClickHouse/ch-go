@@ -9,6 +9,29 @@ type ColMap struct {
 	Values  Column
 }
 
+func (c *ColMap) DecodeState(r *Reader) error {
+	if s, ok := c.Keys.(StateDecoder); ok {
+		if err := s.DecodeState(r); err != nil {
+			return errors.Wrap(err, "keys state")
+		}
+	}
+	if s, ok := c.Values.(StateDecoder); ok {
+		if err := s.DecodeState(r); err != nil {
+			return errors.Wrap(err, "values state")
+		}
+	}
+	return nil
+}
+
+func (c ColMap) EncodeState(b *Buffer) {
+	if s, ok := c.Keys.(StateEncoder); ok {
+		s.EncodeState(b)
+	}
+	if s, ok := c.Values.(StateEncoder); ok {
+		s.EncodeState(b)
+	}
+}
+
 func (c ColMap) Type() ColumnType {
 	return ColumnTypeMap.Sub(c.Keys.Type(), c.Values.Type())
 }
