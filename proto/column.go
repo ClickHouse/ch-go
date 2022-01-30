@@ -25,6 +25,19 @@ type Column interface {
 	ColInput
 }
 
+type StateEncoder interface {
+	EncodeState(b *Buffer)
+}
+
+type StateDecoder interface {
+	DecodeState(r *Reader) error
+}
+
+type StatefulColumn interface {
+	StateEncoder
+	StateDecoder
+}
+
 // Preparable is Column that should be prepared before encoding or decoding.
 type Preparable interface {
 	Prepare() error

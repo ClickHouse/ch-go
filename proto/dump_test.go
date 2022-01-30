@@ -34,3 +34,18 @@ func TestDump(t *testing.T) {
 		}),
 	)
 }
+
+func TestDumpLowCardinality(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("_testdata", "select_lc.raw"))
+	require.NoError(t, err)
+	str := &ColStr{}
+	idx := &ColLowCardinality{Index: str}
+	col := &ColArr{Data: idx}
+	var dec Block
+	require.NoError(t, dec.DecodeRawBlock(
+		NewReader(bytes.NewReader(data)),
+		Results{
+			{Name: "v", Data: col},
+		}),
+	)
+}

@@ -7,6 +7,25 @@ import "github.com/go-faster/errors"
 // Basically it is just a group of columns.
 type ColTuple []Column
 
+func (c ColTuple) DecodeState(r *Reader) error {
+	for i, v := range c {
+		if s, ok := v.(StateDecoder); ok {
+			if err := s.DecodeState(r); err != nil {
+				return errors.Wrapf(err, "[%d]", i)
+			}
+		}
+	}
+	return nil
+}
+
+func (c ColTuple) EncodeState(b *Buffer) {
+	for _, v := range c {
+		if s, ok := v.(StateEncoder); ok {
+			s.EncodeState(b)
+		}
+	}
+}
+
 func (c ColTuple) Type() ColumnType {
 	var types []ColumnType
 	for _, v := range c {

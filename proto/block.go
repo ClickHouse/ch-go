@@ -137,6 +137,12 @@ func (b Block) EncodeBlock(buf *Buffer, version int, input []InputColumn) error 
 				return errors.Wrap(err, "prepare")
 			}
 		}
+		if col.Data.Rows() == 0 {
+			continue
+		}
+		if v, ok := col.Data.(StateEncoder); ok {
+			v.EncodeState(buf)
+		}
 		col.Data.EncodeColumn(buf)
 	}
 	return nil
