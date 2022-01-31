@@ -20,7 +20,7 @@ type Writer struct {
 // Compress buf into Data.
 func (w *Writer) Compress(m Method, buf []byte) error {
 	if len(buf) > maxBlockSize {
-		return errors.Errorf("buf size %d > %d (multiple block encoding not implemented)", len(buf), maxBlockSize)
+		return errors.Errorf("buf size %d > %d max size", len(buf), maxBlockSize)
 	}
 
 	maxSize := lz4.CompressBlockBound(len(buf))

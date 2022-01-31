@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -737,6 +738,31 @@ func TestClientCompression(t *testing.T) {
 				require.NoError(t, client.Do(ctx, selectData), "select")
 				require.Len(t, data, 4)
 				require.Equal(t, data, gotData)
+			})
+			t.Run("InsertBig", func(t *testing.T) {
+				t.Parallel()
+				client := conn(t)
+				createTable := Query{
+					Body: "CREATE TABLE test_table_big (v String) ENGINE = TinyLog",
+				}
+				require.NoError(t, client.Do(ctx, createTable), "create table")
+
+				data := proto.ColStr{}
+				s := rand.NewSource(10)
+				r := rand.New(s)
+				buf := make([]byte, 1024)
+				_, err := io.ReadFull(r, buf)
+				require.NoError(t, err)
+				for i := 0; i < 1200; i++ {
+					data.AppendBytes(buf)
+				}
+				insertQuery := Query{
+					Body: "INSERT INTO test_table_big VALUES",
+					Input: []proto.InputColumn{
+						{Name: "v", Data: &data},
+					},
+				}
+				require.NoError(t, client.Do(ctx, insertQuery), "insert")
 			})
 		}
 	}
