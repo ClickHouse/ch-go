@@ -23,8 +23,10 @@ const (
 	checksumSize       = 16
 	compressHeaderSize = 1 + 4 + 4
 	headerSize         = checksumSize + compressHeaderSize
-	maxBlockSize       = 1024 * 1024 * 128 // 128MB
-	maxDataSize        = 1024 * 1024 * 128 // 128MB
+
+	// Limiting total data/block size to protect from possible OOM.
+	maxDataSize  = 1024 * 1024 * 128 // 128MB
+	maxBlockSize = maxDataSize
 
 	hRawSize  = 17
 	hDataSize = 21
