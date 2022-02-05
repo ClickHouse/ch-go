@@ -12,21 +12,21 @@ import (
 
 // DecodeColumn decodes {{ .Name }} rows from *Reader.
 func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
-  if rows == 0 {
+	if rows == 0 {
+		return nil
+	}
+	*c = append(*c, make([]{{ .ElemType }}, rows)...)
+	s := *(*slice)(unsafe.Pointer(c))
+	{{- if not .SingleByte }}
+	const size = {{ .Bits }} / 8
+	s.Len *= size
+	s.Cap *= size
+	{{- end }}
+	dst := *(*[]byte)(unsafe.Pointer(&s))
+	if err := r.ReadFull(dst); err != nil {
+		return errors.Wrap(err, "read full")
+	}
 	return nil
-  }
-  *c = append(*c, make([]{{ .ElemType }}, rows)...)
-  s := *(*slice)(unsafe.Pointer(c))
-  {{- if not .SingleByte }}
-  const size = {{ .Bits }} / 8
-  s.Len *= size
-  s.Cap *= size
-  {{- end }}
-  dst := *(*[]byte)(unsafe.Pointer(&s))
-  if err := r.ReadFull(dst); err != nil {
-  	return errors.Wrap(err, "read full")
-  }
-  return nil
 }
 
 // EncodeColumn encodes {{ .Name }} rows to *Buffer.
@@ -35,18 +35,18 @@ func (c {{ .Type }}) EncodeColumn(b *Buffer) {
 		return
 	}
 	offset := len(b.Buf)
-{{- if .SingleByte }}
+	{{- if .SingleByte }}
 	b.Buf = append(b.Buf, make([]byte, len(c))...)
-{{- else }}
+	{{- else }}
 	const size = {{ .Bits }} / 8
-	b.Buf = append(b.Buf, make([]byte, size * len(c))...)
-{{- end }}
+	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
+	{{- end }}
 	s := *(*slice)(unsafe.Pointer(&c))
-{{- if not .SingleByte }}
+	{{- if not .SingleByte }}
 	s.Len *= size
 	s.Cap *= size
-{{- end }}
+	{{- end }}
 	src := *(*[]byte)(unsafe.Pointer(&s))
-    dst := b.Buf[offset:]
+	dst := b.Buf[offset:]
 	copy(dst, src)
 }

@@ -13,6 +13,7 @@ import (
 )
 
 func TestColDecimal256_DecodeColumn(t *testing.T) {
+	t.Parallel()
 	const rows = 50
 	var data ColDecimal256
 	for i := 0; i < rows; i++ {
@@ -24,6 +25,7 @@ func TestColDecimal256_DecodeColumn(t *testing.T) {
 	var buf Buffer
 	data.EncodeColumn(&buf)
 	t.Run("Golden", func(t *testing.T) {
+		t.Parallel()
 		gold.Bytes(t, buf.Buf, "col_decimal256")
 	})
 	t.Run("Ok", func(t *testing.T) {

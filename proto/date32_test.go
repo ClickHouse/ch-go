@@ -9,6 +9,7 @@ import (
 )
 
 func TestDate32_Time(t *testing.T) {
+	t.Parallel()
 	t.Run("Single", func(t *testing.T) {
 		v := time.Date(2011, 10, 10, 14, 59, 31, 401235, time.UTC)
 		d := ToDate32(v)
@@ -18,6 +19,7 @@ func TestDate32_Time(t *testing.T) {
 		assert.Equal(t, d, ToDate32(d.Time()))
 	})
 	t.Run("Range", func(t *testing.T) {
+		t.Parallel()
 		var (
 			start = time.Date(1925, 1, 1, 0, 0, 0, 0, time.UTC)
 			end   = time.Date(2283, 11, 11, 0, 0, 0, 0, time.UTC)

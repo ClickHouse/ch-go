@@ -4,148 +4,150 @@
 package proto
 
 import (
-  "bytes"
-  "testing"
-  "io"
+	"bytes"
+	"testing"
+	"io"
 
-  "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 
-  "github.com/go-faster/ch/internal/gold"
+	"github.com/go-faster/ch/internal/gold"
 )
 
 func Test{{ .Type }}_DecodeColumn(t *testing.T) {
-  const rows = 50
-  var data {{ .Type }}
-  for i := 0; i < rows; i++ {
-    v := {{ .New }}(i)
-	data.Append(v)
-    require.Equal(t, v, data.Row(i))
-  }
+	t.Parallel()
+	const rows = 50
+	var data {{ .Type }}
+	for i := 0; i < rows; i++ {
+		v := {{ .New }}(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
+	}
 
-  var buf Buffer
-  data.EncodeColumn(&buf)
-  t.Run("Golden", func(t *testing.T) {
-    gold.Bytes(t, buf.Buf, "col_{{ .ElemLower }}")
-  })
-  t.Run("Ok", func(t *testing.T) {
-    br := bytes.NewReader(buf.Buf)
-    r := NewReader(br)
+	var buf Buffer
+	data.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		t.Parallel()
+		gold.Bytes(t, buf.Buf, "col_{{ .ElemLower }}")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
 
-    var dec {{ .Type }}
-    require.NoError(t, dec.DecodeColumn(r, rows))
-    require.Equal(t, data, dec)
-    require.Equal(t, rows, dec.Rows())
-    dec.Reset()
-    require.Equal(t, 0, dec.Rows())
-    require.Equal(t, {{ .ColumnType }}, dec.Type())
-  })
-  t.Run("ZeroRows", func(t *testing.T) {
-    r := NewReader(bytes.NewReader(nil))
+		var dec {{ .Type }}
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, data, dec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, {{ .ColumnType }}, dec.Type())
+	})
+	t.Run("ZeroRows", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
 
-    var dec {{ .Type }}
-    require.NoError(t, dec.DecodeColumn(r, 0))
-  })
-  t.Run("ErrUnexpectedEOF", func(t *testing.T) {
-    r := NewReader(bytes.NewReader(nil))
+		var dec {{ .Type }}
+		require.NoError(t, dec.DecodeColumn(r, 0))
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
 
-    var dec {{ .Type }}
-    require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
-  })
-  t.Run("NoShortRead", func(t *testing.T) {
-    var dec {{ .Type }}
-    requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
-  })
-  t.Run("ZeroRowsEncode", func(t *testing.T) {
-  	  var v {{ .Type }}
-	  v.EncodeColumn(nil) // should be no-op
-  })
+		var dec {{ .Type }}
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		var dec {{ .Type }}
+		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
+	})
+	t.Run("ZeroRowsEncode", func(t *testing.T) {
+		var v {{ .Type }}
+		v.EncodeColumn(nil) // should be no-op
+	})
 }
 
 func Test{{ .Type }}Array(t *testing.T) {
-  const rows = 50
-  data := NewArr{{ .Name }}()
-  for i := 0; i < rows; i++ {
-    data.Append{{ .Name }}([]{{ .ElemType }}{
-      {{ .New }}(i),
-      {{ .New }}(i+1),
-      {{ .New }}(i+2),
-    })
-  }
+	const rows = 50
+	data := NewArr{{ .Name }}()
+	for i := 0; i < rows; i++ {
+		data.Append{{ .Name }}([]{{ .ElemType }}{
+			{{ .New }}(i),
+			{{ .New }}(i+1),
+			{{ .New }}(i+2),
+		})
+	}
 
-  var buf Buffer
-  data.EncodeColumn(&buf)
-  t.Run("Golden", func(t *testing.T) {
-    gold.Bytes(t, buf.Buf, "col_arr_{{ .ElemLower }}")
-  })
-  t.Run("Ok", func(t *testing.T) {
-    br := bytes.NewReader(buf.Buf)
-    r := NewReader(br)
+	var buf Buffer
+	data.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_arr_{{ .ElemLower }}")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
 
-    dec := NewArr{{ .Name }}()
-    require.NoError(t, dec.DecodeColumn(r, rows))
-    require.Equal(t, data, dec)
-    require.Equal(t, rows, dec.Rows())
-    dec.Reset()
-    require.Equal(t, 0, dec.Rows())
-    require.Equal(t, {{ .ColumnType }}.Array(), dec.Type())
-  })
-  t.Run("ErrUnexpectedEOF", func(t *testing.T) {
-    r := NewReader(bytes.NewReader(nil))
+		dec := NewArr{{ .Name }}()
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, data, dec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, {{ .ColumnType }}.Array(), dec.Type())
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
 
-    dec := NewArr{{ .Name }}()
-    require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
-  })
+		dec := NewArr{{ .Name }}()
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
 }
 
 func Benchmark{{ .Type }}_DecodeColumn(b *testing.B) {
-  const rows = 1_000
-  var data {{ .Type }}
-  for i := 0; i < rows; i++ {
-    data = append(data, {{ .New }}(i))
-  }
+	const rows = 1_000
+	var data {{ .Type }}
+	for i := 0; i < rows; i++ {
+		data = append(data, {{ .New }}(i))
+	}
 
-  var buf Buffer
-  data.EncodeColumn(&buf)
+	var buf Buffer
+	data.EncodeColumn(&buf)
 
-  br := bytes.NewReader(buf.Buf)
-  r := NewReader(br)
+	br := bytes.NewReader(buf.Buf)
+	r := NewReader(br)
 
-  var dec {{ .Type }}
-  if err := dec.DecodeColumn(r, rows); err != nil {
-    b.Fatal(err)
-  }
-  b.SetBytes(int64(len(buf.Buf)))
-  b.ResetTimer()
-  b.ReportAllocs()
+	var dec {{ .Type }}
+	if err := dec.DecodeColumn(r, rows); err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(buf.Buf)))
+	b.ResetTimer()
+	b.ReportAllocs()
 
-  for i := 0; i < b.N; i++ {
-    br.Reset(buf.Buf)
-    r.raw.Reset(br)
-    dec.Reset()
+	for i := 0; i < b.N; i++ {
+		br.Reset(buf.Buf)
+		r.raw.Reset(br)
+		dec.Reset()
 
-    if err := dec.DecodeColumn(r, rows); err != nil {
-      b.Fatal(err)
-    }
-  }
+		if err := dec.DecodeColumn(r, rows); err != nil {
+			b.Fatal(err)
+		}
+	}
 }
 
 func Benchmark{{ .Type }}_EncodeColumn(b *testing.B) {
-  const rows = 1_000
-  var data {{ .Type }}
-  for i := 0; i < rows; i++ {
-    data = append(data, {{ .New }}(i))
-  }
+	const rows = 1_000
+	var data {{ .Type }}
+	for i := 0; i < rows; i++ {
+		data = append(data, {{ .New }}(i))
+	}
 
-  var buf Buffer
-  data.EncodeColumn(&buf)
+	var buf Buffer
+	data.EncodeColumn(&buf)
 
-  b.SetBytes(int64(len(buf.Buf)))
-  b.ResetTimer()
-  b.ReportAllocs()
+	b.SetBytes(int64(len(buf.Buf)))
+	b.ResetTimer()
+	b.ReportAllocs()
 
-  for i := 0; i < b.N; i++ {
-    buf.Reset()
-    data.EncodeColumn(&buf)
-  }
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		data.EncodeColumn(&buf)
+	}
 }
 
