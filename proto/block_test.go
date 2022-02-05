@@ -51,6 +51,34 @@ func resAware(v *Block, out Results) Decoder {
 	}
 }
 
+func colStr(data ...string) ColStr {
+	var v ColStr
+	for _, s := range data {
+		v.Append(s)
+	}
+	return v
+}
+
+func TestBlock_EncodeRawBlock(t *testing.T) {
+	b := new(Buffer)
+	v := Block{Rows: 2, Columns: 2}
+	require.NoError(t, v.EncodeRawBlock(b, []InputColumn{
+		{Name: "title", Data: colStr("Foo", "Bar")},
+		{Name: "data", Data: ColInt64{1, 2}},
+	}), "encode")
+
+	gold.Bytes(t, b.Buf, "block_title_data")
+
+	var (
+		title ColStr
+		data  ColInt64
+	)
+	require.NoError(t, v.DecodeRawBlock(b.Reader(), Results{
+		{Name: "title", Data: &title},
+		{Name: "data", Data: &data},
+	}), "decode")
+}
+
 func TestBlock_EncodeBlock(t *testing.T) {
 	v := Block{
 		Info: BlockInfo{
