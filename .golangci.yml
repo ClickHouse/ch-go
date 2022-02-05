@@ -33,6 +33,7 @@ linters-settings:
       - appendAssign
       - unnecessaryBlock
       - redundantSprint
+      - octalLiteral
 
 linters:
   disable-all: true
