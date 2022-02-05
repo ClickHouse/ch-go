@@ -37,7 +37,7 @@ func Bin() (string, error) {
 	if !ok {
 		// Fallback to default binary name.
 		// Should be in $PATH.
-		v = "clickhouse-server"
+		v = "clickhouse"
 	}
 	p, err := exec.LookPath(v)
 	if err != nil {
