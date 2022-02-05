@@ -126,7 +126,18 @@ func (b Block) EncodeAware(buf *Buffer, version int) {
 }
 
 func (b Block) EncodeBlock(buf *Buffer, version int, input []InputColumn) error {
-	b.EncodeAware(buf, version)
+	if FeatureBlockInfo.In(version) {
+		b.Info.Encode(buf)
+	}
+	if err := b.EncodeRawBlock(buf, input); err != nil {
+		return errors.Wrap(err, "raw block")
+	}
+	return nil
+}
+
+func (b Block) EncodeRawBlock(buf *Buffer, input []InputColumn) error {
+	buf.PutInt(b.Columns)
+	buf.PutInt(b.Rows)
 	for _, col := range input {
 		if r := col.Data.Rows(); r != b.Rows {
 			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
