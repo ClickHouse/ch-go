@@ -39,6 +39,8 @@ func TestLocalNativeDump(t *testing.T) {
 	require.NoError(t, os.WriteFile(inFile, buf.Buf, 0600), "write file")
 
 	cmd := exec.Command(bin, "local",
+		"--logger.console",
+		"--log-level", "trace",
 		"--file", inFile,
 		"--input-format", "Native",
 		"--output-format", "JSON",
@@ -51,6 +53,7 @@ func TestLocalNativeDump(t *testing.T) {
 
 	t.Log(cmd.Args)
 	require.NoError(t, cmd.Run(), "run: %s", errOut)
+	t.Log(errOut)
 
 	v := struct {
 		Rows int `json:"rows"`
