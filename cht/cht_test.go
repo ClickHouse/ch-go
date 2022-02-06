@@ -246,7 +246,7 @@ func TestCluster(t *testing.T) {
 		do(ctx, t, ch.Query{
 			Result:   (&proto.Results{}).Auto(),
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
-			Body: `CREATE TABLE hits ON CLUSTER 'nexus'
+			Body: `CREATE TABLE hits IF NOT EXISTS ON CLUSTER 'nexus'
 (
     EventDate DateTime,
     CounterID UInt32,
@@ -259,7 +259,7 @@ SAMPLE BY intHash32(UserID)`,
 		do(ctx, t, ch.Query{
 			Result:   (&proto.Results{}).Auto(),
 			OnResult: func(ctx context.Context, block proto.Block) error { return nil },
-			Body: `CREATE TABLE hits_distributed ON CLUSTER 'nexus' AS hits
+			Body: `CREATE TABLE hits_distributed IF NOT EXISTS ON CLUSTER 'nexus' AS hits
 ENGINE = Distributed('nexus', default, hits, rand())`,
 		})
 		t.Run("Insert", func(t *testing.T) {
