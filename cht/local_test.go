@@ -2,6 +2,7 @@ package cht
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/proto"
 )
 
@@ -25,6 +27,17 @@ func colStr(data []string) proto.ColStr {
 func TestLocalNativeDump(t *testing.T) {
 	bin := BinOrSkip(t)
 	t.Parallel()
+
+	ctx := context.Background()
+	srv := New(t)
+	db, err := ch.Dial(ctx, ch.Options{Address: srv.TCP})
+	require.NoError(t, err)
+	info := db.ServerInfo()
+	require.NoError(t, db.Close())
+
+	if info.Major < 22 {
+		t.Skip("Skipping versions before v22")
+	}
 
 	// Testing clickhouse-local.
 	buf := new(proto.Buffer)
