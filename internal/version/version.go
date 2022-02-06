@@ -14,11 +14,40 @@ var once struct {
 	sync.Once
 }
 
+// Value describes client module version
 type Value struct {
 	Major int
 	Minor int
 	Patch int
 	Name  string
+}
+
+// Extract version Value from BuildInfo.
+func Extract(info *debug.BuildInfo) Value {
+	var raw string
+	const pkg = "github.com/go-faster/ch"
+	if strings.HasPrefix(info.Main.Path, pkg) {
+		raw = info.Main.Version
+	}
+	for _, d := range info.Deps {
+		if strings.HasPrefix(d.Path, pkg) {
+			raw = d.Version
+			break
+		}
+	}
+	if v, err := version.NewVersion(raw); err == nil {
+		ver := Value{
+			Name: v.Prerelease(), // "alpha", "beta.1"
+		}
+		if s := v.Segments(); len(s) > 2 {
+			ver.Major, ver.Minor, ver.Patch = s[0], s[1], s[2]
+		}
+		return ver
+	}
+	return Value{
+		// Zero-versioned dev version.
+		Name: "dev",
+	}
 }
 
 // Get optimistically gets current module version.
@@ -30,34 +59,7 @@ func Get() Value {
 		if !ok {
 			return
 		}
-		var (
-			raw string
-			ver Value
-		)
-		const pkg = "github.com/go-faster/ch"
-		if strings.HasPrefix(info.Main.Path, pkg) {
-			raw = info.Main.Version
-		}
-		for _, d := range info.Deps {
-			if strings.HasPrefix(d.Path, pkg) {
-				raw = d.Version
-				break
-			}
-		}
-		if v, err := version.NewVersion(raw); err == nil {
-			ver = Value{
-				Name: v.Prerelease(), // "alpha", "beta.1"
-			}
-			if s := v.Segments(); len(s) > 2 {
-				ver.Major, ver.Minor, ver.Patch = s[0], s[1], s[2]
-			}
-		} else {
-			ver = Value{
-				// Zero-versioned dev version.
-				Name: "dev",
-			}
-		}
-		once.version = ver
+		once.version = Extract(info)
 	})
 
 	return once.version
