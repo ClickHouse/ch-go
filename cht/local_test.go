@@ -45,10 +45,12 @@ func TestLocalNativeDump(t *testing.T) {
 		"--query", "SELECT * FROM table",
 	)
 	out := new(bytes.Buffer)
+	errOut := new(bytes.Buffer)
 	cmd.Stdout = out
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = errOut
 
-	require.NoError(t, cmd.Run(), "run")
+	t.Log(cmd.Args)
+	require.NoError(t, cmd.Run(), "run: %s", errOut)
 
 	v := struct {
 		Rows int `json:"rows"`
