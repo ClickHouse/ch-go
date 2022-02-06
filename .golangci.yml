@@ -94,16 +94,14 @@ issues:
 
     # Disable linters that are not needed for testing infra.
     - path: internal/cht
-      linters:
-        - gosec
+      linters: [ gosec ]
 
     - path: _test\.go
       text: "Combine"
-      linters:
-        - gocritic
+      linters: [ gocritic ]
 
     # Check that equal to self is true
-    - linters: [gocritic]
+    - linters: [ gocritic ]
       source: '(assert|require).+Equal'
       text: 'dupArg'
       path: _test\.go

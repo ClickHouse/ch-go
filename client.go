@@ -58,8 +58,8 @@ func SettingInt(k string, v int) Setting {
 	}
 }
 
-// serverInfo returns server information.
-func (c *Client) serverInfo() proto.ServerHello { return c.server }
+// ServerInfo returns server information.
+func (c *Client) ServerInfo() proto.ServerHello { return c.server }
 
 // Location returns current server timezone.
 func (c *Client) Location() *time.Location { return c.tz }

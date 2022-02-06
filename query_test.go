@@ -881,7 +881,7 @@ func TestClient_ServerProfileEvents(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	conn := Conn(t)
-	if !conn.serverInfo().Has(proto.FeatureProfileEvents) {
+	if !conn.ServerInfo().Has(proto.FeatureProfileEvents) {
 		t.Skip("Profile events not supported")
 	}
 	var events int

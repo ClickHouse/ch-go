@@ -2,6 +2,7 @@ package cht
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/proto"
 )
 
@@ -26,6 +28,17 @@ func TestLocalNativeDump(t *testing.T) {
 	bin := BinOrSkip(t)
 	t.Parallel()
 
+	ctx := context.Background()
+	srv := New(t)
+	db, err := ch.Dial(ctx, ch.Options{Address: srv.TCP})
+	require.NoError(t, err)
+	info := db.ServerInfo()
+	require.NoError(t, db.Close())
+
+	if info.Major < 22 {
+		t.Skip("Skipping versions before v22")
+	}
+
 	// Testing clickhouse-local.
 	buf := new(proto.Buffer)
 	b := proto.Block{Rows: 2, Columns: 2}
@@ -39,16 +52,21 @@ func TestLocalNativeDump(t *testing.T) {
 	require.NoError(t, os.WriteFile(inFile, buf.Buf, 0600), "write file")
 
 	cmd := exec.Command(bin, "local",
+		"--logger.console",
+		"--log-level", "trace",
 		"--file", inFile,
 		"--input-format", "Native",
 		"--output-format", "JSON",
 		"--query", "SELECT * FROM table",
 	)
 	out := new(bytes.Buffer)
+	errOut := new(bytes.Buffer)
 	cmd.Stdout = out
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = errOut
 
-	require.NoError(t, cmd.Run(), "run")
+	t.Log(cmd.Args)
+	require.NoError(t, cmd.Run(), "run: %s", errOut)
+	t.Log(errOut)
 
 	v := struct {
 		Rows int `json:"rows"`
