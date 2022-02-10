@@ -56,7 +56,7 @@ func TestConnect(t *testing.T) {
 	client, err := ch.Dial(ctx, ch.Options{Address: server.TCP})
 	require.NoError(t, err)
 
-	t.Log("Connected", client.Location())
+	t.Log("Connected", client.ServerInfo())
 	t.Cleanup(func() {
 		require.NoError(t, client.Close())
 	})

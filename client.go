@@ -28,7 +28,6 @@ type Client struct {
 	reader  *proto.Reader
 	info    proto.ClientHello
 	server  proto.ServerHello
-	tz      *time.Location
 	version clientVersion
 
 	// TCP Binary protocol version.
@@ -60,9 +59,6 @@ func SettingInt(k string, v int) Setting {
 
 // ServerInfo returns server information.
 func (c *Client) ServerInfo() proto.ServerHello { return c.server }
-
-// Location returns current server timezone.
-func (c *Client) Location() *time.Location { return c.tz }
 
 // Close closes underlying connection and frees all resources,
 // rendering Client to unusable state.
@@ -375,13 +371,6 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	}
 	if err := c.handshake(ctx); err != nil {
 		return nil, errors.Wrap(err, "handshake")
-	}
-	if c.server.Timezone != "" {
-		loc, err := time.LoadLocation(c.server.Timezone)
-		if err != nil {
-			return nil, errors.Wrap(err, "load timezone")
-		}
-		c.tz = loc
 	}
 
 	return c, nil
