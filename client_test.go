@@ -33,7 +33,7 @@ func ConnOpt(t testing.TB, opt Options) *Client {
 	client, err := Dial(ctx, opt)
 	require.NoError(t, err)
 
-	t.Log("Connected", client.ServerInfo(), client.Location())
+	t.Log("Connected", client.ServerInfo())
 	t.Cleanup(func() {
 		require.NoError(t, client.Close())
 	})
