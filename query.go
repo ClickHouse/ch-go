@@ -10,6 +10,7 @@ import (
 	"github.com/go-faster/city"
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 	"go.uber.org/multierr"
@@ -17,6 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-faster/ch/internal/compress"
+	"github.com/go-faster/ch/otelch"
 	"github.com/go-faster/ch/proto"
 )
 
@@ -496,9 +498,39 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 }
 
 // Do performs Query on ClickHouse server.
-func (c *Client) Do(ctx context.Context, q Query) error {
+func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
+	}
+	if c.otel {
+		newCtx, span := c.tracer.Start(ctx, "Do",
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(
+				otelch.QueryBody(q.Body),
+				otelch.ProtocolVersion(c.protocolVersion),
+				otelch.QuotaKey(q.QuotaKey),
+				otelch.QueryID(q.QueryID),
+			),
+		)
+		ctx = newCtx
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+				status := "Failed"
+				var exc *Exception
+				if errors.As(err, &exc) {
+					status = exc.Name
+					span.SetAttributes(
+						otelch.ErrorCode(int(exc.Code)),
+						otelch.ErrorName(exc.Name),
+					)
+				}
+				span.SetStatus(codes.Error, status)
+			} else {
+				span.SetStatus(codes.Ok, "")
+			}
+			span.End()
+		}()
 	}
 	g, ctx := errgroup.WithContext(ctx)
 	done := make(chan struct{})
