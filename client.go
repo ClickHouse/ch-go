@@ -11,10 +11,14 @@ import (
 	"time"
 
 	"github.com/go-faster/errors"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
 	"github.com/go-faster/ch/internal/compress"
 	pkgVersion "github.com/go-faster/ch/internal/version"
+	"github.com/go-faster/ch/otelch"
 	"github.com/go-faster/ch/proto"
 )
 
@@ -29,6 +33,10 @@ type Client struct {
 	info    proto.ClientHello
 	server  proto.ServerHello
 	version clientVersion
+
+	otel   bool
+	tracer trace.Tracer
+	meter  metric.Meter
 
 	// TCP Binary protocol version.
 	protocolVersion int
@@ -283,6 +291,17 @@ type Options struct {
 	Compression Compression // disabled by default
 	Dialer      Dialer      // defaults to net.Dialer
 	Settings    []Setting   // none by default
+
+	// Additional OpenTelemetry instrumentation that will capture query body
+	// and other parameters.
+	//
+	// Note: OpenTelemetry context propagation works without this option too.
+	OpenTelemetryInstrumentation bool
+	TracerProvider               trace.TracerProvider
+	MeterProvider                metric.MeterProvider
+
+	meter  metric.Meter
+	tracer trace.Tracer
 }
 
 // Defaults for connection.
@@ -309,6 +328,20 @@ func (o *Options) setDefaults() {
 	if o.Dialer == nil {
 		o.Dialer = &net.Dialer{}
 	}
+	if o.MeterProvider == nil {
+		o.MeterProvider = metric.NewNoopMeterProvider()
+	}
+	if o.TracerProvider == nil {
+		o.TracerProvider = otel.GetTracerProvider()
+	}
+	if o.meter.MeterImpl() == nil {
+		o.meter = o.MeterProvider.Meter(otelch.Name)
+	}
+	if o.tracer == nil {
+		o.tracer = o.TracerProvider.Tracer(otelch.Name,
+			trace.WithInstrumentationVersion(otelch.SemVersion()),
+		)
+	}
 }
 
 type clientVersion struct {
@@ -333,12 +366,25 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	if pkg.Name != "" {
 		ver.Name = fmt.Sprintf("%s (%s)", proto.Name, pkg.Name)
 	}
+	if opt.OpenTelemetryInstrumentation {
+		newCtx, span := opt.tracer.Start(ctx, "Connect",
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(
+				otelch.DB(opt.Database),
+			),
+		)
+		ctx = newCtx
+		defer span.End()
+	}
 	c := &Client{
 		conn:     conn,
 		buf:      new(proto.Buffer),
 		reader:   proto.NewReader(conn),
 		settings: opt.Settings,
 		lg:       opt.Logger,
+		otel:     opt.OpenTelemetryInstrumentation,
+		tracer:   opt.tracer,
+		meter:    opt.meter,
 
 		compressor: compress.NewWriter(),
 
@@ -383,18 +429,31 @@ type Dialer interface {
 
 // Dial dials requested address and establishes TCP connection to ClickHouse
 // server, performing handshake.
-func Dial(ctx context.Context, opt Options) (*Client, error) {
+func Dial(ctx context.Context, opt Options) (c *Client, err error) {
 	opt.setDefaults()
+
+	if opt.OpenTelemetryInstrumentation {
+		newCtx, span := opt.tracer.Start(ctx, "Dial",
+			trace.WithSpanKind(trace.SpanKindClient),
+		)
+		ctx = newCtx
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+			}
+			span.End()
+		}()
+	}
 
 	conn, err := opt.Dialer.DialContext(ctx, "tcp", opt.Address)
 	if err != nil {
 		return nil, errors.Wrap(err, "dial")
 	}
 
-	c, err := Connect(ctx, conn, opt)
+	client, err := Connect(ctx, conn, opt)
 	if err != nil {
 		return nil, errors.Wrap(err, "connect")
 	}
 
-	return c, nil
+	return client, nil
 }

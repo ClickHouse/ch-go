@@ -15,7 +15,7 @@ func TestExtract(t *testing.T) {
 	}{
 		{
 			Name:   "Empty",
-			Output: Value{Name: "dev"},
+			Output: Value{Name: "dev", Raw: "0.0.1-dev"},
 		},
 		{
 			Name: "Main",
@@ -25,7 +25,7 @@ func TestExtract(t *testing.T) {
 					Version: "1.5.10",
 				},
 			},
-			Output: Value{Major: 1, Minor: 5, Patch: 10},
+			Output: Value{Major: 1, Minor: 5, Patch: 10, Raw: "1.5.10"},
 		},
 		{
 			Name: "Invalid",
@@ -35,7 +35,7 @@ func TestExtract(t *testing.T) {
 					Version: "bad",
 				},
 			},
-			Output: Value{Name: "dev"},
+			Output: Value{Name: "dev", Raw: "0.0.1-dev"},
 		},
 		{
 			Name: "Dependency",
@@ -47,7 +47,7 @@ func TestExtract(t *testing.T) {
 					},
 				},
 			},
-			Output: Value{Major: 2, Minor: 110, Patch: 145, Name: "alpha.0"},
+			Output: Value{Major: 2, Minor: 110, Patch: 145, Name: "alpha.0", Raw: "2.110.145-alpha.0"},
 		},
 	} {
 		t.Run(tc.Name, func(t *testing.T) {

@@ -1002,3 +1002,15 @@ func TestClient_ColInfoInput(t *testing.T) {
 	}), "select")
 	require.Len(t, data, 2)
 }
+
+func TestClient_OpenTelemetryInstrumentation(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := ConnOpt(t, Options{
+		OpenTelemetryInstrumentation: true,
+	})
+	require.NoError(t, conn.Do(ctx, Query{
+		Body:   "SELECT 1 as v",
+		Result: (&proto.Results{}).Auto(),
+	}), "select")
+}

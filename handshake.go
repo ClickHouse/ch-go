@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"github.com/go-faster/errors"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/go-faster/ch/otelch"
 	"github.com/go-faster/ch/proto"
 )
 
@@ -83,6 +85,12 @@ func (c *Client) handshake(ctx context.Context) error {
 			zap.Int("client.patch", c.version.Patch),
 			zap.String("client.name", c.version.Name),
 		)
+		if c.otel {
+			trace.SpanFromContext(ctx).SetAttributes(
+				otelch.ServerName(c.server.String()),
+				otelch.ProtocolVersion(c.protocolVersion),
+			)
+		}
 
 		return nil
 	})
