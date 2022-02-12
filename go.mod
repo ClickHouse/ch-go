@@ -15,7 +15,7 @@ require (
 	github.com/segmentio/asm v1.1.3
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/otel v1.4.0
-	go.opentelemetry.io/otel/metric v0.26.0
+	go.opentelemetry.io/otel/metric v0.27.0
 	go.opentelemetry.io/otel/trace v1.4.0
 	go.uber.org/atomic v1.9.0
 	go.uber.org/multierr v1.7.0
