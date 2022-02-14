@@ -4,11 +4,35 @@ import (
 	"context"
 
 	"github.com/go-faster/errors"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
+	"github.com/go-faster/ch/otelch"
 	"github.com/go-faster/ch/proto"
 )
 
-func (c *Client) Ping(ctx context.Context) error {
+// Ping server.
+//
+// Do not call concurrently with Query.
+func (c *Client) Ping(ctx context.Context) (err error) {
+	if c.otel {
+		newCtx, span := c.tracer.Start(ctx, "Ping",
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(
+				otelch.ProtocolVersion(c.protocolVersion),
+			),
+		)
+		ctx = newCtx
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, "Failed")
+			} else {
+				span.SetStatus(codes.Ok, "")
+			}
+			span.End()
+		}()
+	}
 	c.buf.Encode(proto.ClientCodePing)
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
