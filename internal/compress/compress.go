@@ -19,6 +19,9 @@ const (
 	ZSTD Method = 0x90
 )
 
+// Constants for compression encoding.
+//
+// See https://go-faster.org/docs/clickhouse/compression for reference.
 const (
 	checksumSize       = 16
 	compressHeaderSize = 1 + 4 + 4
