@@ -63,6 +63,11 @@ func TestClient_Do_tracing(t *testing.T) {
 		},
 	})
 
+	info := conn.ServerInfo()
+	if info.Revision < 54455 {
+		t.Skip("Skipping (not supported)")
+	}
+
 	// Should record trace and spans.
 	var traceID trace.TraceID
 	require.NoError(t, conn.Do(ctx, Query{
