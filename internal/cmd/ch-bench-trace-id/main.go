@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-faster/errors"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/go-faster/ch"
@@ -48,6 +49,20 @@ func run(ctx context.Context) error {
 			d := make(proto.ColUInt128, n)
 			for i := range d {
 				d[i] = proto.UInt128{Low: 1}
+			}
+			return &d
+		},
+		func() (col proto.Column) {
+			d := make(proto.ColUUID, n)
+			for i := range d {
+				d[i] = uuid.UUID{1, 2, 10: 3}
+			}
+			return &d
+		},
+		func() (col proto.Column) {
+			d := make(proto.ColUInt64, n)
+			for i := range d {
+				d[i] = uint64(i)
 			}
 			return &d
 		},
