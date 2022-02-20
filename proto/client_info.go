@@ -2,6 +2,7 @@ package proto
 
 import (
 	"github.com/go-faster/errors"
+	"github.com/segmentio/asm/bswap"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -89,11 +90,15 @@ func (c ClientInfo) EncodeAware(b *Buffer, version int) {
 			b.PutByte(1)
 			{
 				v := c.Span.TraceID()
+				start := len(b.Buf)
 				b.Buf = append(b.Buf, v[:]...)
+				bswap.Swap64(b.Buf[start:]) // https://github.com/ClickHouse/ClickHouse/issues/34369
 			}
 			{
 				v := c.Span.SpanID()
+				start := len(b.Buf)
 				b.Buf = append(b.Buf, v[:]...)
+				bswap.Swap64(b.Buf[start:]) // https://github.com/ClickHouse/ClickHouse/issues/34369
 			}
 			b.PutString(c.Span.TraceState().String())
 			b.PutByte(byte(c.Span.TraceFlags()))
@@ -239,6 +244,7 @@ func (c *ClientInfo) DecodeAware(r *Reader, version int) error {
 				if err != nil {
 					return errors.Wrap(err, "trace id")
 				}
+				bswap.Swap64(v) // https://github.com/ClickHouse/ClickHouse/issues/34369
 				copy(cfg.TraceID[:], v)
 			}
 			{
@@ -246,6 +252,7 @@ func (c *ClientInfo) DecodeAware(r *Reader, version int) error {
 				if err != nil {
 					return errors.Wrap(err, "span id")
 				}
+				bswap.Swap64(v) // https://github.com/ClickHouse/ClickHouse/issues/34369
 				copy(cfg.SpanID[:], v)
 			}
 			{

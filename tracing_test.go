@@ -92,17 +92,5 @@ func TestClient_Do_tracing(t *testing.T) {
 		},
 	}))
 
-	t.Log(total.Row(0), traceID)
-
-	var traces proto.ColStr
-	require.NoError(t, conn.Do(ctx, Query{
-		Body: "SELECT lower(hex(trace_id)) as trace_id FROM system.opentelemetry_span_log",
-		Result: proto.Results{
-			{Name: "trace_id", Data: &traces},
-		},
-	}))
-	_ = traces.ForEach(func(i int, s string) error {
-		t.Log(s)
-		return nil
-	})
+	require.Greater(t, total.Row(0), uint64(1), "spans should be recorded")
 }
