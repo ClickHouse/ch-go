@@ -979,6 +979,10 @@ func BenchmarkClient_decodeBlock(b *testing.B) {
 	}
 }
 
+func discardResult() proto.Result {
+	return (&proto.Results{}).Auto()
+}
+
 func TestClient_ResultsAuto(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -1011,6 +1015,6 @@ func TestClient_OpenTelemetryInstrumentation(t *testing.T) {
 	})
 	require.NoError(t, conn.Do(ctx, Query{
 		Body:   "SELECT 1 as v",
-		Result: (&proto.Results{}).Auto(),
+		Result: discardResult(),
 	}), "select")
 }

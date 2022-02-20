@@ -113,6 +113,8 @@ type Config struct {
 	MarkCacheSize int64 `xml:"mark_cache_size"`
 	MMAPCacheSize int64 `xml:"mmap_cache_size"`
 
+	OpenTelemetrySpanLog *OpenTelemetry `xml:"opentelemetry_span_log,omitempty"`
+
 	// ZooKeeper configures ZooKeeper nodes.
 	ZooKeeper      []ZooKeeperNode `xml:"zookeeper>node,omitempty"`
 	Macros         Map             `xml:"macros,omitempty"`
