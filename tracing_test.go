@@ -63,8 +63,7 @@ func TestClient_Do_tracing(t *testing.T) {
 		},
 	})
 
-	info := conn.ServerInfo()
-	if info.Revision < 54455 {
+	if v := conn.ServerInfo(); (v.Major < 22) || (v.Major == 22 && v.Minor < 2) {
 		t.Skip("Skipping (not supported)")
 	}
 
