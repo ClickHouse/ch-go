@@ -100,7 +100,7 @@ func TestClient_Do_tracing(t *testing.T) {
 
 	var traceIDs proto.ColUUID
 	require.NoError(t, conn.Do(ctx, Query{
-		Body: fmt.Sprintf("SELECT trace_id, span_id FROM system.opentelemetry_span_log WHERE lower(hex(trace_id)) = '%s' LIMIT 1", traceID),
+		Body: fmt.Sprintf("SELECT trace_id FROM system.opentelemetry_span_log WHERE lower(hex(trace_id)) = '%s' LIMIT 1", traceID),
 		Result: proto.Results{
 			{Name: "trace_id", Data: &traceIDs},
 		},
