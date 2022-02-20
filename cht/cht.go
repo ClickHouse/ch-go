@@ -207,6 +207,13 @@ func BinOrSkip(t testing.TB) string {
 	return binaryPath
 }
 
+type OpenTelemetry struct {
+	Engine          string `xml:"engine,omitempty"`
+	Database        string `xml:"database,omitempty"`
+	Table           string `xml:"table,omitempty"`
+	FlushIntervalMs int    `xml:"flush_interval_milliseconds,omitempty"`
+}
+
 // New creates new ClickHouse server and returns it.
 // Use Many to start multiple servers at once.
 //
@@ -250,6 +257,14 @@ func New(t testing.TB, opts ...Option) Server {
 
 		MarkCacheSize: 5368709120,
 		MMAPCacheSize: 1000,
+
+		OpenTelemetrySpanLog: &OpenTelemetry{
+			Table:    "opentelemetry_span_log",
+			Database: "system",
+			Engine: `engine MergeTree
+            partition by toYYYYMM(finish_date)
+            order by (finish_date, finish_time_us, trace_id)`,
+		},
 
 		UserDirectories: UserDir{
 			UsersXML: UsersXML{
