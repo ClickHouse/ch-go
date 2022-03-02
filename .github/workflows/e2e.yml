@@ -14,7 +14,7 @@ jobs:
       fail-fast: true
       matrix:
         clickhouse:
-          - 21.8.15.7-lts
+          - 21.8.14.5-lts
           - 21.9.6.24-stable
           - 21.10.6.2-stable
           - 21.11.11.1-stable
