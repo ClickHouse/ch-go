@@ -15,18 +15,6 @@ type logInfo struct {
 	Ready bool
 }
 
-/*
-2022.01.19 16:58:24.256479 [ 591781 ] {} <Trace> ContextAccess (default): Settings: readonly=0, allow_ddl=true, allow_introspection_functions=false
-2022.01.19 16:58:24.256484 [ 591781 ] {} <Trace> ContextAccess (default): List of all grants: GRANT SHOW, SELECT, INSERT, ALTER, CREATE, DROP, TRUNCATE, OPTIMIZE, KILL QUERY, MOVE PARTITION BETWEEN SHARDS, SYSTEM, dictGet, INTROSPECTION, SOURCES ON *.*
-2022.01.19 16:58:24.256488 [ 591781 ] {} <Trace> ContextAccess (default): List of all grants including implicit: GRANT SHOW, SELECT, INSERT, ALTER, CREATE, DROP, TRUNCATE, OPTIMIZE, KILL QUERY, MOVE PARTITION BETWEEN SHARDS, SYSTEM, dictGet, INTROSPECTION, SOURCES ON *.*
-2022.01.19 16:58:24.256559 [ 591781 ] {} <Debug> TCP-Session: b75e863b-c0c0-4b7b-b75e-863bc0c08b7b Creating query context from session context, user_id: 94309d50-4f52-5250-31bd-74fecac179db, parent context user: default
-2022.01.19 16:58:24.256691 [ 591781 ] {f9464441-7023-4df5-89e5-8d16ea6aa2dd} <Debug> executeQuery: (from 127.0.0.1:59428) SELECT * FROM system.clusters
-2022.01.19 16:58:24.256931 [ 591781 ] {f9464441-7023-4df5-89e5-8d16ea6aa2dd} <Trace> ContextAccess (default): Access granted: SELECT(cluster, shard_num, shard_weight, replica_num, host_name, host_address, port, is_local, user, default_database, errors_count, slowdowns_count, estimated_recovery_time) ON system.clusters
-2022.01.19 16:58:24.257025 [ 591781 ] {f9464441-7023-4df5-89e5-8d16ea6aa2dd} <Trace> InterpreterSelectQuery: FetchColumns -> Complete
-2022.01.19 16:58:24.257527 [ 591781 ] {f9464441-7023-4df5-89e5-8d16ea6aa2dd} <Information> executeQuery: Read 2 rows, 204.00 B in 0.000814392 sec., 2455 rows/sec., 244.62 KiB/sec.
-2022.01.19 16:58:24.257537 [ 591781 ] {f9464441-7023-4df5-89e5-8d16ea6aa2dd} <Debug> MemoryTracker: Peak memory usage (for query): 0.00 B.
-*/
-
 // cut field between start and end, trimming space.
 //
 // E.g. cut("[ 12345 ]", "[", "]") == "12345".
