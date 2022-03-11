@@ -13,6 +13,7 @@ import (
 	"github.com/go-faster/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
@@ -370,7 +371,7 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		newCtx, span := opt.tracer.Start(ctx, "Connect",
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(
-				otelch.DB(opt.Database),
+				semconv.DBNameKey.String(opt.Database),
 			),
 		)
 		ctx = newCtx

@@ -7,8 +7,6 @@ import (
 const (
 	QueryIDKey         = attribute.Key("ch.query.id")
 	QuotaKeyKey        = attribute.Key("ch.quota.key")
-	QueryBodyKey       = attribute.Key("ch.query.body")
-	DBKey              = attribute.Key("ch.db")
 	ProtocolVersionKey = attribute.Key("ch.protocol.version")
 	ServerNameKey      = attribute.Key("ch.server.name")
 	ErrorCodeKey       = attribute.Key("ch.error.code")
@@ -27,22 +25,6 @@ func QueryID(v string) attribute.KeyValue {
 func QuotaKey(v string) attribute.KeyValue {
 	return attribute.KeyValue{
 		Key:   QuotaKeyKey,
-		Value: attribute.StringValue(v),
-	}
-}
-
-// QueryBody attribute.
-func QueryBody(v string) attribute.KeyValue {
-	return attribute.KeyValue{
-		Key:   QueryBodyKey,
-		Value: attribute.StringValue(v),
-	}
-}
-
-// DB attribute.
-func DB(v string) attribute.KeyValue {
-	return attribute.KeyValue{
-		Key:   DBKey,
 		Value: attribute.StringValue(v),
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 	"go.uber.org/multierr"
@@ -506,7 +507,10 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		newCtx, span := c.tracer.Start(ctx, "Do",
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(
-				otelch.QueryBody(q.Body),
+				semconv.DBSystemKey.String("clickhouse"),
+				semconv.DBStatementKey.String(q.Body),
+				semconv.DBUserKey.String(c.info.User),
+				semconv.DBNameKey.String(c.info.Database),
 				otelch.ProtocolVersion(c.protocolVersion),
 				otelch.QuotaKey(q.QuotaKey),
 				otelch.QueryID(q.QueryID),
