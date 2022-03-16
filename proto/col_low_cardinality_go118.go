@@ -55,7 +55,7 @@ func (c *ColLowCardinalityOf[T]) Prepare() error {
 		c.key = KeyUInt8
 	} else if n < math.MaxUint16 {
 		c.key = KeyUInt16
-	} else if n < math.MaxUint32 {
+	} else if uint32(n) < math.MaxUint32 {
 		c.key = KeyUInt32
 	} else {
 		c.key = KeyUInt64
