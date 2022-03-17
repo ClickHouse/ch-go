@@ -14,10 +14,10 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.14
 	github.com/segmentio/asm v1.1.3
 	github.com/stretchr/testify v1.7.0
-	go.opentelemetry.io/otel v1.4.1
+	go.opentelemetry.io/otel v1.5.0
 	go.opentelemetry.io/otel/metric v0.27.0
 	go.opentelemetry.io/otel/sdk v1.4.1
-	go.opentelemetry.io/otel/trace v1.4.1
+	go.opentelemetry.io/otel/trace v1.5.0
 	go.uber.org/atomic v1.9.0
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.21.0
