@@ -13,6 +13,7 @@ import (
 	"github.com/go-faster/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/nonrecording"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -330,12 +331,12 @@ func (o *Options) setDefaults() {
 		o.Dialer = &net.Dialer{}
 	}
 	if o.MeterProvider == nil {
-		o.MeterProvider = metric.NewNoopMeterProvider()
+		o.MeterProvider = nonrecording.NewNoopMeterProvider()
 	}
 	if o.TracerProvider == nil {
 		o.TracerProvider = otel.GetTracerProvider()
 	}
-	if o.meter.MeterImpl() == nil {
+	if o.meter == nil {
 		o.meter = o.MeterProvider.Meter(otelch.Name)
 	}
 	if o.tracer == nil {
