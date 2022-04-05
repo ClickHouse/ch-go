@@ -43,7 +43,7 @@ linters:
     - dogsled
     - errcheck
     - goconst
-    - gocritic
+#    - gocritic # go1.18
     - gofmt
     - goimports
     - revive
