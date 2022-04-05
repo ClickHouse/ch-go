@@ -4,10 +4,9 @@ package ch
 
 import (
 	"bytes"
+	"net/netip"
 	"strings"
 	"testing"
-
-	"inet.af/netaddr"
 
 	"github.com/go-faster/ch/internal/gold"
 	"github.com/go-faster/ch/proto"
@@ -58,7 +57,7 @@ func encodeTestIPv6Block() []byte {
 	} {
 		var values []proto.IPv6
 		for _, s := range v {
-			ip := netaddr.MustParseIP(s)
+			ip := netip.MustParseAddr(s)
 			values = append(values, proto.ToIPv6(ip))
 		}
 		arr.AppendIPv6(values)

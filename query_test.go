@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net/netip"
 	"testing"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"inet.af/netaddr"
 
 	"github.com/go-faster/ch/proto"
 )
@@ -345,7 +345,7 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, Conn(t).Do(ctx, selectArr))
 		require.Equal(t, 1, data.Rows())
 		t.Logf("%v %s", data[0], data[0].ToIP())
-		require.Equal(t, netaddr.MustParseIP("127.1.1.5"), data[0].ToIP())
+		require.Equal(t, netip.MustParseAddr("127.1.1.5"), data[0].ToIP())
 	})
 	t.Run("SelectIPv6", func(t *testing.T) {
 		t.Parallel()
@@ -362,7 +362,7 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, Conn(t).Do(ctx, selectArr))
 		require.Equal(t, 1, data.Rows())
 		t.Logf("%v %s", data[0], data[0].ToIP())
-		expected := netaddr.MustParseIP("2001:db8:ac10:fe01:feed:babe:cafe:f00d")
+		expected := netip.MustParseAddr("2001:db8:ac10:fe01:feed:babe:cafe:f00d")
 		require.Equal(t, expected, data[0].ToIP())
 	})
 	t.Run("SelectDateTime", func(t *testing.T) {
@@ -414,7 +414,7 @@ func TestClient_Query(t *testing.T) {
 			},
 		}))
 		require.Equal(t, 1, data.Rows())
-		require.Equal(t, netaddr.MustParseIP("10.10.0.1"), data[0].ToIP())
+		require.Equal(t, netip.MustParseAddr("10.10.0.1"), data[0].ToIP())
 	})
 	t.Run("InsertDateTime", func(t *testing.T) {
 		t.Parallel()

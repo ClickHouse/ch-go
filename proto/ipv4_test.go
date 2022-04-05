@@ -2,18 +2,18 @@ package proto
 
 import (
 	"bytes"
+	"net/netip"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"inet.af/netaddr"
 
 	"github.com/go-faster/ch/internal/gold"
 )
 
 func TestIPv4_String(t *testing.T) {
-	for _, v := range []netaddr.IP{
-		netaddr.MustParseIP("127.0.0.1"),
-		netaddr.MustParseIP("1.1.1.1"),
+	for _, v := range []netip.Addr{
+		netip.MustParseAddr("127.0.0.1"),
+		netip.MustParseAddr("1.1.1.1"),
 	} {
 		d := ToIPv4(v)
 		require.Equal(t, v.String(), d.String())
@@ -21,10 +21,10 @@ func TestIPv4_String(t *testing.T) {
 }
 
 func TestColIPv4_NetAddr(t *testing.T) {
-	input := []netaddr.IP{
-		netaddr.MustParseIP("127.0.0.1"),
-		netaddr.MustParseIP("127.0.0.2"),
-		netaddr.MustParseIP("127.0.0.3"),
+	input := []netip.Addr{
+		netip.MustParseAddr("127.0.0.1"),
+		netip.MustParseAddr("127.0.0.2"),
+		netip.MustParseAddr("127.0.0.3"),
 	}
 	var d ColIPv4
 	for _, v := range input {
@@ -41,7 +41,7 @@ func TestColIPv4_NetAddr(t *testing.T) {
 
 		var dec ColIPv4
 		require.NoError(t, dec.DecodeColumn(r, len(input)))
-		var output []netaddr.IP
+		var output []netip.Addr
 		for _, v := range dec {
 			output = append(output, v.ToIP())
 		}
