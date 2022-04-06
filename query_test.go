@@ -651,15 +651,10 @@ func TestClient_Query(t *testing.T) {
 	})
 	t.Run("SelectArrayOf", func(t *testing.T) {
 		t.Parallel()
-		arr := proto.ArrayOf[string](new(proto.ColStr))
+		arr := new(proto.ColStr).Array()
 		selectArr := Query{
-			Body: "SELECT ['foo', 'bar', 'baz']::Array(String) as v",
-			Result: proto.Results{
-				{
-					Name: "v",
-					Data: arr,
-				},
-			},
+			Body:   "SELECT ['foo', 'bar', 'baz']::Array(String) as v",
+			Result: arr.Results("v"),
 		}
 		require.NoError(t, Conn(t).Do(ctx, selectArr))
 		require.Equal(t, 1, arr.Rows())

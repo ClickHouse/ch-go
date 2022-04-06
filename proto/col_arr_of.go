@@ -97,3 +97,13 @@ func (c *ColArrOf[T]) AppendArr(v [][]T) {
 		c.Append(e)
 	}
 }
+
+// Result for current column.
+func (c *ColArrOf[T]) Result(column string) ResultColumn {
+	return ResultColumn{Name: column, Data: c}
+}
+
+// Results return Results containing single column.
+func (c *ColArrOf[T]) Results(column string) Results {
+	return Results{c.Result(column)}
+}

@@ -131,6 +131,25 @@ q := ch.Query{
 * Tuple(T1, T2, ..., Tn)
 * Nullable(T)
 
+## Generics
+
+### ArrayOf
+
+Generic for `Array(T)`
+
+```go
+// Array(String)
+arr := proto.ArrayOf[string](new(proto.ColStr))
+// Or
+arr := new(proto.ColStr).Array()
+q := ch.Query{
+  Body:   "SELECT ['foo', 'bar', 'baz']::Array(String) as v",
+  Result: arr.Results("v"),
+}
+// Do ...
+arr.Row(0) // ["foo", "bar", "baz"]
+```
+
 ## TODO
 - [ ] Connection pools
 - [ ] Improved i/o timeout handling
