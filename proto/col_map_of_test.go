@@ -7,7 +7,7 @@ import (
 )
 
 func TestColMapOf(t *testing.T) {
-	v := MapOf[string, string]{
+	v := ColMapOf[string, string]{
 		Keys:   &ColStr{},
 		Values: &ColStr{},
 	}
