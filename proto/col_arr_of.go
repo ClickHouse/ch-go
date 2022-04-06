@@ -32,14 +32,17 @@ func ArrayOf[T any](c ColumnOf[T]) *ColArrOf[T] {
 	}
 }
 
+// Type returns type of array, i.e. Array(T).
 func (c ColArrOf[T]) Type() ColumnType {
 	return ColumnTypeArray.Sub(c.Data.Type())
 }
 
+// Rows returns rows count.
 func (c ColArrOf[T]) Rows() int {
 	return c.Offsets.Rows()
 }
 
+// RowAppend appends i-th row to target and returns it.
 func (c ColArrOf[T]) RowAppend(i int, target []T) []T {
 	var start int
 	end := int(c.Offsets[i])
@@ -53,10 +56,12 @@ func (c ColArrOf[T]) RowAppend(i int, target []T) []T {
 	return target
 }
 
+// Row returns i-th row.
 func (c ColArrOf[T]) Row(i int) []T {
 	return c.RowAppend(i, nil)
 }
 
+// DecodeColumn implements ColResult.
 func (c *ColArrOf[T]) DecodeColumn(r *Reader, rows int) error {
 	if err := c.Offsets.DecodeColumn(r, rows); err != nil {
 		return errors.Wrap(err, "read offsets")
@@ -72,26 +77,31 @@ func (c *ColArrOf[T]) DecodeColumn(r *Reader, rows int) error {
 	return nil
 }
 
+// Reset implements ColResult.
 func (c *ColArrOf[T]) Reset() {
 	c.Data.Reset()
 	c.Offsets.Reset()
 }
 
+// EncodeColumn implements ColInput.
 func (c ColArrOf[T]) EncodeColumn(b *Buffer) {
 	c.Offsets.EncodeColumn(b)
 	c.Data.EncodeColumn(b)
 }
 
+// Array is helper that creates Array(String).
 func (c *ColStr) Array() *ColArrOf[string] {
 	return &ColArrOf[string]{
 		Data: c,
 	}
 }
 
+// Append appends new row to column.
 func (c *ColArrOf[T]) Append(v []T) {
 	c.Data.AppendArr(v)
 }
 
+// AppendArr appends multiple rows to column.
 func (c *ColArrOf[T]) AppendArr(v [][]T) {
 	for _, e := range v {
 		c.Append(e)
