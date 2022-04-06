@@ -1,5 +1,3 @@
-//go:build go1.18
-
 package proto
 
 import (
@@ -9,11 +7,10 @@ import (
 )
 
 func TestColMapOf(t *testing.T) {
-	v := ColMapOf[string, string]{
+	v := MapOf[string, string]{
 		Keys:   &ColStr{},
 		Values: &ColStr{},
 	}
-	_ = v
 	_, _ = v.Get("foo")
 	require.Equal(t, ColumnType("Map(String, String)"), v.Type())
 }
