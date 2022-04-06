@@ -649,6 +649,22 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, Conn(t).Do(ctx, selectArr))
 		require.Equal(t, proto.ColUInt8{1, 2, 3, 4}, data)
 	})
+	t.Run("SelectArrayOf", func(t *testing.T) {
+		t.Parallel()
+		arr := proto.ArrayOf[string](new(proto.ColStr))
+		selectArr := Query{
+			Body: "SELECT ['foo', 'bar', 'baz']::Array(String) as v",
+			Result: proto.Results{
+				{
+					Name: "v",
+					Data: arr,
+				},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectArr))
+		require.Equal(t, 1, arr.Rows())
+		require.Equal(t, []string{"foo", "bar", "baz"}, arr.Row(0))
+	})
 	t.Run("SelectRand", func(t *testing.T) {
 		t.Parallel()
 		const numbers = 15_249_611

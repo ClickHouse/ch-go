@@ -1,8 +1,13 @@
-//go:build go1.18
-
 package proto
 
 import "github.com/go-faster/errors"
+
+// Compile-time assertions for ArrayOf.
+var (
+	_ ColInput  = ArrayOf[string]((*ColStr)(nil))
+	_ ColResult = ArrayOf[string]((*ColStr)(nil))
+	_ Column    = ArrayOf[string]((*ColStr)(nil))
+)
 
 // ColumnOf is generic Column(T) constraint.
 type ColumnOf[T any] interface {
@@ -42,7 +47,7 @@ func (c ColArrOf[T]) RowAppend(i int, target []T) []T {
 		start = int(c.Offsets[i-1])
 	}
 	for idx := start; idx < end; idx++ {
-		target = append(target, c.Data.Row(i))
+		target = append(target, c.Data.Row(idx))
 	}
 
 	return target
@@ -52,7 +57,7 @@ func (c ColArrOf[T]) Row(i int) []T {
 	return c.RowAppend(i, nil)
 }
 
-func (c ColArrOf[T]) DecodeColumn(r *Reader, rows int) error {
+func (c *ColArrOf[T]) DecodeColumn(r *Reader, rows int) error {
 	if err := c.Offsets.DecodeColumn(r, rows); err != nil {
 		return errors.Wrap(err, "read offsets")
 	}
