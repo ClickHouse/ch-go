@@ -21,7 +21,6 @@ jobs:
           - v21.12.4.1-stable
           - v22.1.4.30-stable
           - v22.2.3.5-stable
-          - v22.3.1.1262-prestable
           - v22.3.2.2-lts
           - v22.3.3.44-lts
     steps:
