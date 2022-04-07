@@ -14,16 +14,16 @@ jobs:
       fail-fast: true
       matrix:
         clickhouse:
-          - 21.8.14.5-lts
-          - 21.9.6.24-stable
-          - 21.10.6.2-stable
-          - 21.11.11.1-stable
-          - 21.12.4.1-stable
-          - 22.1.4.30-stable
-          - 22.2.3.5-stable
-          - 22.3.1.1262-prestable
-          - 22.3.2.2-lts
-          - 22.3.3.44-lts
+          - v21.8.14.5-lts
+          - v21.9.6.24-stable
+          - v21.10.6.2-stable
+          - v21.11.11.1-stable
+          - v21.12.4.1-stable
+          - v22.1.4.30-stable
+          - v22.2.3.5-stable
+          - v22.3.1.1262-prestable
+          - v22.3.2.2-lts
+          - v22.3.3.44-lts
     steps:
       - uses: actions/checkout@v3
 
@@ -46,7 +46,7 @@ jobs:
             ${{ steps.go-env.outputs.modcache }}
           key: e2e-${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            test-${{ runner.os }}-go-
+            e2e-${{ runner.os }}-go-
 
       - name: Set up ClickHouse cache
         uses: actions/cache@v3
@@ -62,7 +62,7 @@ jobs:
 
       - name: Download ClickHouse
         if: steps.ch_exists.outputs.files_exists != 'true'
-        run: _hack/dl.sh ${{ matrix.clickhouse }}
+        run: cd internal/cmd/ch-dl && go run . ${{ matrix.clickhouse }}
 
       - name: Run tests
         env:
