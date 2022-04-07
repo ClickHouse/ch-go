@@ -10,7 +10,6 @@ wget -O /tmp/static.tgz "${URL}"
 
 mkdir -p /opt/ch
 tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse"
-rm /tmp/static.tgz
+ls -lhsa /opt/ch/clickhouse
 
-echo "/opt/ch:"
-ls -lhsa /opt/ch
+rm /tmp/static.tgz
