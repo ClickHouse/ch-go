@@ -64,10 +64,6 @@ jobs:
         if: steps.ch_exists.outputs.files_exists != 'true'
         run: _hack/dl.sh ${{ matrix.clickhouse }}
 
-      - name: Install ClickHouse
-        if: steps.ch_exists.outputs.files_exists != 'true'
-        run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
-
       - name: Run tests
         env:
           CH_BIN: "/opt/ch/clickhouse"
