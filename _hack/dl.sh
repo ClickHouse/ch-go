@@ -8,6 +8,8 @@ URL=$(curl -L -s "https://api.github.com/repos/ClickHouse/ClickHouse/releases/ta
 echo "Downloading ${1}: ${URL}"
 wget -O /tmp/static.tgz "${URL}"
 
+tar -xvf /tmp/static.tgz
+
 mkdir -p /opt/ch
 tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse"
 ls -lhsa /opt/ch/clickhouse
