@@ -13,8 +13,8 @@ jobs:
     strategy:
       matrix:
         clickhouse:
-          - 22.3.2.2-lts
-          - 22.3.3.44-lts
+          - v22.3.2.2-lts
+          - v22.3.3.44-lts
     steps:
       - uses: actions/checkout@v3
 
@@ -53,7 +53,7 @@ jobs:
 
       - name: Download ClickHouse
         if: steps.ch_exists.outputs.files_exists != 'true'
-        run: _hack/dl.sh ${{ matrix.clickhouse }}
+        run: cd internal/cmd/ch-dl && go run . ${{ matrix.clickhouse }}
 
       - name: Run tests
         env:
