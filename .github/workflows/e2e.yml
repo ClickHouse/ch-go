@@ -27,30 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up ClickHouse cache
-        uses: actions/cache@v3
-        with:
-          path: /opt/ch/clickhouse
-          key: ClickHouse-${{ matrix.clickhouse }}
-
-      - name: Check ClickHouse
-        id: "ch_exists"
-        uses: andstor/file-existence-action@v1
-        with:
-          files: /opt/ch/clickhouse
-
-      - name: Get ClickHouse asset version
-        id: asset
-        run: echo "::set-output name=version::$(echo '${{ matrix.clickhouse }}' | cut -f1 -d'-')"
-
-      - name: Download ClickHouse
-        if: steps.ch_exists.outputs.files_exists != 'true'
-        run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v${{ matrix.clickhouse }}/clickhouse-common-static-${{ steps.asset.outputs.version }}.tgz"
-
-      - name: Install ClickHouse
-        if: steps.ch_exists.outputs.files_exists != 'true'
-        run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
-
       - name: Install Go
         uses: actions/setup-go@v3
         with:
@@ -71,6 +47,26 @@ jobs:
           key: e2e-${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             test-${{ runner.os }}-go-
+
+      - name: Set up ClickHouse cache
+        uses: actions/cache@v3
+        with:
+          path: /opt/ch/clickhouse
+          key: ClickHouse-${{ matrix.clickhouse }}
+
+      - name: Check ClickHouse
+        id: "ch_exists"
+        uses: andstor/file-existence-action@v1
+        with:
+          files: /opt/ch/clickhouse
+
+      - name: Download ClickHouse
+        if: steps.ch_exists.outputs.files_exists != 'true'
+        run: _hack/dl.sh ${{ matrix.clickhouse }}
+
+      - name: Install ClickHouse
+        if: steps.ch_exists.outputs.files_exists != 'true'
+        run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
 
       - name: Run tests
         env:
