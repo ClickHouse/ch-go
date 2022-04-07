@@ -8,7 +8,7 @@ Also, see [benchmarks](https://github.com/go-faster/ch-bench#benchmarks) and [pr
 *[ClickHouse](https://clickhouse.com/) is an open-source, high performance columnar OLAP database management system for real-time analytics using SQL.*
 
 ```console
-go get github.com/go-faster/ch
+go get github.com/go-faster/ch@latest
 ```
 
 ## Example
