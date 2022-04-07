@@ -77,7 +77,10 @@ func run(ctx context.Context, tag string) error {
 		}
 	}
 
-	f, err := os.Create("/opt/ch/clickhouse")
+	if err := os.MkdirAll("/opt/ch/", 0o777); err != nil {
+		return errors.Wrap(err, "mkdir")
+	}
+	f, err := os.OpenFile("/opt/ch/clickhouse", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o777)
 	if err != nil {
 		return errors.Wrap(err, "create")
 	}

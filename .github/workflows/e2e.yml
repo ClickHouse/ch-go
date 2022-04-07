@@ -11,10 +11,19 @@ jobs:
   run:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         clickhouse:
-          - v22.3.2.2-lts
-          - v22.3.3.44-lts
+          - 21.8.14.5-lts
+          - 21.9.6.24-stable
+          - 21.10.6.2-stable
+          - 21.11.11.1-stable
+          - 21.12.4.1-stable
+          - 22.1.4.30-stable
+          - 22.2.3.5-stable
+          - 22.3.1.1262-prestable
+          - 22.3.2.2-lts
+          - 22.3.3.44-lts
     steps:
       - uses: actions/checkout@v3
 
@@ -37,7 +46,7 @@ jobs:
             ${{ steps.go-env.outputs.modcache }}
           key: e2e-${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            test-${{ runner.os }}-go-
+            e2e-${{ runner.os }}-go-
 
       - name: Set up ClickHouse cache
         uses: actions/cache@v3
