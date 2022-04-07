@@ -97,7 +97,7 @@ func (c *Client) handshake(ctx context.Context) error {
 
 	if err := wg.Wait(); err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			// Parent context is cancel, propagating error to allow error
+			// Parent context is cancelled, propagating error to allow error
 			// traversal, like errors.Is(err, context.Canceled) assertion.
 			return errors.Wrap(multierr.Append(err, ctxErr), "parent context done")
 		}
