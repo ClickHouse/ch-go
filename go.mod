@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-version v1.4.0
 	github.com/klauspost/compress v1.15.1
 	github.com/pierrec/lz4/v4 v4.1.14
-	github.com/segmentio/asm v1.1.3
+	github.com/segmentio/asm v1.1.4
 	github.com/stretchr/testify v1.7.1
 	go.opentelemetry.io/otel v1.6.3
 	go.opentelemetry.io/otel/metric v0.28.0
