@@ -21,7 +21,17 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		c.Data = new(ColStr)
 	case ColumnTypeBool:
 		c.Data = new(ColBool)
+
 	default:
+		if t.Base() == ColumnTypeLowCardinality {
+			elem := t.Elem()
+			if elem == ColumnTypeString {
+				c.Data = &ColLowCardinality{
+					Index: new(ColStr),
+				}
+				return nil
+			}
+		}
 		return errors.Errorf("automatic column inference not supported for %q", t)
 	}
 

@@ -28,6 +28,7 @@ func TestColAuto_Infer(t *testing.T) {
 		ColumnTypeFloat64,
 		ColumnTypeIPv4,
 		ColumnTypeIPv6,
+		ColumnTypeLowCardinality.Sub(ColumnTypeString),
 	} {
 		auto := r.Data.(InferColumn)
 		require.NoError(t, auto.Infer(columnType))
