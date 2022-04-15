@@ -21,6 +21,10 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		c.Data = new(ColStr)
 	case ColumnTypeBool:
 		c.Data = new(ColBool)
+	case ColumnTypeDateTime:
+		c.Data = new(ColDateTime)
+	case ColumnTypeDate:
+		c.Data = new(ColDate)
 
 	default:
 		if t.Base() == ColumnTypeLowCardinality {
@@ -31,6 +35,9 @@ func (c *ColAuto) Infer(t ColumnType) error {
 				}
 				return nil
 			}
+		} else if t.Base() == ColumnTypeDateTime {
+			c.Data = new(ColDateTime)
+			return nil
 		}
 		return errors.Errorf("automatic column inference not supported for %q", t)
 	}
