@@ -29,10 +29,16 @@ func TestColAuto_Infer(t *testing.T) {
 		ColumnTypeIPv4,
 		ColumnTypeIPv6,
 		ColumnTypeLowCardinality.Sub(ColumnTypeString),
+		ColumnTypeDateTime.Sub("Europe/Berlin"),
 	} {
 		auto := r.Data.(InferColumn)
 		require.NoError(t, auto.Infer(columnType))
-		require.Equal(t, auto.Type(), columnType)
+		// timezone-agnostic - see note about time zone in DateTime.Time
+		if auto.Type().Base() == ColumnTypeDateTime {
+			require.Equal(t, auto.Type(), columnType.Base())
+		} else {
+			require.Equal(t, auto.Type(), columnType)
+		}
 		auto.Reset()
 		require.Equal(t, 0, auto.Rows())
 	}
