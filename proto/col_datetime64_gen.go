@@ -32,9 +32,21 @@ func (c *ColDateTime64) Append(v DateTime64) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of DateTime64 to column.
+func (c *ColDateTime64) AppendArr(v []DateTime64) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDateTime64) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for DateTime64 .
+func (c *ColDateTime64) LowCardinality() *ColLowCardinalityOf[DateTime64] {
+	return &ColLowCardinalityOf[DateTime64]{
+		index: c,
+	}
 }
 
 // NewArrDateTime64 returns new Array(DateTime64).

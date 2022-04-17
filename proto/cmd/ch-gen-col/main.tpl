@@ -33,9 +33,21 @@ func (c *{{ .Type }}) Append(v {{ .ElemType }})  {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of {{ .ElemType }} to column.
+func (c *{{ .Type }}) AppendArr(v []{{ .ElemType }})  {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *{{ .Type }}) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for {{ .Name }} .
+func (c *{{ .Type }}) LowCardinality() *ColLowCardinalityOf[{{ .ElemType }}] {
+	return &ColLowCardinalityOf[{{ .ElemType }}]{
+		index: c,
+	}
 }
 
 // NewArr{{ .Name }} returns new Array({{ .Name }}).

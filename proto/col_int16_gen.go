@@ -32,9 +32,21 @@ func (c *ColInt16) Append(v int16) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of int16 to column.
+func (c *ColInt16) AppendArr(v []int16) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColInt16) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for Int16 .
+func (c *ColInt16) LowCardinality() *ColLowCardinalityOf[int16] {
+	return &ColLowCardinalityOf[int16]{
+		index: c,
+	}
 }
 
 // NewArrInt16 returns new Array(Int16).

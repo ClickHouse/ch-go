@@ -32,9 +32,21 @@ func (c *ColFloat64) Append(v float64) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of float64 to column.
+func (c *ColFloat64) AppendArr(v []float64) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColFloat64) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for Float64 .
+func (c *ColFloat64) LowCardinality() *ColLowCardinalityOf[float64] {
+	return &ColLowCardinalityOf[float64]{
+		index: c,
+	}
 }
 
 // NewArrFloat64 returns new Array(Float64).

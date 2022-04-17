@@ -17,3 +17,5 @@ jobs:
     uses: go-faster/x/.github/workflows/nancy.yml@main
   codeql:
     uses: go-faster/x/.github/workflows/codeql.yml@main
+  lint:
+    uses: go-faster/x/.github/workflows/lint.yml@main

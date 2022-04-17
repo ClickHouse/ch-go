@@ -32,9 +32,21 @@ func (c *ColUInt32) Append(v uint32) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of uint32 to column.
+func (c *ColUInt32) AppendArr(v []uint32) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColUInt32) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for UInt32 .
+func (c *ColUInt32) LowCardinality() *ColLowCardinalityOf[uint32] {
+	return &ColLowCardinalityOf[uint32]{
+		index: c,
+	}
 }
 
 // NewArrUInt32 returns new Array(UInt32).

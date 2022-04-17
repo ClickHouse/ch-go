@@ -32,9 +32,21 @@ func (c *ColIPv4) Append(v IPv4) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of IPv4 to column.
+func (c *ColIPv4) AppendArr(v []IPv4) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColIPv4) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for IPv4 .
+func (c *ColIPv4) LowCardinality() *ColLowCardinalityOf[IPv4] {
+	return &ColLowCardinalityOf[IPv4]{
+		index: c,
+	}
 }
 
 // NewArrIPv4 returns new Array(IPv4).

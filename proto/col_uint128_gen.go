@@ -32,9 +32,21 @@ func (c *ColUInt128) Append(v UInt128) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of UInt128 to column.
+func (c *ColUInt128) AppendArr(v []UInt128) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColUInt128) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for UInt128 .
+func (c *ColUInt128) LowCardinality() *ColLowCardinalityOf[UInt128] {
+	return &ColLowCardinalityOf[UInt128]{
+		index: c,
+	}
 }
 
 // NewArrUInt128 returns new Array(UInt128).

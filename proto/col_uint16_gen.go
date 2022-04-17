@@ -32,9 +32,21 @@ func (c *ColUInt16) Append(v uint16) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of uint16 to column.
+func (c *ColUInt16) AppendArr(v []uint16) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColUInt16) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for UInt16 .
+func (c *ColUInt16) LowCardinality() *ColLowCardinalityOf[uint16] {
+	return &ColLowCardinalityOf[uint16]{
+		index: c,
+	}
 }
 
 // NewArrUInt16 returns new Array(UInt16).

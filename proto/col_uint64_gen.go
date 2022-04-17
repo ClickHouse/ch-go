@@ -32,9 +32,21 @@ func (c *ColUInt64) Append(v uint64) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of uint64 to column.
+func (c *ColUInt64) AppendArr(v []uint64) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColUInt64) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for UInt64 .
+func (c *ColUInt64) LowCardinality() *ColLowCardinalityOf[uint64] {
+	return &ColLowCardinalityOf[uint64]{
+		index: c,
+	}
 }
 
 // NewArrUInt64 returns new Array(UInt64).
