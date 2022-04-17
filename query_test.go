@@ -528,6 +528,16 @@ func TestClient_Query(t *testing.T) {
 			got := gotIndex.Row(int(j))
 			assert.Equal(t, expected[i], got, "[%d]", i)
 		}
+		t.Run("LowCardinalityOf", func(t *testing.T) {
+			v := new(proto.ColStr).LowCardinality()
+			require.NoError(t, conn.Do(ctx, Query{
+				Body: "SELECT * FROM test_table",
+				Result: proto.Results{
+					{Name: "v", Data: v},
+				},
+			}))
+			require.Equal(t, expected, v.Values)
+		})
 	})
 	t.Run("InsertArrayLowCardinalityString", func(t *testing.T) {
 		t.Parallel()
