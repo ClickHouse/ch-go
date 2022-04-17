@@ -115,7 +115,10 @@ func (c *ColStr) Array() *ColArrOf[string] {
 
 // Append appends new row to column.
 func (c *ColArrOf[T]) Append(v []T) {
-	c.Data.AppendArr(v)
+	for _, s := range v {
+		c.Data.Append(s)
+	}
+	c.Offsets = append(c.Offsets, uint64(c.Data.Rows()))
 }
 
 // AppendArr appends multiple rows to column.
