@@ -45,6 +45,7 @@ func (ColStr) ArrAppend(arr *ColArr, data []string) {
 	for _, v := range data {
 		c.Append(v)
 	}
+	c.Rows()
 	arr.Offsets = append(arr.Offsets, uint64(len(c.Pos)))
 }
 
