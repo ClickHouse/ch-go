@@ -32,9 +32,21 @@ func (c *ColDecimal64) Append(v Decimal64) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of Decimal64 to column.
+func (c *ColDecimal64) AppendArr(v []Decimal64) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDecimal64) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for Decimal64 .
+func (c *ColDecimal64) LowCardinality() *ColLowCardinalityOf[Decimal64] {
+	return &ColLowCardinalityOf[Decimal64]{
+		index: c,
+	}
 }
 
 // NewArrDecimal64 returns new Array(Decimal64).

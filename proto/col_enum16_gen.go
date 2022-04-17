@@ -32,9 +32,21 @@ func (c *ColEnum16) Append(v Enum16) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of Enum16 to column.
+func (c *ColEnum16) AppendArr(v []Enum16) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColEnum16) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for Enum16 .
+func (c *ColEnum16) LowCardinality() *ColLowCardinalityOf[Enum16] {
+	return &ColLowCardinalityOf[Enum16]{
+		index: c,
+	}
 }
 
 // NewArrEnum16 returns new Array(Enum16).

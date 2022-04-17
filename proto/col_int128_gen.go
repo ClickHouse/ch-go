@@ -32,9 +32,21 @@ func (c *ColInt128) Append(v Int128) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of Int128 to column.
+func (c *ColInt128) AppendArr(v []Int128) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColInt128) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for Int128 .
+func (c *ColInt128) LowCardinality() *ColLowCardinalityOf[Int128] {
+	return &ColLowCardinalityOf[Int128]{
+		index: c,
+	}
 }
 
 // NewArrInt128 returns new Array(Int128).

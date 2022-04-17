@@ -32,9 +32,21 @@ func (c *ColDate32) Append(v Date32) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of Date32 to column.
+func (c *ColDate32) AppendArr(v []Date32) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDate32) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for Date32 .
+func (c *ColDate32) LowCardinality() *ColLowCardinalityOf[Date32] {
+	return &ColLowCardinalityOf[Date32]{
+		index: c,
+	}
 }
 
 // NewArrDate32 returns new Array(Date32).

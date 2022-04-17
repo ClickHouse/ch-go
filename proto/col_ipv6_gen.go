@@ -32,9 +32,21 @@ func (c *ColIPv6) Append(v IPv6) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of IPv6 to column.
+func (c *ColIPv6) AppendArr(v []IPv6) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColIPv6) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for IPv6 .
+func (c *ColIPv6) LowCardinality() *ColLowCardinalityOf[IPv6] {
+	return &ColLowCardinalityOf[IPv6]{
+		index: c,
+	}
 }
 
 // NewArrIPv6 returns new Array(IPv6).

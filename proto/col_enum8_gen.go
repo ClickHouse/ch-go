@@ -32,9 +32,21 @@ func (c *ColEnum8) Append(v Enum8) {
 	*c = append(*c, v)
 }
 
+// AppendArr appends slice of Enum8 to column.
+func (c *ColEnum8) AppendArr(v []Enum8) {
+	*c = append(*c, v...)
+}
+
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColEnum8) Reset() {
 	*c = (*c)[:0]
+}
+
+// LowCardinality returns LowCardinality for Enum8 .
+func (c *ColEnum8) LowCardinality() *ColLowCardinalityOf[Enum8] {
+	return &ColLowCardinalityOf[Enum8]{
+		index: c,
+	}
 }
 
 // NewArrEnum8 returns new Array(Enum8).
