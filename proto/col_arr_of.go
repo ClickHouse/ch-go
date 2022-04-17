@@ -4,9 +4,11 @@ import "github.com/go-faster/errors"
 
 // Compile-time assertions for ArrayOf.
 var (
-	_ ColInput  = ArrayOf[string]((*ColStr)(nil))
-	_ ColResult = ArrayOf[string]((*ColStr)(nil))
-	_ Column    = ArrayOf[string]((*ColStr)(nil))
+	_ ColInput     = ArrayOf[string]((*ColStr)(nil))
+	_ ColResult    = ArrayOf[string]((*ColStr)(nil))
+	_ Column       = ArrayOf[string]((*ColStr)(nil))
+	_ StateEncoder = ArrayOf[string]((*ColStr)(nil))
+	_ StateDecoder = ArrayOf[string]((*ColStr)(nil))
 )
 
 // ColumnOf is generic Column(T) constraint.
@@ -40,6 +42,21 @@ func (c ColArrOf[T]) Type() ColumnType {
 // Rows returns rows count.
 func (c ColArrOf[T]) Rows() int {
 	return c.Offsets.Rows()
+}
+
+func (c *ColArrOf[T]) DecodeState(r *Reader) error {
+	if s, ok := c.Data.(StateDecoder); ok {
+		if err := s.DecodeState(r); err != nil {
+			return errors.Wrap(err, "data state")
+		}
+	}
+	return nil
+}
+
+func (c *ColArrOf[T]) EncodeState(b *Buffer) {
+	if s, ok := c.Data.(StateEncoder); ok {
+		s.EncodeState(b)
+	}
 }
 
 // RowAppend appends i-th row to target and returns it.
