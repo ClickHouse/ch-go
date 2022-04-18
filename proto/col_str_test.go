@@ -10,6 +10,11 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestColBytes(t *testing.T) {
+	// Assert that ColBytes can be ColumnOf for []byte.
+	var _ ColumnOf[[]byte] = &ColBytes{}
+}
+
 func TestColStr_AppendBytes(t *testing.T) {
 	var data ColStr
 

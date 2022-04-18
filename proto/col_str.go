@@ -12,6 +12,8 @@ type Position struct {
 }
 
 // ColStr represents String column.
+//
+// Use ColBytes for []bytes ColumnOf implementation.
 type ColStr struct {
 	Buf []byte
 	Pos []Position
@@ -100,6 +102,12 @@ func (c ColStr) Row(i int) string {
 	return string(c.Buf[p.Start:p.End])
 }
 
+// RowBytes returns row with number i as byte slice.
+func (c ColStr) RowBytes(i int) []byte {
+	p := c.Pos[i]
+	return c.Buf[p.Start:p.End]
+}
+
 // ForEachBytes calls f on each string from column as byte slice.
 func (c ColStr) ForEachBytes(f func(i int, b []byte) error) error {
 	for i, p := range c.Pos {
@@ -129,4 +137,26 @@ func (c *ColStr) DecodeColumn(r *Reader, rows int) error {
 		c.Pos = append(c.Pos, p)
 	}
 	return nil
+}
+
+// ColBytes is ColStr wrapper to be ColumnOf for []byte.
+type ColBytes struct {
+	ColStr
+}
+
+// Row returns row with number i.
+func (c ColBytes) Row(i int) []byte {
+	return c.RowBytes(i)
+}
+
+// Append byte slice to column.
+func (c *ColBytes) Append(v []byte) {
+	c.AppendBytes(v)
+}
+
+// AppendArr append slice of byte slices to column.
+func (c *ColBytes) AppendArr(v [][]byte) {
+	for _, s := range v {
+		c.Append(s)
+	}
 }
