@@ -11,8 +11,9 @@ import (
 )
 
 func TestColBytes(t *testing.T) {
-	// Assert that ColBytes can be ColumnOf for []byte.
-	var _ ColumnOf[[]byte] = &ColBytes{}
+	testColumn(t, "bytes", func() ColumnOf[[]byte] {
+		return new(ColBytes)
+	}, []byte("Hello"), []byte("World"))
 }
 
 func TestColStr_AppendBytes(t *testing.T) {
