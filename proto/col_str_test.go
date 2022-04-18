@@ -10,6 +10,12 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestColBytes(t *testing.T) {
+	testColumn(t, "bytes", func() ColumnOf[[]byte] {
+		return new(ColBytes)
+	}, []byte("Hello"), []byte("World"))
+}
+
 func TestColStr_AppendBytes(t *testing.T) {
 	var data ColStr
 

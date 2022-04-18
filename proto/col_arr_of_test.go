@@ -10,6 +10,33 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+// testColumn tests column implementation.
+func testColumn[T any](t *testing.T, name string, f func() ColumnOf[T], values ...T) {
+	data := f()
+
+	for _, v := range values {
+		data.Append(v)
+	}
+	var buf Buffer
+	data.EncodeColumn(&buf)
+
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "column_of_"+name)
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+
+		dec := f()
+		require.NoError(t, dec.DecodeColumn(r, len(values)))
+		require.Equal(t, data, dec)
+	})
+}
+
+func TestColumnOfString(t *testing.T) {
+	testColumn(t, "str", func() ColumnOf[string] { return new(ColStr) }, "foo", "bar", "baz")
+}
+
 func TestColArrFrom(t *testing.T) {
 	var data ColStr
 	arr := data.Array()
