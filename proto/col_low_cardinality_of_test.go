@@ -5,6 +5,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-faster/ch/internal/gold"
@@ -19,7 +20,8 @@ func TestLowCardinalityOf(t *testing.T) {
 
 func TestLowCardinalityOfStr(t *testing.T) {
 	col := (&ColStr{}).LowCardinality()
-	col.AppendArr([]string{"foo", "bar", "foo", "foo", "baz"})
+	v := []string{"foo", "bar", "foo", "foo", "baz"}
+	col.AppendArr(v)
 
 	require.NoError(t, col.Prepare())
 
@@ -35,7 +37,10 @@ func TestLowCardinalityOfStr(t *testing.T) {
 
 		require.NoError(t, dec.DecodeColumn(r, col.Rows()))
 		require.Equal(t, col.Rows(), dec.Rows())
-		require.Equal(t, ColumnType("LowCardinality(String)"), dec.Type())
+		for i, s := range v {
+			assert.Equal(t, s, col.Row(i))
+		}
+		assert.Equal(t, ColumnType("LowCardinality(String)"), dec.Type())
 	})
 	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))

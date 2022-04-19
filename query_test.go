@@ -478,6 +478,35 @@ func TestClient_Query(t *testing.T) {
 		require.Len(t, data, 1)
 		require.Equal(t, data, gotData)
 	})
+	t.Run("ArrayLowCardinality", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = Memory",
+		}), "create table")
+
+		v := proto.ArrayOf[string](new(proto.ColStr).LowCardinality())
+		v.Append([]string{"foo", "bar"})
+		v.Append([]string{"baz"})
+
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: v},
+			},
+		}), "insert")
+
+		gotData := proto.ArrayOf[string](new(proto.ColStr).LowCardinality())
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: gotData},
+			},
+		}), "select")
+
+		assert.Equal(t, []string{"foo", "bar"}, gotData.Row(0))
+		assert.Equal(t, []string{"baz"}, gotData.Row(1))
+	})
 	t.Run("InsertLowCardinalityString", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
