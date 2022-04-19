@@ -49,6 +49,13 @@ func (c *ColUInt32) LowCardinality() *ColLowCardinalityOf[uint32] {
 	}
 }
 
+// Array is helper that creates Array of uint32.
+func (c *ColUInt32) Array() *ColArrOf[uint32] {
+	return &ColArrOf[uint32]{
+		Data: c,
+	}
+}
+
 // NewArrUInt32 returns new Array(UInt32).
 func NewArrUInt32() *ColArr {
 	return &ColArr{

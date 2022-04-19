@@ -49,6 +49,13 @@ func (c *ColDecimal32) LowCardinality() *ColLowCardinalityOf[Decimal32] {
 	}
 }
 
+// Array is helper that creates Array of Decimal32.
+func (c *ColDecimal32) Array() *ColArrOf[Decimal32] {
+	return &ColArrOf[Decimal32]{
+		Data: c,
+	}
+}
+
 // NewArrDecimal32 returns new Array(Decimal32).
 func NewArrDecimal32() *ColArr {
 	return &ColArr{

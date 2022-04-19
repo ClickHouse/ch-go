@@ -49,6 +49,13 @@ func (c *ColDate32) LowCardinality() *ColLowCardinalityOf[Date32] {
 	}
 }
 
+// Array is helper that creates Array of Date32.
+func (c *ColDate32) Array() *ColArrOf[Date32] {
+	return &ColArrOf[Date32]{
+		Data: c,
+	}
+}
+
 // NewArrDate32 returns new Array(Date32).
 func NewArrDate32() *ColArr {
 	return &ColArr{

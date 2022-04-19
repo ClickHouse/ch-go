@@ -49,6 +49,13 @@ func (c *ColDateTime64) LowCardinality() *ColLowCardinalityOf[DateTime64] {
 	}
 }
 
+// Array is helper that creates Array of DateTime64.
+func (c *ColDateTime64) Array() *ColArrOf[DateTime64] {
+	return &ColArrOf[DateTime64]{
+		Data: c,
+	}
+}
+
 // NewArrDateTime64 returns new Array(DateTime64).
 func NewArrDateTime64() *ColArr {
 	return &ColArr{

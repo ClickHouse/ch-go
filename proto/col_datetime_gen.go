@@ -49,6 +49,13 @@ func (c *ColDateTime) LowCardinality() *ColLowCardinalityOf[DateTime] {
 	}
 }
 
+// Array is helper that creates Array of DateTime.
+func (c *ColDateTime) Array() *ColArrOf[DateTime] {
+	return &ColArrOf[DateTime]{
+		Data: c,
+	}
+}
+
 // NewArrDateTime returns new Array(DateTime).
 func NewArrDateTime() *ColArr {
 	return &ColArr{
