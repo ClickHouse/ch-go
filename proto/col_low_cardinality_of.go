@@ -275,10 +275,3 @@ func LowCardinalityOf[T comparable](c ColumnOf[T]) *ColLowCardinalityOf[T] {
 		index: c,
 	}
 }
-
-// LowCardinality returns LowCardinality(String).
-func (c *ColStr) LowCardinality() *ColLowCardinalityOf[string] {
-	return &ColLowCardinalityOf[string]{
-		index: c,
-	}
-}

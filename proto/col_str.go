@@ -139,6 +139,20 @@ func (c *ColStr) DecodeColumn(r *Reader, rows int) error {
 	return nil
 }
 
+// LowCardinality returns LowCardinality(String).
+func (c *ColStr) LowCardinality() *ColLowCardinalityOf[string] {
+	return &ColLowCardinalityOf[string]{
+		index: c,
+	}
+}
+
+// Array is helper that creates Array(String).
+func (c *ColStr) Array() *ColArrOf[string] {
+	return &ColArrOf[string]{
+		Data: c,
+	}
+}
+
 // ColBytes is ColStr wrapper to be ColumnOf for []byte.
 type ColBytes struct {
 	ColStr
@@ -158,5 +172,12 @@ func (c *ColBytes) Append(v []byte) {
 func (c *ColBytes) AppendArr(v [][]byte) {
 	for _, s := range v {
 		c.Append(s)
+	}
+}
+
+// Array is helper that creates Array(String).
+func (c *ColBytes) Array() *ColArrOf[[]byte] {
+	return &ColArrOf[[]byte]{
+		Data: c,
 	}
 }

@@ -116,13 +116,6 @@ func (c ColArrOf[T]) EncodeColumn(b *Buffer) {
 	c.Data.EncodeColumn(b)
 }
 
-// Array is helper that creates Array(String).
-func (c *ColStr) Array() *ColArrOf[string] {
-	return &ColArrOf[string]{
-		Data: c,
-	}
-}
-
 // Append appends new row to column.
 func (c *ColArrOf[T]) Append(v []T) {
 	for _, s := range v {
