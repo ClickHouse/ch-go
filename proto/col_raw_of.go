@@ -18,7 +18,7 @@ func (c *ColRawOf[X]) AppendArr(v []X) {
 
 func (c ColRawOf[X]) Size() int {
 	var x X
-	return int(unsafe.Sizeof(x))
+	return int(unsafe.Sizeof(x)) // #nosec G103
 }
 
 // Type returns ColumnType of ColRawOf.
@@ -53,12 +53,12 @@ func (c ColRawOf[X]) EncodeColumn(b *Buffer) {
 	}
 	offset := len(b.Buf)
 	var x X
-	size := unsafe.Sizeof(x)
+	size := unsafe.Sizeof(x) // #nosec G103
 	b.Buf = append(b.Buf, make([]byte, int(size)*len(c))...)
-	s := *(*slice)(unsafe.Pointer(&c))
+	s := *(*slice)(unsafe.Pointer(&c)) // #nosec G103
 	s.Len *= size
 	s.Cap *= size
-	src := *(*[]byte)(unsafe.Pointer(&s))
+	src := *(*[]byte)(unsafe.Pointer(&s)) // #nosec G103
 	dst := b.Buf[offset:]
 	copy(dst, src)
 }
@@ -69,12 +69,12 @@ func (c *ColRawOf[X]) DecodeColumn(r *Reader, rows int) error {
 		return nil
 	}
 	*c = append(*c, make([]X, rows)...)
-	s := *(*slice)(unsafe.Pointer(c))
+	s := *(*slice)(unsafe.Pointer(c)) // #nosec G103
 	var x X
-	size := unsafe.Sizeof(x)
+	size := unsafe.Sizeof(x) // #nosec G103
 	s.Len *= size
 	s.Cap *= size
-	dst := *(*[]byte)(unsafe.Pointer(&s))
+	dst := *(*[]byte)(unsafe.Pointer(&s)) // #nosec G103
 	if err := r.ReadFull(dst); err != nil {
 		return errors.Wrap(err, "read full")
 	}
