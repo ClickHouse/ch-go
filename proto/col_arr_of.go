@@ -59,6 +59,16 @@ func (c *ColArrOf[T]) EncodeState(b *Buffer) {
 	}
 }
 
+// Prepare ensures Preparable column propagation.
+func (c *ColArrOf[T]) Prepare() error {
+	if v, ok := c.Data.(Preparable); ok {
+		if err := v.Prepare(); err != nil {
+			return errors.Wrap(err, "prepare data")
+		}
+	}
+	return nil
+}
+
 // RowAppend appends i-th row to target and returns it.
 func (c ColArrOf[T]) RowAppend(i int, target []T) []T {
 	var start int

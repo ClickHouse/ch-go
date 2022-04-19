@@ -248,6 +248,7 @@ func (c *ColLowCardinalityOf[T]) Prepare() error {
 		if !ok {
 			c.index.Append(v)
 			c.kv[v] = last
+			idx = last
 			last++
 		}
 		c.keys[i] = idx

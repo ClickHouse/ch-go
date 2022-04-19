@@ -62,7 +62,7 @@ func TestColArrOfStr(t *testing.T) {
 	var buf Buffer
 	col.EncodeColumn(&buf)
 	t.Run("Golden", func(t *testing.T) {
-		gold.Bytes(t, buf.Buf, "col_col_arr_of_str")
+		gold.Bytes(t, buf.Buf, "col_arr_of_str")
 	})
 	t.Run("Ok", func(t *testing.T) {
 		br := bytes.NewReader(buf.Buf)
@@ -82,6 +82,40 @@ func TestColArrOfStr(t *testing.T) {
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := (&ColStr{}).Array()
+		requireNoShortRead(t, buf.Buf, colAware(dec, col.Rows()))
+	})
+}
+
+func TestArrOfLowCordStr(t *testing.T) {
+	col := ArrayOf[string](new(ColStr).LowCardinality())
+	col.Append([]string{"foo", "bar", "foo", "foo", "baz"})
+	col.Append([]string{"foo", "baz"})
+
+	require.NoError(t, col.Prepare())
+
+	var buf Buffer
+	col.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_arr_of_low_cord_str")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+		dec := ArrayOf[string](new(ColStr).LowCardinality())
+
+		require.NoError(t, dec.DecodeColumn(r, col.Rows()))
+		require.Equal(t, col.Rows(), dec.Rows())
+		require.Equal(t, ColumnType("Array(LowCardinality(String))"), dec.Type())
+		require.Equal(t, []string{"foo", "bar", "foo", "foo", "baz"}, dec.Row(0))
+		require.Equal(t, []string{"foo", "baz"}, dec.Row(1))
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+		dec := ArrayOf[string](new(ColStr).LowCardinality())
+		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.ErrUnexpectedEOF)
+	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		dec := ArrayOf[string](new(ColStr).LowCardinality())
 		requireNoShortRead(t, buf.Buf, colAware(dec, col.Rows()))
 	})
 }
