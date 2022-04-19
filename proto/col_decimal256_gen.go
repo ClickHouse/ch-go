@@ -49,6 +49,13 @@ func (c *ColDecimal256) LowCardinality() *ColLowCardinalityOf[Decimal256] {
 	}
 }
 
+// Array is helper that creates Array of Decimal256.
+func (c *ColDecimal256) Array() *ColArrOf[Decimal256] {
+	return &ColArrOf[Decimal256]{
+		Data: c,
+	}
+}
+
 // NewArrDecimal256 returns new Array(Decimal256).
 func NewArrDecimal256() *ColArr {
 	return &ColArr{

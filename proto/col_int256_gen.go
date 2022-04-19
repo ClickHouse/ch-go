@@ -49,6 +49,13 @@ func (c *ColInt256) LowCardinality() *ColLowCardinalityOf[Int256] {
 	}
 }
 
+// Array is helper that creates Array of Int256.
+func (c *ColInt256) Array() *ColArrOf[Int256] {
+	return &ColArrOf[Int256]{
+		Data: c,
+	}
+}
+
 // NewArrInt256 returns new Array(Int256).
 func NewArrInt256() *ColArr {
 	return &ColArr{

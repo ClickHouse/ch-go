@@ -49,6 +49,13 @@ func (c *ColIPv4) LowCardinality() *ColLowCardinalityOf[IPv4] {
 	}
 }
 
+// Array is helper that creates Array of IPv4.
+func (c *ColIPv4) Array() *ColArrOf[IPv4] {
+	return &ColArrOf[IPv4]{
+		Data: c,
+	}
+}
+
 // NewArrIPv4 returns new Array(IPv4).
 func NewArrIPv4() *ColArr {
 	return &ColArr{

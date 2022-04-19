@@ -49,6 +49,13 @@ func (c *ColUInt256) LowCardinality() *ColLowCardinalityOf[UInt256] {
 	}
 }
 
+// Array is helper that creates Array of UInt256.
+func (c *ColUInt256) Array() *ColArrOf[UInt256] {
+	return &ColArrOf[UInt256]{
+		Data: c,
+	}
+}
+
 // NewArrUInt256 returns new Array(UInt256).
 func NewArrUInt256() *ColArr {
 	return &ColArr{

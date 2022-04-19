@@ -49,6 +49,13 @@ func (c *ColEnum16) LowCardinality() *ColLowCardinalityOf[Enum16] {
 	}
 }
 
+// Array is helper that creates Array of Enum16.
+func (c *ColEnum16) Array() *ColArrOf[Enum16] {
+	return &ColArrOf[Enum16]{
+		Data: c,
+	}
+}
+
 // NewArrEnum16 returns new Array(Enum16).
 func NewArrEnum16() *ColArr {
 	return &ColArr{

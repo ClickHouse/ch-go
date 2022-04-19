@@ -50,6 +50,13 @@ func (c *{{ .Type }}) LowCardinality() *ColLowCardinalityOf[{{ .ElemType }}] {
 	}
 }
 
+// Array is helper that creates Array of {{ .ElemType }}.
+func (c *{{ .Type }}) Array() *ColArrOf[{{ .ElemType }}] {
+	return &ColArrOf[{{ .ElemType }}]{
+		Data: c,
+	}
+}
+
 // NewArr{{ .Name }} returns new Array({{ .Name }}).
 func NewArr{{ .Name }}() *ColArr {
 	return &ColArr{

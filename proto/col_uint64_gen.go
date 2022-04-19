@@ -49,6 +49,13 @@ func (c *ColUInt64) LowCardinality() *ColLowCardinalityOf[uint64] {
 	}
 }
 
+// Array is helper that creates Array of uint64.
+func (c *ColUInt64) Array() *ColArrOf[uint64] {
+	return &ColArrOf[uint64]{
+		Data: c,
+	}
+}
+
 // NewArrUInt64 returns new Array(UInt64).
 func NewArrUInt64() *ColArr {
 	return &ColArr{
