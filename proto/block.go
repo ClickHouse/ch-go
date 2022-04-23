@@ -159,16 +159,11 @@ func (b Block) EncodeRawBlock(buf *Buffer, input []InputColumn) error {
 	return nil
 }
 
-const (
-	maxColumnsInBlock = 1_000_000
-	maxRowsInBlock    = 1_000_000
-)
+const maxColumnsInBlock = 1_000_000
 
 func checkRows(n int) error {
-	if n < 0 || n > maxRowsInBlock {
-		return errors.Errorf("invalid: %d < %d < %d",
-			0, n, maxRowsInBlock,
-		)
+	if n < 0 {
+		return errors.New("negative row count")
 	}
 	return nil
 }
