@@ -503,6 +503,9 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 
 // Do performs Query on ClickHouse server.
 func (c *Client) Do(ctx context.Context, q Query) (err error) {
+	if c.conn == nil {
+		return ErrClosed
+	}
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
 	}

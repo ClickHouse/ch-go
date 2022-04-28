@@ -51,6 +51,18 @@ func TestDial(t *testing.T) {
 		conn := Conn(t)
 		require.NoError(t, conn.Ping(context.Background()))
 	})
+	t.Run("Closed", func(t *testing.T) {
+		ctx := context.Background()
+		server := cht.New(t)
+		conn, err := Dial(ctx, Options{
+			Address: server.TCP,
+		})
+		require.NoError(t, err)
+		require.NoError(t, conn.Ping(ctx))
+		require.NoError(t, conn.Close())
+		require.ErrorIs(t, conn.Ping(ctx), ErrClosed)
+		require.ErrorIs(t, conn.Do(ctx, Query{}), ErrClosed)
+	})
 	t.Run("DatabaseNotFound", func(t *testing.T) {
 		ctx := context.Background()
 		server := cht.New(t)
