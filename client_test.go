@@ -58,6 +58,9 @@ func TestDial(t *testing.T) {
 			Address:  server.TCP,
 			Database: "bad",
 		})
+		if IsErr(err, proto.ErrUnknownDatabase) {
+			t.Skip("got error during handshake")
+		}
 		require.NoError(t, err)
 		err = client.Do(ctx, Query{
 			Body:   "SELECT 1",
