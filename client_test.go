@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-faster/ch/cht"
 	"github.com/go-faster/ch/internal/gold"
+	"github.com/go-faster/ch/proto"
 )
 
 func TestMain(m *testing.M) {
@@ -43,4 +44,25 @@ func ConnOpt(t testing.TB, opt Options) *Client {
 
 func Conn(t testing.TB) *Client {
 	return ConnOpt(t, Options{})
+}
+
+func TestDial(t *testing.T) {
+	t.Run("Ok", func(t *testing.T) {
+		conn := Conn(t)
+		require.NoError(t, conn.Ping(context.Background()))
+	})
+	t.Run("DatabaseNotFound", func(t *testing.T) {
+		ctx := context.Background()
+		server := cht.New(t)
+		client, err := Dial(ctx, Options{
+			Address:  server.TCP,
+			Database: "bad",
+		})
+		require.NoError(t, err)
+		err = client.Do(ctx, Query{
+			Body:   "SELECT 1",
+			Result: discardResult(),
+		})
+		require.True(t, IsErr(err, proto.ErrUnknownDatabase))
+	})
 }
