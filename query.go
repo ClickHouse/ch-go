@@ -70,6 +70,9 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 			zap.String("query_id", q.QueryID),
 		)
 	}
+	if c.conn == nil {
+		return ErrClosed
+	}
 	c.encode(proto.Query{
 		ID:          q.QueryID,
 		Body:        q.Body,

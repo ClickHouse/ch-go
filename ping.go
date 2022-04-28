@@ -15,6 +15,9 @@ import (
 //
 // Do not call concurrently with Do.
 func (c *Client) Ping(ctx context.Context) (err error) {
+	if c.conn == nil {
+		return ErrClosed
+	}
 	if c.otel {
 		newCtx, span := c.tracer.Start(ctx, "Ping",
 			trace.WithSpanKind(trace.SpanKindClient),

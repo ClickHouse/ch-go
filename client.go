@@ -70,9 +70,15 @@ func SettingInt(k string, v int) Setting {
 // ServerInfo returns server information.
 func (c *Client) ServerInfo() proto.ServerHello { return c.server }
 
+// ErrClosed means that client was already closed.
+var ErrClosed = errors.New("client is closed")
+
 // Close closes underlying connection and frees all resources,
 // rendering Client to unusable state.
 func (c *Client) Close() error {
+	if c.conn == nil {
+		return ErrClosed
+	}
 	defer func() {
 		c.buf = nil
 		c.reader = nil
