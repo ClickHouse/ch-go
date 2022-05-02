@@ -4,16 +4,19 @@ import "github.com/go-faster/errors"
 
 // ColAuto is column that is initialized during decoding.
 type ColAuto struct {
-	Data Column
+	Data     Column
+	DataType ColumnType
 }
 
 // Infer and initialize Column from ColumnType.
 func (c *ColAuto) Infer(t ColumnType) error {
 	if c.Data != nil && !c.Type().Conflicts(t) {
 		// Already ok.
+		c.DataType = t // update subtype if needed
 		return nil
 	}
 	if c.inferNumeric(t) {
+		c.DataType = t
 		return nil
 	}
 	switch t {
@@ -25,23 +28,29 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		c.Data = new(ColDateTime)
 	case ColumnTypeDate:
 		c.Data = new(ColDate)
-
 	default:
-		if t.Base() == ColumnTypeLowCardinality {
-			elem := t.Elem()
-			if elem == ColumnTypeString {
+		switch t.Base() {
+		case ColumnTypeLowCardinality:
+			if t.Elem() == ColumnTypeString {
 				c.Data = &ColLowCardinality{
 					Index: new(ColStr),
 				}
+				c.DataType = t
 				return nil
 			}
-		} else if t.Base() == ColumnTypeDateTime {
+		case ColumnTypeDateTime:
 			c.Data = new(ColDateTime)
+			c.DataType = t
+			return nil
+		case ColumnTypeDateTime64:
+			c.Data = new(ColDateTime)
+			c.DataType = t
 			return nil
 		}
 		return errors.Errorf("automatic column inference not supported for %q", t)
 	}
 
+	c.DataType = t
 	return nil
 }
 
@@ -57,7 +66,7 @@ type InferColumn interface {
 }
 
 func (c ColAuto) Type() ColumnType {
-	return c.Data.Type()
+	return c.DataType
 }
 
 func (c ColAuto) Rows() int {
