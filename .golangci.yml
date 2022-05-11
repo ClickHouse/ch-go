@@ -117,3 +117,7 @@ issues:
     - path: main\.go
       linters: [ gosec ]
       text: "G307"
+
+    - source: 'func Fuzz.+\(f \*testing\.F\)'
+      linters: [ stylecheck ]
+      text: "ST1003" # unserscores lol
