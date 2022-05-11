@@ -120,4 +120,4 @@ issues:
 
     - source: 'func Fuzz.+\(f \*testing\.F\)'
       linters: [ stylecheck ]
-      text: "ST1003" # unserscores lol
+      text: "ST1003" # underscores lol
