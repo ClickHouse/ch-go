@@ -10,7 +10,7 @@ require (
 	github.com/go-faster/errors v0.5.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-version v1.4.0
-	github.com/klauspost/compress v1.15.3
+	github.com/klauspost/compress v1.15.4
 	github.com/pierrec/lz4/v4 v4.1.14
 	github.com/segmentio/asm v1.2.0
 	github.com/stretchr/testify v1.7.1
