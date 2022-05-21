@@ -91,6 +91,11 @@ func (c *Client) Close() error {
 	return nil
 }
 
+// IsClosed indicates that connection is closed.
+func (c *Client) IsClosed() bool {
+	return c.conn == nil
+}
+
 // Exception is server-side error.
 type Exception struct {
 	Code    proto.Error
