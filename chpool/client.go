@@ -2,16 +2,19 @@ package chpool
 
 import (
 	"context"
+	"time"
+
 	"github.com/go-faster/ch"
 	puddle "github.com/jackc/puddle/puddleg"
-	"time"
 )
 
+// Client is an acquired *ch.Client from a Pool.
 type Client struct {
 	res *puddle.Resource[*connResource]
 	p   *Pool
 }
 
+// Release returns client to the pool.
 func (c *Client) Release() {
 	if c.res == nil {
 		return

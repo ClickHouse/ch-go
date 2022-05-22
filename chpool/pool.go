@@ -2,10 +2,11 @@ package chpool
 
 import (
 	"context"
-	"github.com/go-faster/ch"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/go-faster/ch"
 
 	puddle "github.com/jackc/puddle/puddleg"
 )
