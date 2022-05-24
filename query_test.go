@@ -25,7 +25,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 
-		// Create table, no data fetch.
+
 		createTable := Query{
 			Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
 		}
@@ -55,7 +55,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 
-		// Create table, no data fetch.
+
 		createTable := Query{
 			Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY id",
 		}
@@ -156,7 +156,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 
-		// Create table, no data fetch.
+
 		createTable := Query{
 			Body: "CREATE TABLE test_table (id UInt8) ENGINE = TinyLog",
 		}
@@ -419,8 +419,6 @@ func TestClient_Query(t *testing.T) {
 	t.Run("InsertDateTime", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
-
-		// Create table, no data fetch.
 		createTable := Query{
 			Body: "CREATE TABLE test_table (d DateTime) ENGINE = MergeTree ORDER BY d",
 		}
@@ -510,8 +508,6 @@ func TestClient_Query(t *testing.T) {
 	t.Run("InsertLowCardinalityString", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
-
-		// Create table, no data fetch.
 		createTable := Query{
 			Body: "CREATE TABLE test_table (v LowCardinality(String)) ENGINE = TinyLog",
 		}
@@ -615,8 +611,6 @@ func TestClient_Query(t *testing.T) {
 	t.Run("InsertMapStringString", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
-
-		// Create table, no data fetch.
 		createTable := Query{
 			Body: "CREATE TABLE test_table (v Map(String, String)) ENGINE = TinyLog",
 		}
@@ -725,8 +719,6 @@ func TestClient_Query(t *testing.T) {
 	t.Run("InsertMapOfStringInt64", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
-
-		// Create table, no data fetch.
 		createTable := Query{
 			Body: "CREATE TABLE test_table (v Map(String, Int64)) ENGINE = TinyLog",
 		}
@@ -775,15 +767,12 @@ func TestClient_Query(t *testing.T) {
 	t.Run("InsertMapOfFixedStrArrayStr", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
-
-		// Create table, no data fetch.
 		createTable := Query{
 			Body: "CREATE TABLE test_table (v Map(FixedString(16), Array(String))) ENGINE = TinyLog",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		type K = [16]byte
-
 		data := &proto.ColMapOf[K, []string]{
 			Keys:   new(proto.ColRawOf[K]),
 			Values: new(proto.ColStr).Array(),
@@ -861,7 +850,6 @@ func TestClientCompression(t *testing.T) {
 				require.Equal(t, "foo", data.First())
 			})
 			t.Run("Insert", func(t *testing.T) {
-				// Create table, no data fetch.
 				t.Parallel()
 				client := conn(t)
 				createTable := Query{
