@@ -2,9 +2,6 @@ package proto
 
 import (
 	"github.com/go-faster/errors"
-	"golang.org/x/exp/constraints"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 // Compile-time assertions for ColMapOf.
@@ -23,7 +20,7 @@ var (
 )
 
 // ColMapOf implements Map(K, V) as ColumnOf[map[K]V].
-type ColMapOf[K constraints.Ordered, V any] struct {
+type ColMapOf[K comparable, V any] struct {
 	Offsets ColUInt64
 	Keys    ColumnOf[K]
 	Values  ColumnOf[V]
@@ -73,16 +70,11 @@ func (c ColMapOf[K, V]) Row(i int) map[K]V {
 	return m
 }
 
-func (c *ColMapOf[K, V]) Append(v map[K]V) {
-	// Make marshaling deterministic and sort map.
-	keys := maps.Keys(v)
-	slices.Sort(keys)
-
-	for _, k := range keys {
+func (c *ColMapOf[K, V]) Append(m map[K]V) {
+	for k, v := range m {
 		c.Keys.Append(k)
-		c.Values.Append(v[k])
+		c.Values.Append(v)
 	}
-
 	c.Offsets.Append(uint64(c.Keys.Rows()))
 }
 

@@ -10,6 +10,27 @@ import (
 	"github.com/go-faster/ch/internal/gold"
 )
 
+func TestColMapOfGolden(t *testing.T) {
+	v := ColMapOf[string, string]{
+		Keys: &ColStr{}, Values: &ColStr{},
+	}
+	require.Equal(t, ColumnType("Map(String, String)"), v.Type())
+	v.Append(map[string]string{
+		"foo": "bar",
+	})
+	v.Append(map[string]string{
+		"like": "100",
+	})
+	var buf Buffer
+	v.EncodeColumn(&buf)
+
+	t.Run("Golden", func(t *testing.T) {
+		var buf Buffer
+		v.EncodeColumn(&buf)
+		gold.Bytes(t, buf.Buf, "col_map_of_str_str")
+	})
+}
+
 func TestColMapOf(t *testing.T) {
 	v := ColMapOf[string, string]{
 		Keys: &ColStr{}, Values: &ColStr{},
@@ -29,9 +50,6 @@ func TestColMapOf(t *testing.T) {
 	var buf Buffer
 	v.EncodeColumn(&buf)
 
-	t.Run("Golden", func(t *testing.T) {
-		gold.Bytes(t, buf.Buf, "col_map_of_str_str")
-	})
 	t.Run("Ok", func(t *testing.T) {
 		br := bytes.NewReader(buf.Buf)
 		r := NewReader(br)
