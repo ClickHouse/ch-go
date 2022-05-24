@@ -14,7 +14,7 @@ import (
 )
 
 func (c *Client) handshake(ctx context.Context) error {
-	handshakeCtx, cancel := context.WithCancel(ctx)
+	handshakeCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	wg, wgCtx := errgroup.WithContext(ctx)
