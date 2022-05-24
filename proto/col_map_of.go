@@ -13,6 +13,8 @@ var (
 	_ ColResult                   = (*ColMapOf[string, string])(nil)
 	_ Column                      = (*ColMapOf[string, string])(nil)
 	_ ColumnOf[map[string]string] = (*ColMapOf[string, string])(nil)
+	_ StateEncoder                = (*ColMapOf[string, string])(nil)
+	_ StateDecoder                = (*ColMapOf[string, string])(nil)
 
 	_ = ColMapOf[int64, string]{
 		Keys:   new(ColInt64),
@@ -33,6 +35,29 @@ func (c ColMapOf[K, V]) Type() ColumnType {
 
 func (c ColMapOf[K, V]) Rows() int {
 	return c.Offsets.Rows()
+}
+
+func (c *ColMapOf[K, V]) DecodeState(r *Reader) error {
+	if s, ok := c.Keys.(StateDecoder); ok {
+		if err := s.DecodeState(r); err != nil {
+			return errors.Wrap(err, "keys state")
+		}
+	}
+	if s, ok := c.Values.(StateDecoder); ok {
+		if err := s.DecodeState(r); err != nil {
+			return errors.Wrap(err, "values state")
+		}
+	}
+	return nil
+}
+
+func (c ColMapOf[K, V]) EncodeState(b *Buffer) {
+	if s, ok := c.Keys.(StateEncoder); ok {
+		s.EncodeState(b)
+	}
+	if s, ok := c.Values.(StateEncoder); ok {
+		s.EncodeState(b)
+	}
 }
 
 func (c ColMapOf[K, V]) Row(i int) map[K]V {
