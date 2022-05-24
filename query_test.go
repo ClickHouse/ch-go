@@ -722,6 +722,56 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, Conn(t).Do(ctx, selectRand))
 		require.Equal(t, numbers, total)
 	})
+	t.Run("InsertMapOfStringInt64", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		// Create table, no data fetch.
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v Map(String, Int64)) ENGINE = TinyLog",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		data := &proto.ColMapOf[string, int64]{
+			Keys:   new(proto.ColStr),
+			Values: new(proto.ColInt64),
+		}
+		data.AppendArr([]map[string]int64{
+			{
+				"foo": 1,
+				"bar": 100,
+			},
+			{
+				"clickhouse_1": -7,
+				"clickhouse_2": 130,
+				"clickhouse_3": 110,
+			},
+		})
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		gotData := &proto.ColMapOf[string, int64]{
+			Keys:   new(proto.ColStr),
+			Values: new(proto.ColInt64),
+		}
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: gotData},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, selectData), "select")
+		require.Equal(t, data.Rows(), gotData.Rows())
+		for i := 0; i < data.Rows(); i++ {
+			require.Equal(t, data.Row(i), gotData.Row(i))
+		}
+	})
 }
 
 func TestClientCompression(t *testing.T) {

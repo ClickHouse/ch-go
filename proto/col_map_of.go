@@ -1,31 +1,30 @@
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+	"golang.org/x/exp/constraints"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+)
 
 // Compile-time assertions for ColMapOf.
 var (
-	_ ColInput = ColMapOf[string, string]{
-		Keys:   &ColStr{},
-		Values: &ColStr{},
-	}
-	_ ColResult = &ColMapOf[string, string]{
-		Keys:   &ColStr{},
-		Values: &ColStr{},
-	}
-	_ Column = &ColMapOf[string, string]{
-		Keys:   &ColStr{},
-		Values: &ColStr{},
+	_ ColInput                    = (*ColMapOf[string, string])(nil)
+	_ ColResult                   = (*ColMapOf[string, string])(nil)
+	_ Column                      = (*ColMapOf[string, string])(nil)
+	_ ColumnOf[map[string]string] = (*ColMapOf[string, string])(nil)
+
+	_ = ColMapOf[int64, string]{
+		Keys:   new(ColInt64),
+		Values: new(ColStr),
 	}
 )
 
-type ColMapOf[K comparable, V any] struct {
+// ColMapOf implements Map(K, V) as ColumnOf[map[K]V].
+type ColMapOf[K constraints.Ordered, V any] struct {
 	Offsets ColUInt64
 	Keys    ColumnOf[K]
 	Values  ColumnOf[V]
-}
-
-func (c ColMapOf[K, V]) Get(k K) (v V, ok bool) {
-	return v, ok
 }
 
 func (c ColMapOf[K, V]) Type() ColumnType {
@@ -34,6 +33,38 @@ func (c ColMapOf[K, V]) Type() ColumnType {
 
 func (c ColMapOf[K, V]) Rows() int {
 	return c.Offsets.Rows()
+}
+
+func (c ColMapOf[K, V]) Row(i int) map[K]V {
+	m := make(map[K]V)
+	var start int
+	end := int(c.Offsets[i])
+	if i > 0 {
+		start = int(c.Offsets[i-1])
+	}
+	for idx := start; idx < end; idx++ {
+		m[c.Keys.Row(idx)] = c.Values.Row(idx)
+	}
+	return m
+}
+
+func (c *ColMapOf[K, V]) Append(v map[K]V) {
+	// Make marshaling deterministic and sort map.
+	keys := maps.Keys(v)
+	slices.Sort(keys)
+
+	for _, k := range keys {
+		c.Keys.Append(k)
+		c.Values.Append(v[k])
+	}
+
+	c.Offsets.Append(uint64(c.Keys.Rows()))
+}
+
+func (c *ColMapOf[K, V]) AppendArr(v []map[K]V) {
+	for _, m := range v {
+		c.Append(m)
+	}
 }
 
 func (c *ColMapOf[K, V]) DecodeColumn(r *Reader, rows int) error {
