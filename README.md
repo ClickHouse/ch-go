@@ -156,12 +156,12 @@ arr.Row(0) // ["foo", "bar", "baz"]
   - [ ] Close connection on context cancellation in all cases
   - [ ] Ensure that reads can't block forever
 - [ ] TLS
-- [ ] API UX Improvements (with 1.18 generics?)
+- [ ] API UX Improvements (with 1.18 generics)
     - [x] Enum
     - [x] LowCardinality
-    - [ ] Array(T)
-    - [ ] FixedString(N)
-    - [ ] Map(K, V)
+    - [x] Array(T)
+    - [x] FixedString(N)
+    - [x] Map(K, V)
     - [ ] [Decimal(P, S)](https://clickhouse.com/docs/en/sql-reference/data-types/decimal/)
     - [ ] Nullable(T)
     - [ ] Tuple?
