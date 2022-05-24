@@ -45,7 +45,7 @@ func (o *Options) setDefaults() {
 		o.MaxConnIdleTime = DefaultMaxConnIdleTime
 	}
 	if o.MaxConns == 0 {
-		o.MinConns = int32(runtime.NumCPU())
+		o.MaxConns = int32(runtime.NumCPU())
 	}
 	if o.HealthCheckPeriod == 0 {
 		o.HealthCheckPeriod = DefaultHealthCheckPeriod
@@ -75,7 +75,7 @@ func Dial(ctx context.Context, opt Options) (*Pool, error) {
 		},
 		func(c *connResource) {
 			_ = c.client.Close()
-		}, opt.MinConns)
+		}, opt.MaxConns)
 
 	if err := p.createIdleResources(ctx, int(p.options.MinConns)); err != nil {
 		p.Close()
@@ -112,6 +112,16 @@ func (p *Pool) Do(ctx context.Context, q ch.Query) (err error) {
 	defer c.Release()
 
 	return c.Do(ctx, q)
+}
+
+func (p *Pool) Ping(ctx context.Context) error {
+	c, err := p.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer c.Release()
+
+	return c.Ping(ctx)
 }
 
 func (p *Pool) backgroundHealthCheck() {
@@ -163,6 +173,11 @@ func (p *Pool) createIdleResources(ctx context.Context, resourcesCount int) erro
 	}
 
 	return nil
+}
+
+// Stat return pool statistic.
+func (p *Pool) Stat() *puddle.Stat {
+	return p.pool.Stat()
 }
 
 // Close pool.

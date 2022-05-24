@@ -34,6 +34,10 @@ func (c *Client) Do(ctx context.Context, q ch.Query) (err error) {
 	return c.client().Do(ctx, q)
 }
 
+func (c *Client) Ping(ctx context.Context) error {
+	return c.client().Ping(ctx)
+}
+
 func (c *Client) client() *ch.Client {
 	return c.res.Value().client
 }
