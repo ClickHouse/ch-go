@@ -13,6 +13,8 @@ const (
 	ErrorNameKey       = attribute.Key("ch.error.name")
 	BlocksSentKey      = attribute.Key("ch.blocks_sent")
 	BlocksReceivedKey  = attribute.Key("ch.blocks_received")
+	ColumnsReceivedKey = attribute.Key("ch.columns_received")
+	RowsReceivedKey    = attribute.Key("ch.rows_received")
 	RowsKey            = attribute.Key("ch.rows")
 	BytesKey           = attribute.Key("ch.bytes")
 )
@@ -29,6 +31,22 @@ func BlocksSent(v int) attribute.KeyValue {
 func BlocksReceived(v int) attribute.KeyValue {
 	return attribute.KeyValue{
 		Key:   BlocksReceivedKey,
+		Value: attribute.IntValue(v),
+	}
+}
+
+// RowsReceived is cumulative rows received count during query execution.
+func RowsReceived(v int) attribute.KeyValue {
+	return attribute.KeyValue{
+		Key:   RowsReceivedKey,
+		Value: attribute.IntValue(v),
+	}
+}
+
+// ColumnsReceived is count of columns in result.
+func ColumnsReceived(v int) attribute.KeyValue {
+	return attribute.KeyValue{
+		Key:   ColumnsReceivedKey,
 		Value: attribute.IntValue(v),
 	}
 }

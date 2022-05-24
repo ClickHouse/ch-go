@@ -227,7 +227,11 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 	if block.End() {
 		return nil
 	}
-	c.metricsInc(ctx, queryMetrics{BlocksReceived: 1})
+	c.metricsInc(ctx, queryMetrics{
+		BlocksReceived:  1,
+		RowsReceived:    block.Rows,
+		ColumnsReceived: block.Columns,
+	})
 	if err := opt.Handler(ctx, block); err != nil {
 		return errors.Wrap(err, "handler")
 	}
@@ -531,6 +535,8 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			span.SetAttributes(
 				otelch.BlocksSent(m.BlocksSent),
 				otelch.BlocksReceived(m.BlocksReceived),
+				otelch.RowsReceived(m.RowsReceived),
+				otelch.ColumnsReceived(m.ColumnsReceived),
 				otelch.Rows(m.Rows),
 				otelch.Bytes(m.Bytes),
 			)
