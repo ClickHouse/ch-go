@@ -6,12 +6,12 @@ import (
 
 // Compile-time assertions for ColMapOf.
 var (
-	_ ColInput                    = (*ColMapOf[string, string])(nil)
-	_ ColResult                   = (*ColMapOf[string, string])(nil)
-	_ Column                      = (*ColMapOf[string, string])(nil)
-	_ ColumnOf[map[string]string] = (*ColMapOf[string, string])(nil)
-	_ StateEncoder                = (*ColMapOf[string, string])(nil)
-	_ StateDecoder                = (*ColMapOf[string, string])(nil)
+	_ ColInput                 = (*ColMapOf[string, string])(nil)
+	_ ColResult                = (*ColMapOf[string, string])(nil)
+	_ Column                   = (*ColMapOf[string, string])(nil)
+	_ ColumnOf[map[string]int] = (*ColMapOf[string, int])(nil)
+	_ StateEncoder             = (*ColMapOf[string, string])(nil)
+	_ StateDecoder             = (*ColMapOf[string, string])(nil)
 
 	_ = ColMapOf[int64, string]{
 		Keys:   new(ColInt64),
