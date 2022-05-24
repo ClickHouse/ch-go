@@ -106,12 +106,12 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 			// Resembling behavior of clickhouse-client.
 			q.ExternalTable = "_data"
 		}
-		if err := c.encodeBlock(q.ExternalTable, q.ExternalData); err != nil {
+		if err := c.encodeBlock(ctx, q.ExternalTable, q.ExternalData); err != nil {
 			return errors.Wrap(err, "external data")
 		}
 	}
 	// End of external data.
-	if err := c.encodeBlankBlock(); err != nil {
+	if err := c.encodeBlankBlock(ctx); err != nil {
 		return errors.Wrap(err, "external data end")
 	}
 
@@ -227,6 +227,7 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 	if block.End() {
 		return nil
 	}
+	c.metricsInc(ctx, queryMetrics{BlocksReceived: 1})
 	if err := opt.Handler(ctx, block); err != nil {
 		return errors.Wrap(err, "handler")
 	}
@@ -237,7 +238,7 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 //
 // If input length is zero, blank block will be encoded, which is special case
 // for "end of data".
-func (c *Client) encodeBlock(tableName string, input []proto.InputColumn) error {
+func (c *Client) encodeBlock(ctx context.Context, tableName string, input []proto.InputColumn) error {
 	proto.ClientCodeData.Encode(c.buf)
 	clientData := proto.ClientData{
 		// External data table name.
@@ -252,6 +253,7 @@ func (c *Client) encodeBlock(tableName string, input []proto.InputColumn) error 
 		Columns: len(input),
 	}
 	if len(input) > 0 {
+		c.metricsInc(ctx, queryMetrics{BlocksSent: 1})
 		b.Rows = input[0].Data.Rows()
 		b.Info = proto.BlockInfo{
 			// TODO(ernado): investigate and document
@@ -279,8 +281,8 @@ func (c *Client) encodeBlock(tableName string, input []proto.InputColumn) error 
 
 // encodeBlankBlock encodes block with zero columns and rows which is special
 // case for "end of data".
-func (c *Client) encodeBlankBlock() error {
-	return c.encodeBlock("", nil)
+func (c *Client) encodeBlankBlock(ctx context.Context) error {
+	return c.encodeBlock(ctx, "", nil)
 }
 
 func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query) error {
@@ -323,7 +325,7 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 		if err := ctx.Err(); err != nil {
 			return errors.Wrap(err, "context")
 		}
-		if err := c.encodeBlock("", q.Input); err != nil {
+		if err := c.encodeBlock(ctx, "", q.Input); err != nil {
 			return errors.Wrap(err, "write block")
 		}
 		if f == nil {
@@ -347,7 +349,7 @@ End:
 	// End of input stream.
 	//
 	// Encoding that there are no more data.
-	if err := c.encodeBlankBlock(); err != nil {
+	if err := c.encodeBlankBlock(ctx); err != nil {
 		return errors.Wrap(err, "write end of data")
 	}
 
@@ -391,6 +393,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 		if err != nil {
 			return errors.Wrap(err, "progress")
 		}
+		c.metricsInc(ctx, queryMetrics{Rows: int(p.Rows), Bytes: int(p.Bytes)})
 		if ce := c.lg.Check(zap.DebugLevel, "Progress"); ce != nil {
 			ce.Write(
 				zap.Uint64("rows", p.Rows),
@@ -522,8 +525,15 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 				otelch.QueryID(q.QueryID),
 			),
 		)
-		ctx = newCtx
+		m := new(queryMetrics)
+		ctx = context.WithValue(newCtx, ctxQueryKey{}, m)
 		defer func() {
+			span.SetAttributes(
+				otelch.BlocksSent(m.BlocksSent),
+				otelch.BlocksReceived(m.BlocksReceived),
+				otelch.Rows(m.Rows),
+				otelch.Bytes(m.Bytes),
+			)
 			if err != nil {
 				span.RecordError(err)
 				status := "Failed"

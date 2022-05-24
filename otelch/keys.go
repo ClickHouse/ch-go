@@ -11,7 +11,43 @@ const (
 	ServerNameKey      = attribute.Key("ch.server.name")
 	ErrorCodeKey       = attribute.Key("ch.error.code")
 	ErrorNameKey       = attribute.Key("ch.error.name")
+	BlocksSentKey      = attribute.Key("ch.blocks_sent")
+	BlocksReceivedKey  = attribute.Key("ch.blocks_received")
+	RowsKey            = attribute.Key("ch.rows")
+	BytesKey           = attribute.Key("ch.bytes")
 )
+
+// BlocksSent is cumulative blocks sent count during query execution.
+func BlocksSent(v int) attribute.KeyValue {
+	return attribute.KeyValue{
+		Key:   BlocksSentKey,
+		Value: attribute.IntValue(v),
+	}
+}
+
+// BlocksReceived is cumulative received sent count during query execution.
+func BlocksReceived(v int) attribute.KeyValue {
+	return attribute.KeyValue{
+		Key:   BlocksReceivedKey,
+		Value: attribute.IntValue(v),
+	}
+}
+
+// Rows is cumulative rows processed count during query execution.
+func Rows(v int) attribute.KeyValue {
+	return attribute.KeyValue{
+		Key:   RowsKey,
+		Value: attribute.IntValue(v),
+	}
+}
+
+// Bytes is cumulative bytes processed count during query execution.
+func Bytes(v int) attribute.KeyValue {
+	return attribute.KeyValue{
+		Key:   BytesKey,
+		Value: attribute.IntValue(v),
+	}
+}
 
 // QueryID attribute.
 func QueryID(v string) attribute.KeyValue {
