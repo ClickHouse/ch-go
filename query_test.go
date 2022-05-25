@@ -761,6 +761,49 @@ func TestClient_Query(t *testing.T) {
 			require.Equal(t, data.Row(i), gotData.Row(i))
 		}
 	})
+	t.Run("InsertNullableString", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v Nullable(String)) ENGINE = Memory",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		data := &proto.ColNullableOf[string]{
+			Values: new(proto.ColStr),
+		}
+		data.AppendArr([]proto.Nullable[string]{
+			proto.Null[string](),
+			proto.NewNullable("hello"),
+			proto.NewNullable("world"),
+			proto.Null[string](),
+			proto.Null[string](),
+			proto.NewNullable("end"),
+		})
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		gotData := &proto.ColNullableOf[string]{
+			Values: new(proto.ColStr),
+		}
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: gotData},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, selectData), "select")
+		require.Equal(t, data.Rows(), gotData.Rows())
+		for i := 0; i < data.Rows(); i++ {
+			require.Equal(t, data.Row(i), gotData.Row(i))
+		}
+	})
 }
 
 func TestClientCompression(t *testing.T) {
