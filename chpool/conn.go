@@ -1,8 +1,9 @@
 package chpool
 
 import (
-	"github.com/go-faster/ch"
 	puddle "github.com/jackc/puddle/puddleg"
+
+	"github.com/go-faster/ch"
 )
 
 type connResource struct {

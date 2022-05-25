@@ -10,6 +10,7 @@ require (
 	github.com/go-faster/errors v0.5.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-version v1.5.0
+	github.com/jackc/puddle v1.2.2-0.20220404125616-4e959849469a
 	github.com/klauspost/compress v1.15.4
 	github.com/pierrec/lz4/v4 v4.1.14
 	github.com/segmentio/asm v1.2.0
@@ -29,7 +30,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/jackc/puddle v1.2.2-0.20220404125616-4e959849469a // indirect
 	github.com/pascaldekloe/name v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect

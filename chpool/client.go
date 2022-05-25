@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-faster/ch"
 	puddle "github.com/jackc/puddle/puddleg"
+
+	"github.com/go-faster/ch"
 )
 
 // Client is an acquired *ch.Client from a Pool.

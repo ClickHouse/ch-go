@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
+
 	"github.com/go-faster/ch"
 	"github.com/go-faster/ch/cht"
 	"github.com/go-faster/ch/proto"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 )
 
 func PoolConnOpt(t testing.TB, opt Options) *Pool {
