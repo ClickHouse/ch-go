@@ -110,6 +110,10 @@ issues:
     - linters: [ govet ]
       text: 'declaration of "(err|ctx|log|lg|c)"'
 
+    # Probably some broken linter for generics?
+    - linters: [ revive ]
+      text: 'receiver-naming: receiver name \S+ should be consistent with previous receiver name \S+ for invalid-type'
+
     # Ignore linters in main packages.
     - path: main\.go
       linters: [ goconst, funlen, gocognit, gocyclo ]

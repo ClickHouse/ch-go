@@ -84,7 +84,7 @@ q := ch.Query{
 ## Features
 * OpenTelemetry support
 * No reflection or `interface{}`
-* Generics (go1.18) for `ArrayOf[T]`, `LowCardinaliyOf[T]`, `MapOf[K, V]`
+* Generics (go1.18) for `ArrayOf[T]`, `LowCardinaliyOf[T]`, `MapOf[K, V]`, `NullableOf[T]`
 * **Column**-oriented design that operates with **blocks**
   * [Dramatically more efficient](https://github.com/go-faster/ch-bench)
   * Up to 100x faster than row-first design around `sql`
