@@ -159,7 +159,7 @@ func (p *Pool) checkMinConns() {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
-			p.pool.CreateResource(ctx)
+			_ = p.pool.CreateResource(ctx)
 		}()
 	}
 }

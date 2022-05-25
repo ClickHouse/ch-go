@@ -22,7 +22,7 @@ func (c *Client) Release() {
 
 	client := c.client()
 
-	if client.IsClosed() || time.Now().Sub(c.res.CreationTime()) > c.p.options.MaxConnLifetime {
+	if client.IsClosed() || time.Since(c.res.CreationTime()) > c.p.options.MaxConnLifetime {
 		c.res.Destroy()
 		return
 	}
