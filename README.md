@@ -151,7 +151,7 @@ arr.Row(0) // ["foo", "bar", "baz"]
 ```
 
 ## TODO
-- [ ] Connection pools
+- [x] Connection pools
 - [ ] Improved i/o timeout handling
   - [ ] Close connection on context cancellation in all cases
   - [ ] Ensure that reads can't block forever
