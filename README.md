@@ -130,6 +130,7 @@ q := ch.Query{
 * Bool
 * Tuple(T1, T2, ..., Tn)
 * Nullable(T)
+* Point
 
 ## Generics
 
