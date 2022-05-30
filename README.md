@@ -164,8 +164,7 @@ arr.Row(0) // ["foo", "bar", "baz"]
     - [x] FixedString(N)
     - [x] Map(K, V)
     - [ ] [Decimal(P, S)](https://clickhouse.com/docs/en/sql-reference/data-types/decimal/)
-    - [ ] Nullable(T)
-    - [ ] Tuple?
+    - [x] Nullable(T)
 - [ ] Code generation from DDL
   - [ ] Parser
   - [ ] Code generator for SELECT/INSERT
