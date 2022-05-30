@@ -7,7 +7,7 @@ require (
 	github.com/dmarkham/enumer v1.5.5
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-faster/city v1.0.1
-	github.com/go-faster/errors v0.5.0
+	github.com/go-faster/errors v0.6.0
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-version v1.5.0
 	github.com/jackc/puddle v1.2.2-0.20220404125616-4e959849469a
