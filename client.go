@@ -2,6 +2,7 @@ package ch
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
@@ -302,8 +303,11 @@ type Options struct {
 	User        string      // "default"
 	Password    string      // blank string by default
 	Compression Compression // disabled by default
-	Dialer      Dialer      // defaults to net.Dialer
 	Settings    []Setting   // none by default
+
+	Dialer      Dialer        // defaults to net.Dialer
+	DialTimeout time.Duration // defaults to 1s
+	TLS         *tls.Config   // no TLS is used by default
 
 	// Additional OpenTelemetry instrumentation that will capture query body
 	// and other parameters.
@@ -319,10 +323,11 @@ type Options struct {
 
 // Defaults for connection.
 const (
-	DefaultDatabase = "default"
-	DefaultUser     = "default"
-	DefaultHost     = "127.0.0.1"
-	DefaultPort     = 9000
+	DefaultDatabase    = "default"
+	DefaultUser        = "default"
+	DefaultHost        = "127.0.0.1"
+	DefaultPort        = 9000
+	DefaultDialTimeout = 1 * time.Second
 )
 
 func (o *Options) setDefaults() {
@@ -338,8 +343,13 @@ func (o *Options) setDefaults() {
 	if o.Address == "" {
 		o.Address = net.JoinHostPort(DefaultHost, strconv.Itoa(DefaultPort))
 	}
+	if o.DialTimeout == 0 {
+		o.DialTimeout = DefaultDialTimeout
+	}
 	if o.Dialer == nil {
-		o.Dialer = &net.Dialer{}
+		o.Dialer = &net.Dialer{
+			Timeout: o.DialTimeout,
+		}
 	}
 	if o.MeterProvider == nil {
 		o.MeterProvider = nonrecording.NewNoopMeterProvider()
@@ -456,6 +466,23 @@ func Dial(ctx context.Context, opt Options) (c *Client, err error) {
 			}
 			span.End()
 		}()
+	}
+
+	if opt.TLS != nil {
+		netDialer := &net.Dialer{
+			Timeout: opt.DialTimeout,
+		}
+		if opt.Dialer != nil {
+			d, ok := opt.Dialer.(*net.Dialer)
+			if !ok {
+				return nil, errors.Errorf("tls dialer should be *net.Dialer, got %T", opt.Dialer)
+			}
+			netDialer = d
+		}
+		opt.Dialer = &tls.Dialer{
+			NetDialer: netDialer,
+			Config:    opt.TLS,
+		}
 	}
 
 	conn, err := opt.Dialer.DialContext(ctx, "tcp", opt.Address)
