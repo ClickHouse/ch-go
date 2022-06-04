@@ -8,6 +8,39 @@ import (
 	"github.com/go-faster/ch/proto"
 )
 
+type MapPair[V comparable] struct {
+	Keys   *proto.ColArrOf[string]
+	Values *proto.ColArrOf[V]
+}
+
+func (m MapPair[V]) Row(i int) ([]string, []V) {
+	return m.Keys.Row(i), m.Values.Row(i)
+}
+
+func (m MapPair[V]) Append(k []string, v []V) {
+	m.Keys.Append(k)
+	m.Values.Append(v)
+}
+
+func NewMapPair[X comparable](v proto.ColumnOf[X]) MapPair[X] {
+	return MapPair[X]{
+		Keys:   proto.ArrayOf[string](new(proto.ColStr).LowCardinality()),
+		Values: proto.ArrayOf(v),
+	}
+}
+
+type MapPairs struct {
+	Strings MapPair[string]
+	Ints    MapPair[int64]
+}
+
+func NewMapPairs() MapPairs {
+	return MapPairs{
+		Strings: NewMapPair[string](&proto.ColStr{}),
+		Ints:    NewMapPair[int64](&proto.ColInt64{}),
+	}
+}
+
 // OTEL is OpenTelemetry log model.
 type OTEL struct {
 	Body      proto.ColStr
@@ -19,16 +52,8 @@ type OTEL struct {
 	SpanID  proto.ColFixedStr
 
 	// K(String):V(String) for attributes.
-	AttrStringValues    proto.ColStr
-	AttrStringValuesArr proto.ColArr
-	AttrStringKeys      proto.ColStr
-	AttrStringKeysArr   proto.ColArr
-
-	// K(String):V(String) for resource.
-	ResStringValues    proto.ColStr
-	ResStringValuesArr proto.ColArr
-	ResStringKeys      proto.ColStr
-	ResStringKeysArr   proto.ColArr
+	Attr MapPairs
+	Res  MapPairs
 }
 
 func (t *OTEL) Input() proto.Input {
@@ -40,11 +65,11 @@ func (t *OTEL) Input() proto.Input {
 		{Name: "severity_text", Data: &t.SevText},
 		{Name: "severity_number", Data: t.SevNumber},
 
-		{Name: "attr_str_keys", Data: t.AttrStringKeysArr},
-		{Name: "attr_str_values", Data: t.AttrStringValuesArr},
+		{Name: "attr_str_keys", Data: t.Attr.Strings.Keys},
+		{Name: "attr_str_values", Data: t.Attr.Strings.Values},
 
-		{Name: "res_str_keys", Data: t.ResStringKeysArr},
-		{Name: "res_str_values", Data: t.ResStringValuesArr},
+		{Name: "res_str_keys", Data: t.Res.Strings.Keys},
+		{Name: "res_str_values", Data: t.Res.Strings.Values},
 	}
 }
 
@@ -73,26 +98,17 @@ func (t *OTEL) Append(row OTELRow) {
 	t.TraceID.Append(row.TraceID[:])
 	t.SpanID.Append(row.SpanID[:])
 
-	t.ResStringKeys.ArrAppend(&t.ResStringKeysArr, row.ResKeys)
-	t.ResStringValues.ArrAppend(&t.ResStringValuesArr, row.ResValues)
-
-	t.AttrStringKeys.ArrAppend(&t.AttrStringKeysArr, row.AttrKeys)
-	t.AttrStringValues.ArrAppend(&t.AttrStringValuesArr, row.AttrValues)
+	t.Res.Strings.Append(row.ResKeys, row.ResValues)
+	t.Attr.Strings.Append(row.AttrKeys, row.AttrValues)
 }
 
 func NewOTEL() *OTEL {
-	t := &OTEL{}
-
-	// Bind arrays.
-	t.AttrStringKeysArr.Data = &t.AttrStringKeys
-	t.AttrStringValuesArr.Data = &t.AttrStringValues
-
-	t.ResStringValuesArr.Data = &t.ResStringValues
-	t.ResStringKeysArr.Data = &t.ResStringKeys
-
-	t.TraceID = proto.ColFixedStr{Size: 16}
-	t.SpanID = proto.ColFixedStr{Size: 8}
-
+	t := &OTEL{
+		TraceID: proto.ColFixedStr{Size: 16},
+		SpanID:  proto.ColFixedStr{Size: 8},
+		Res:     NewMapPairs(),
+		Attr:    NewMapPairs(),
+	}
 	if err := t.SevText.Infer(`Enum8('TRACE'=1, 'DEBUG'=2, 'INFO'=3, 'WARN'=4, 'ERROR'=5, 'FATAL'=6)`); err != nil {
 		panic(err)
 	}
