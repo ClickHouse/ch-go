@@ -14,7 +14,7 @@ require (
 	github.com/klauspost/compress v1.15.6
 	github.com/pierrec/lz4/v4 v4.1.14
 	github.com/segmentio/asm v1.2.0
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/metric v0.30.0
 	go.opentelemetry.io/otel/sdk v1.7.0
@@ -36,5 +36,5 @@ require (
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/tools v0.1.11-0.20220415161144-46bc274e027b // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
