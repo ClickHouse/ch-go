@@ -39,5 +39,5 @@ func ExampleQuery_multipleInputColumns() {
 	fmt.Println(input.Into("logs"))
 
 	// Output:
-	// INSERT INTO logs (timestamp, severity_text, severity_number, body, name, arr) VALUES
+	// INSERT INTO "logs" ("timestamp","severity_text","severity_number","body","name","arr") VALUES
 }

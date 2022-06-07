@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/go-faster/errors"
@@ -68,16 +69,27 @@ type Input []InputColumn
 
 // Into returns INSERT INTO table (c0, c..., cn) VALUES query.
 func (i Input) Into(table string) string {
-	return fmt.Sprintf("INSERT INTO %s %s VALUES", table, i.Columns())
+	return fmt.Sprintf("INSERT INTO %s %s VALUES", strconv.QuoteToASCII(table), i.Columns())
 }
 
 // Columns returns "(foo, bar, baz)" formatted list of Input column names.
 func (i Input) Columns() string {
-	var names []string
-	for _, v := range i {
-		names = append(names, v.Name)
+	var (
+		b   strings.Builder
+		buf [64]byte
+	)
+
+	b.WriteRune('(')
+	for idx, v := range i {
+		escaped := strconv.AppendQuoteToASCII(buf[:0], v.Name)
+		b.Write(escaped)
+		if idx != len(i)-1 {
+			b.WriteRune(',')
+		}
 	}
-	return fmt.Sprintf("(%s)", strings.Join(names, ", "))
+	b.WriteRune(')')
+
+	return b.String()
 }
 
 type InputColumn struct {
