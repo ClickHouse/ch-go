@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 func TestClient_Query_Raw(t *testing.T) {

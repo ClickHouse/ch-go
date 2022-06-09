@@ -2,4 +2,4 @@
 package otelch
 
 // Name of instrumentation.
-const Name = "github.com/go-faster/ch"
+const Name = "github.com/ClickHouse/ch-go"

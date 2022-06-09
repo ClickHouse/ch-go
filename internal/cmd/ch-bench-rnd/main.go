@@ -11,8 +11,8 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/go-faster/errors"
 
-	"github.com/go-faster/ch"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 func run(ctx context.Context) error {

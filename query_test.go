@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 func TestClient_Query(t *testing.T) {

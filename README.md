@@ -1,15 +1,14 @@
-# ch [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/go-faster/ch#section-documentation) [![](https://img.shields.io/codecov/c/github/go-faster/ch?label=cover)](https://codecov.io/gh/go-faster/ch) [![experimental](https://img.shields.io/badge/-experimental-blueviolet)](https://go-faster.org/docs/projects/status#experimental)
+# ch [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/ClickHouse/ch-go#section-documentation)
+Low level TCP [ClickHouse](https://clickhouse.com/) client and protocol implementation in Go. Designed for very fast data block streaming with low network, cpu and memory overhead.
 
-TCP [ClickHouse](https://clickhouse.com/) client in Go. Designed for very fast data block streaming with low network, cpu and memory overhead.
-
-* [Feedback](https://github.com/go-faster/ch/discussions/6)
-* [Benchmarks](https://github.com/go-faster/ch-bench#benchmarks)
+* [Feedback](https://github.com/ClickHouse/ch-go/discussions/6)
+* [Benchmarks](https://github.com/ClickHouse/ch-go-bench#benchmarks)
 * [Protocol reference](https://go-faster.org/docs/clickhouse)
 
 *[ClickHouse](https://clickhouse.com/) is an open-source, high performance columnar OLAP database management system for real-time analytics using SQL.*
 
 ```console
-go get github.com/go-faster/ch@latest
+go get github.com/ClickHouse/ch-go@latest
 ```
 
 ## Example
@@ -20,8 +19,8 @@ import (
   "context"
   "fmt"
 
-  "github.com/go-faster/ch"
-  "github.com/go-faster/ch/proto"
+  "github.com/ClickHouse/ch-go"
+  "github.com/ClickHouse/ch-go/proto"
 )
 
 func main() {
@@ -58,7 +57,7 @@ func main() {
 
 ### Results
 
-To stream query results, set `Result` and `OnResult` fields of [Query](https://pkg.go.dev/github.com/go-faster/ch#Query).
+To stream query results, set `Result` and `OnResult` fields of [Query](https://pkg.go.dev/github.com/ClickHouse/ch-go#Query).
 The `OnResult` will be called after `Result` is filled with received data block.
 
 The `OnResult` is optional, but query will fail if more than single block is received, so it is ok to solely set the `Result`
@@ -87,7 +86,7 @@ q := ch.Query{
 * No reflection or `interface{}`
 * Generics (go1.18) for `ArrayOf[T]`, `LowCardinaliyOf[T]`, `MapOf[K, V]`, `NullableOf[T]`
 * **Column**-oriented design that operates with **blocks**
-  * [Dramatically more efficient](https://github.com/go-faster/ch-bench)
+  * [Dramatically more efficient](https://github.com/ClickHouse/ch-go-bench)
   * Up to 100x faster than row-first design around `sql`
   * Up to 700x faster than HTTP API
   * Low memory overhead (data blocks are slices, i.e. continuous memory)

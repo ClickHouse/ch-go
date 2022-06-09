@@ -15,7 +15,7 @@ linters-settings:
   lll:
     line-length: 140
   goimports:
-    local-prefixes: github.com/go-faster/ch
+    local-prefixes: github.com/ClickHouse/ch-go
   gocritic:
     enabled-tags:
       - diagnostic

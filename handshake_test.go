@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-faster/ch/cht"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/cht"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 func TestDial_Exception(t *testing.T) {

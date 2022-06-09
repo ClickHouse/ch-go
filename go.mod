@@ -1,4 +1,4 @@
-module github.com/go-faster/ch
+module github.com/ClickHouse/ch-go
 
 go 1.18
 

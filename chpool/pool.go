@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-faster/ch"
+	"github.com/ClickHouse/ch-go"
 
 	puddle "github.com/jackc/puddle/puddleg"
 )

@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/go-faster/ch/otelch"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/otelch"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 func (c *Client) handshake(ctx context.Context) error {

@@ -26,7 +26,7 @@ type Value struct {
 // Extract version Value from BuildInfo.
 func Extract(info *debug.BuildInfo) Value {
 	var raw string
-	const pkg = "github.com/go-faster/ch"
+	const pkg = "github.com/ClickHouse/ch-go"
 	if strings.HasPrefix(info.Main.Path, pkg) {
 		raw = info.Main.Version
 	}
