@@ -174,7 +174,6 @@ arr.Row(0) // ["foo", "bar", "baz"]
 - [ ] Reading and writing *Native* format dumps
 
 ## Reference
-
 * [clickhouse-cpp](https://github.com/ClickHouse/clickhouse-cpp)
 * [clickhouse-go](https://github.com/ClickHouse/clickhouse-go)
 * [python driver](https://github.com/mymarilyn/clickhouse-driver)
