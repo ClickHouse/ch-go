@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-faster/ch/internal/gold"
+	"github.com/ClickHouse/ch-go/internal/gold"
 )
 
 func TestColFloat32_DecodeColumn(t *testing.T) {

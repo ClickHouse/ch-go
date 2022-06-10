@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-faster/ch/internal/gold"
+	"github.com/ClickHouse/ch-go/internal/gold"
 )
 
 func (c *ColInt8) ArrAppend(arr *ColArr, data []int8) {

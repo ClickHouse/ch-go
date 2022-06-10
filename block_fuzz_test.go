@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-faster/ch/internal/gold"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/internal/gold"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 func encodeTestStrBlock() []byte {

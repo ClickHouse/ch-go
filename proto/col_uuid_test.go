@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-faster/ch/internal/gold"
+	"github.com/ClickHouse/ch-go/internal/gold"
 )
 
 func TestColUUID_DecodeColumn(t *testing.T) {

@@ -1,6 +1,6 @@
 package otelch
 
-import "github.com/go-faster/ch/internal/version"
+import "github.com/ClickHouse/ch-go/internal/version"
 
 // Version is the current release version of the ch instrumentation.
 func Version() string {

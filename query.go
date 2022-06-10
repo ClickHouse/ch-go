@@ -18,9 +18,9 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/go-faster/ch/internal/compress"
-	"github.com/go-faster/ch/otelch"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/internal/compress"
+	"github.com/ClickHouse/ch-go/otelch"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 // cancelQuery cancels current query.

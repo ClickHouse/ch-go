@@ -10,9 +10,9 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/go-faster/ch"
-	"github.com/go-faster/ch/internal/cmd/app"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go"
+	"github.com/ClickHouse/ch-go/internal/cmd/app"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 const ddl = `CREATE TABLE IF NOT EXISTS ch_insert_lag  (

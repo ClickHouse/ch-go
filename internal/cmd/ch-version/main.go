@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/go-faster/ch/internal/version"
+	"github.com/ClickHouse/ch-go/internal/version"
 )
 
 func main() {

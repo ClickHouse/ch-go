@@ -11,8 +11,8 @@ import (
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 
-	"github.com/go-faster/ch/internal/compress"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/internal/compress"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 // Server is basic ClickHouse server.

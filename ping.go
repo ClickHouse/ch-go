@@ -7,8 +7,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/go-faster/ch/otelch"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/otelch"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 // Ping server.

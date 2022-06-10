@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
-	"github.com/go-faster/ch/cht"
-	"github.com/go-faster/ch/internal/gold"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/cht"
+	"github.com/ClickHouse/ch-go/internal/gold"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 func TestMain(m *testing.M) {

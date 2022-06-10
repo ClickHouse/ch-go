@@ -6,7 +6,7 @@ import (
 
 	puddle "github.com/jackc/puddle/puddleg"
 
-	"github.com/go-faster/ch"
+	"github.com/ClickHouse/ch-go"
 )
 
 // Client is an acquired *ch.Client from a Pool.

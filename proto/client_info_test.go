@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/go-faster/ch/internal/gold"
+	"github.com/ClickHouse/ch-go/internal/gold"
 )
 
 func TestClientInfo_EncodeAware(t *testing.T) {

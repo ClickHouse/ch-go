@@ -11,7 +11,7 @@ import (
 	"github.com/go-faster/city"
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-faster/ch/internal/gold"
+	"github.com/ClickHouse/ch-go/internal/gold"
 )
 
 func TestMain(m *testing.M) {

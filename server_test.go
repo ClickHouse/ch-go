@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/go-faster/ch/cht"
-	"github.com/go-faster/ch/internal/ztest"
+	"github.com/ClickHouse/ch-go/cht"
+	"github.com/ClickHouse/ch-go/internal/ztest"
 )
 
 func TestServer_Serve(t *testing.T) {

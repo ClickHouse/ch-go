@@ -19,10 +19,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
-	"github.com/go-faster/ch/internal/compress"
-	pkgVersion "github.com/go-faster/ch/internal/version"
-	"github.com/go-faster/ch/otelch"
-	"github.com/go-faster/ch/proto"
+	"github.com/ClickHouse/ch-go/internal/compress"
+	pkgVersion "github.com/ClickHouse/ch-go/internal/version"
+	"github.com/ClickHouse/ch-go/otelch"
+	"github.com/ClickHouse/ch-go/proto"
 )
 
 // Client implements ClickHouse binary protocol client on top of
