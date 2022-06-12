@@ -43,7 +43,11 @@ func (c *ColAuto) Infer(t ColumnType) error {
 			c.DataType = t
 			return nil
 		case ColumnTypeDateTime64:
-			c.Data = new(ColDateTime)
+			v := new(ColDateTime64Auto)
+			if err := v.Infer(t); err != nil {
+				return errors.Wrap(err, "datetime")
+			}
+			c.Data = v
 			c.DataType = t
 			return nil
 		}
