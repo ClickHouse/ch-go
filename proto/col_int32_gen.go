@@ -32,11 +32,6 @@ func (c *ColInt32) Append(v int32) {
 	*c = append(*c, v)
 }
 
-// AppendArr appends slice of int32 to column.
-func (c *ColInt32) AppendArr(v []int32) {
-	*c = append(*c, v...)
-}
-
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColInt32) Reset() {
 	*c = (*c)[:0]
@@ -57,15 +52,8 @@ func (c *ColInt32) Array() *ColArrOf[int32] {
 }
 
 // NewArrInt32 returns new Array(Int32).
-func NewArrInt32() *ColArr {
-	return &ColArr{
+func NewArrInt32() *ColArrOf[int32] {
+	return &ColArrOf[int32]{
 		Data: new(ColInt32),
 	}
-}
-
-// AppendInt32 appends slice of int32 to Array(Int32).
-func (c *ColArr) AppendInt32(data []int32) {
-	d := c.Data.(*ColInt32)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }

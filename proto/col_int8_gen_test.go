@@ -66,7 +66,7 @@ func TestColInt8Array(t *testing.T) {
 	const rows = 50
 	data := NewArrInt8()
 	for i := 0; i < rows; i++ {
-		data.AppendInt8([]int8{
+		data.Append([]int8{
 			int8(i),
 			int8(i + 1),
 			int8(i + 2),

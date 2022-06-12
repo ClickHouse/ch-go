@@ -33,11 +33,6 @@ func (c *{{ .Type }}) Append(v {{ .ElemType }})  {
 	*c = append(*c, v)
 }
 
-// AppendArr appends slice of {{ .ElemType }} to column.
-func (c *{{ .Type }}) AppendArr(v []{{ .ElemType }})  {
-	*c = append(*c, v...)
-}
-
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *{{ .Type }}) Reset() {
 	*c = (*c)[:0]
@@ -58,15 +53,8 @@ func (c *{{ .Type }}) Array() *ColArrOf[{{ .ElemType }}] {
 }
 
 // NewArr{{ .Name }} returns new Array({{ .Name }}).
-func NewArr{{ .Name }}() *ColArr {
-	return &ColArr{
+func NewArr{{ .Name }}() *ColArrOf[{{ .ElemType }}] {
+	return &ColArrOf[{{ .ElemType }}]{
 		Data: new({{ .Type }}),
-  }
-}
-
-// Append{{ .Name }} appends slice of {{ .ElemType }} to Array({{ .Name }}).
-func (c *ColArr) Append{{ .Name }}(data []{{ .ElemType }}) {
-	d := c.Data.(*{{ .Type }})
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
+	}
 }

@@ -66,7 +66,7 @@ func TestColUInt16Array(t *testing.T) {
 	const rows = 50
 	data := NewArrUInt16()
 	for i := 0; i < rows; i++ {
-		data.AppendUInt16([]uint16{
+		data.Append([]uint16{
 			uint16(i),
 			uint16(i + 1),
 			uint16(i + 2),

@@ -67,7 +67,7 @@ func Test{{ .Type }}Array(t *testing.T) {
 	const rows = 50
 	data := NewArr{{ .Name }}()
 	for i := 0; i < rows; i++ {
-		data.Append{{ .Name }}([]{{ .ElemType }}{
+		data.Append([]{{ .ElemType }}{
 			{{ .New }}(i),
 			{{ .New }}(i+1),
 			{{ .New }}(i+2),

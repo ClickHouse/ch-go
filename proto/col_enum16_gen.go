@@ -32,11 +32,6 @@ func (c *ColEnum16) Append(v Enum16) {
 	*c = append(*c, v)
 }
 
-// AppendArr appends slice of Enum16 to column.
-func (c *ColEnum16) AppendArr(v []Enum16) {
-	*c = append(*c, v...)
-}
-
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColEnum16) Reset() {
 	*c = (*c)[:0]
@@ -57,15 +52,8 @@ func (c *ColEnum16) Array() *ColArrOf[Enum16] {
 }
 
 // NewArrEnum16 returns new Array(Enum16).
-func NewArrEnum16() *ColArr {
-	return &ColArr{
+func NewArrEnum16() *ColArrOf[Enum16] {
+	return &ColArrOf[Enum16]{
 		Data: new(ColEnum16),
 	}
-}
-
-// AppendEnum16 appends slice of Enum16 to Array(Enum16).
-func (c *ColArr) AppendEnum16(data []Enum16) {
-	d := c.Data.(*ColEnum16)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }

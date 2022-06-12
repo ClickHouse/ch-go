@@ -66,7 +66,7 @@ func TestColDecimal32Array(t *testing.T) {
 	const rows = 50
 	data := NewArrDecimal32()
 	for i := 0; i < rows; i++ {
-		data.AppendDecimal32([]Decimal32{
+		data.Append([]Decimal32{
 			Decimal32(i),
 			Decimal32(i + 1),
 			Decimal32(i + 2),

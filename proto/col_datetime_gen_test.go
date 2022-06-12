@@ -66,7 +66,7 @@ func TestColDateTimeArray(t *testing.T) {
 	const rows = 50
 	data := NewArrDateTime()
 	for i := 0; i < rows; i++ {
-		data.AppendDateTime([]DateTime{
+		data.Append([]DateTime{
 			DateTime(i),
 			DateTime(i + 1),
 			DateTime(i + 2),

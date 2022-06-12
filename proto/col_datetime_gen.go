@@ -32,11 +32,6 @@ func (c *ColDateTime) Append(v DateTime) {
 	*c = append(*c, v)
 }
 
-// AppendArr appends slice of DateTime to column.
-func (c *ColDateTime) AppendArr(v []DateTime) {
-	*c = append(*c, v...)
-}
-
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDateTime) Reset() {
 	*c = (*c)[:0]
@@ -57,15 +52,8 @@ func (c *ColDateTime) Array() *ColArrOf[DateTime] {
 }
 
 // NewArrDateTime returns new Array(DateTime).
-func NewArrDateTime() *ColArr {
-	return &ColArr{
+func NewArrDateTime() *ColArrOf[DateTime] {
+	return &ColArrOf[DateTime]{
 		Data: new(ColDateTime),
 	}
-}
-
-// AppendDateTime appends slice of DateTime to Array(DateTime).
-func (c *ColArr) AppendDateTime(data []DateTime) {
-	d := c.Data.(*ColDateTime)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }

@@ -66,7 +66,7 @@ func TestColInt256Array(t *testing.T) {
 	const rows = 50
 	data := NewArrInt256()
 	for i := 0; i < rows; i++ {
-		data.AppendInt256([]Int256{
+		data.Append([]Int256{
 			Int256FromInt(i),
 			Int256FromInt(i + 1),
 			Int256FromInt(i + 2),

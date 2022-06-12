@@ -66,7 +66,7 @@ func TestColUInt64Array(t *testing.T) {
 	const rows = 50
 	data := NewArrUInt64()
 	for i := 0; i < rows; i++ {
-		data.AppendUInt64([]uint64{
+		data.Append([]uint64{
 			uint64(i),
 			uint64(i + 1),
 			uint64(i + 2),

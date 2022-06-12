@@ -32,11 +32,6 @@ func (c *ColIPv4) Append(v IPv4) {
 	*c = append(*c, v)
 }
 
-// AppendArr appends slice of IPv4 to column.
-func (c *ColIPv4) AppendArr(v []IPv4) {
-	*c = append(*c, v...)
-}
-
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColIPv4) Reset() {
 	*c = (*c)[:0]
@@ -57,15 +52,8 @@ func (c *ColIPv4) Array() *ColArrOf[IPv4] {
 }
 
 // NewArrIPv4 returns new Array(IPv4).
-func NewArrIPv4() *ColArr {
-	return &ColArr{
+func NewArrIPv4() *ColArrOf[IPv4] {
+	return &ColArrOf[IPv4]{
 		Data: new(ColIPv4),
 	}
-}
-
-// AppendIPv4 appends slice of IPv4 to Array(IPv4).
-func (c *ColArr) AppendIPv4(data []IPv4) {
-	d := c.Data.(*ColIPv4)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }

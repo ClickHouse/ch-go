@@ -58,7 +58,7 @@ func encodeTestIPv6Block() []byte {
 			ip := netip.MustParseAddr(s)
 			values = append(values, proto.ToIPv6(ip))
 		}
-		arr.AppendIPv6(values)
+		arr.Append(values)
 	}
 	input := []proto.InputColumn{
 		{

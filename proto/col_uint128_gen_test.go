@@ -66,7 +66,7 @@ func TestColUInt128Array(t *testing.T) {
 	const rows = 50
 	data := NewArrUInt128()
 	for i := 0; i < rows; i++ {
-		data.AppendUInt128([]UInt128{
+		data.Append([]UInt128{
 			UInt128FromInt(i),
 			UInt128FromInt(i + 1),
 			UInt128FromInt(i + 2),

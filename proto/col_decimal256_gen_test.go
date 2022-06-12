@@ -66,7 +66,7 @@ func TestColDecimal256Array(t *testing.T) {
 	const rows = 50
 	data := NewArrDecimal256()
 	for i := 0; i < rows; i++ {
-		data.AppendDecimal256([]Decimal256{
+		data.Append([]Decimal256{
 			Decimal256FromInt(i),
 			Decimal256FromInt(i + 1),
 			Decimal256FromInt(i + 2),
