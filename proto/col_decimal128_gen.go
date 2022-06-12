@@ -32,11 +32,6 @@ func (c *ColDecimal128) Append(v Decimal128) {
 	*c = append(*c, v)
 }
 
-// AppendArr appends slice of Decimal128 to column.
-func (c *ColDecimal128) AppendArr(v []Decimal128) {
-	*c = append(*c, v...)
-}
-
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDecimal128) Reset() {
 	*c = (*c)[:0]
@@ -57,15 +52,8 @@ func (c *ColDecimal128) Array() *ColArrOf[Decimal128] {
 }
 
 // NewArrDecimal128 returns new Array(Decimal128).
-func NewArrDecimal128() *ColArr {
-	return &ColArr{
+func NewArrDecimal128() *ColArrOf[Decimal128] {
+	return &ColArrOf[Decimal128]{
 		Data: new(ColDecimal128),
 	}
-}
-
-// AppendDecimal128 appends slice of Decimal128 to Array(Decimal128).
-func (c *ColArr) AppendDecimal128(data []Decimal128) {
-	d := c.Data.(*ColDecimal128)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }

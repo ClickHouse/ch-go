@@ -52,7 +52,7 @@ func (s *Results) decodeAuto(r *Reader, b Block) error {
 		}
 		col.Data.Reset()
 		if b.Rows != 0 {
-			if s, ok := col.Data.(StatefulColumn); ok {
+			if s, ok := col.Data.(Stateful); ok {
 				if err := s.DecodeState(r); err != nil {
 					return errors.Wrapf(err, "%s state", columnName)
 				}
@@ -104,7 +104,7 @@ func (s Results) DecodeResult(r *Reader, b Block) error {
 			return errors.Errorf("[%d]: unexpected column %q (%q expected)", i, columnName, t.Name)
 		}
 		gotType := ColumnType(columnType)
-		if infer, ok := t.Data.(InferColumn); ok {
+		if infer, ok := t.Data.(Inferable); ok {
 			if err := infer.Infer(gotType); err != nil {
 				return errors.Wrap(err, "infer")
 			}

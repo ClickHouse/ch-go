@@ -66,7 +66,7 @@ func TestColDate32Array(t *testing.T) {
 	const rows = 50
 	data := NewArrDate32()
 	for i := 0; i < rows; i++ {
-		data.AppendDate32([]Date32{
+		data.Append([]Date32{
 			Date32(i),
 			Date32(i + 1),
 			Date32(i + 2),

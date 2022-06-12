@@ -32,11 +32,6 @@ func (c *ColUInt256) Append(v UInt256) {
 	*c = append(*c, v)
 }
 
-// AppendArr appends slice of UInt256 to column.
-func (c *ColUInt256) AppendArr(v []UInt256) {
-	*c = append(*c, v...)
-}
-
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColUInt256) Reset() {
 	*c = (*c)[:0]
@@ -57,15 +52,8 @@ func (c *ColUInt256) Array() *ColArrOf[UInt256] {
 }
 
 // NewArrUInt256 returns new Array(UInt256).
-func NewArrUInt256() *ColArr {
-	return &ColArr{
+func NewArrUInt256() *ColArrOf[UInt256] {
+	return &ColArrOf[UInt256]{
 		Data: new(ColUInt256),
 	}
-}
-
-// AppendUInt256 appends slice of UInt256 to Array(UInt256).
-func (c *ColArr) AppendUInt256(data []UInt256) {
-	d := c.Data.(*ColUInt256)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }

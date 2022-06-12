@@ -66,7 +66,7 @@ func TestColInt64Array(t *testing.T) {
 	const rows = 50
 	data := NewArrInt64()
 	for i := 0; i < rows; i++ {
-		data.AppendInt64([]int64{
+		data.Append([]int64{
 			int64(i),
 			int64(i + 1),
 			int64(i + 2),

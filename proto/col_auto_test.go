@@ -32,10 +32,9 @@ func TestColAuto_Infer(t *testing.T) {
 		ColumnTypeDateTime.Sub("Europe/Berlin"),
 		ColumnTypeDateTime64.Sub("9"),
 	} {
-		auto := r.Data.(InferColumn)
-		require.NoError(t, auto.Infer(columnType))
-		require.Equal(t, columnType, auto.Type())
-		auto.Reset()
-		require.Equal(t, 0, auto.Rows())
+		require.NoError(t, r.Data.(Inferable).Infer(columnType))
+		require.Equal(t, columnType, r.Data.Type())
+		r.Data.Reset()
+		require.Equal(t, 0, r.Data.Rows())
 	}
 }

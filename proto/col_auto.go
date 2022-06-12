@@ -43,7 +43,11 @@ func (c *ColAuto) Infer(t ColumnType) error {
 			c.DataType = t
 			return nil
 		case ColumnTypeDateTime64:
-			c.Data = new(ColDateTime)
+			v := new(ColDateTime64Auto)
+			if err := v.Infer(t); err != nil {
+				return errors.Wrap(err, "datetime")
+			}
+			c.Data = v
 			c.DataType = t
 			return nil
 		}
@@ -55,15 +59,9 @@ func (c *ColAuto) Infer(t ColumnType) error {
 }
 
 var (
-	_ Column      = &ColAuto{}
-	_ InferColumn = &ColAuto{}
+	_ Column    = &ColAuto{}
+	_ Inferable = &ColAuto{}
 )
-
-// InferColumn is Column that supports type inference.
-type InferColumn interface {
-	Column
-	Infer(t ColumnType) error
-}
 
 func (c ColAuto) Type() ColumnType {
 	return c.DataType

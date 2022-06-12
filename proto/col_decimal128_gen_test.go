@@ -66,7 +66,7 @@ func TestColDecimal128Array(t *testing.T) {
 	const rows = 50
 	data := NewArrDecimal128()
 	for i := 0; i < rows; i++ {
-		data.AppendDecimal128([]Decimal128{
+		data.Append([]Decimal128{
 			Decimal128FromInt(i),
 			Decimal128FromInt(i + 1),
 			Decimal128FromInt(i + 2),

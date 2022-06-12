@@ -32,11 +32,6 @@ func (c *ColDecimal32) Append(v Decimal32) {
 	*c = append(*c, v)
 }
 
-// AppendArr appends slice of Decimal32 to column.
-func (c *ColDecimal32) AppendArr(v []Decimal32) {
-	*c = append(*c, v...)
-}
-
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColDecimal32) Reset() {
 	*c = (*c)[:0]
@@ -57,15 +52,8 @@ func (c *ColDecimal32) Array() *ColArrOf[Decimal32] {
 }
 
 // NewArrDecimal32 returns new Array(Decimal32).
-func NewArrDecimal32() *ColArr {
-	return &ColArr{
+func NewArrDecimal32() *ColArrOf[Decimal32] {
+	return &ColArrOf[Decimal32]{
 		Data: new(ColDecimal32),
 	}
-}
-
-// AppendDecimal32 appends slice of Decimal32 to Array(Decimal32).
-func (c *ColArr) AppendDecimal32(data []Decimal32) {
-	d := c.Data.(*ColDecimal32)
-	*d = append(*d, data...)
-	c.Offsets = append(c.Offsets, uint64(len(*d)))
 }

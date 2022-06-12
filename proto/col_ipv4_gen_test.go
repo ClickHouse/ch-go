@@ -66,7 +66,7 @@ func TestColIPv4Array(t *testing.T) {
 	const rows = 50
 	data := NewArrIPv4()
 	for i := 0; i < rows; i++ {
-		data.AppendIPv4([]IPv4{
+		data.Append([]IPv4{
 			IPv4(i),
 			IPv4(i + 1),
 			IPv4(i + 2),

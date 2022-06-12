@@ -33,15 +33,22 @@ type StateDecoder interface {
 	DecodeState(r *Reader) error
 }
 
-type StatefulColumn interface {
+type Stateful interface {
 	StateEncoder
 	StateDecoder
 }
 
-// Preparable is Column that should be prepared before encoding or decoding.
+// Inferable can be inferenced from type.
+type Inferable interface {
+	Infer(t ColumnType) error
+}
+
+// Preparable should be prepared before encoding or decoding.
 type Preparable interface {
 	Prepare() error
 }
+
+// TODO: merge preparable with inferable?
 
 // ColumnType is type of column element.
 type ColumnType string

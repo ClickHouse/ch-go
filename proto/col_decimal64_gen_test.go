@@ -66,7 +66,7 @@ func TestColDecimal64Array(t *testing.T) {
 	const rows = 50
 	data := NewArrDecimal64()
 	for i := 0; i < rows; i++ {
-		data.AppendDecimal64([]Decimal64{
+		data.Append([]Decimal64{
 			Decimal64(i),
 			Decimal64(i + 1),
 			Decimal64(i + 2),

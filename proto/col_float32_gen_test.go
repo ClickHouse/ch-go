@@ -66,7 +66,7 @@ func TestColFloat32Array(t *testing.T) {
 	const rows = 50
 	data := NewArrFloat32()
 	for i := 0; i < rows; i++ {
-		data.AppendFloat32([]float32{
+		data.Append([]float32{
 			float32(i),
 			float32(i + 1),
 			float32(i + 2),

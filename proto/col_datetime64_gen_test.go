@@ -66,7 +66,7 @@ func TestColDateTime64Array(t *testing.T) {
 	const rows = 50
 	data := NewArrDateTime64()
 	for i := 0; i < rows; i++ {
-		data.AppendDateTime64([]DateTime64{
+		data.Append([]DateTime64{
 			DateTime64(i),
 			DateTime64(i + 1),
 			DateTime64(i + 2),

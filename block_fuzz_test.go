@@ -58,7 +58,7 @@ func encodeTestIPv6Block() []byte {
 			ip := netip.MustParseAddr(s)
 			values = append(values, proto.ToIPv6(ip))
 		}
-		arr.AppendIPv6(values)
+		arr.Append(values)
 	}
 	input := []proto.InputColumn{
 		{
@@ -155,12 +155,12 @@ func FuzzDecodeBlock(f *testing.F) {
 
 		// Skip table name.
 		if _, err := r.Str(); err != nil {
-			t.Skip()
+			t.Skip(err)
 		}
 
 		var block proto.Block
 		if err := block.DecodeBlock(r, v, d); err != nil {
-			t.Skip()
+			t.Skip(err)
 		}
 	})
 }
@@ -180,12 +180,12 @@ func FuzzDecodeArrayIPv6ArrayBlock(f *testing.F) {
 
 		// Skip table name.
 		if _, err := r.Str(); err != nil {
-			t.Skip()
+			t.Skip(err)
 		}
 
 		var block proto.Block
 		if err := block.DecodeBlock(r, v, d); err != nil {
-			t.Skip()
+			t.Skip(err)
 		}
 	})
 }

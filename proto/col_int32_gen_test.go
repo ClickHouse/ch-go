@@ -66,7 +66,7 @@ func TestColInt32Array(t *testing.T) {
 	const rows = 50
 	data := NewArrInt32()
 	for i := 0; i < rows; i++ {
-		data.AppendInt32([]int32{
+		data.Append([]int32{
 			int32(i),
 			int32(i + 1),
 			int32(i + 2),

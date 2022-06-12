@@ -66,7 +66,7 @@ func TestColIPv6Array(t *testing.T) {
 	const rows = 50
 	data := NewArrIPv6()
 	for i := 0; i < rows; i++ {
-		data.AppendIPv6([]IPv6{
+		data.Append([]IPv6{
 			IPv6FromInt(i),
 			IPv6FromInt(i + 1),
 			IPv6FromInt(i + 2),

@@ -66,7 +66,7 @@ func TestColFloat64Array(t *testing.T) {
 	const rows = 50
 	data := NewArrFloat64()
 	for i := 0; i < rows; i++ {
-		data.AppendFloat64([]float64{
+		data.Append([]float64{
 			float64(i),
 			float64(i + 1),
 			float64(i + 2),

@@ -66,7 +66,7 @@ func TestColEnum8Array(t *testing.T) {
 	const rows = 50
 	data := NewArrEnum8()
 	for i := 0; i < rows; i++ {
-		data.AppendEnum8([]Enum8{
+		data.Append([]Enum8{
 			Enum8(i),
 			Enum8(i + 1),
 			Enum8(i + 2),

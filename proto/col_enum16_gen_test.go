@@ -66,7 +66,7 @@ func TestColEnum16Array(t *testing.T) {
 	const rows = 50
 	data := NewArrEnum16()
 	for i := 0; i < rows; i++ {
-		data.AppendEnum16([]Enum16{
+		data.Append([]Enum16{
 			Enum16(i),
 			Enum16(i + 1),
 			Enum16(i + 2),
