@@ -5,10 +5,19 @@ type ColBool []bool
 
 // Compile-time assertions for ColBool.
 var (
-	_ ColInput  = ColBool{}
-	_ ColResult = (*ColBool)(nil)
-	_ Column    = (*ColBool)(nil)
+	_ ColInput       = ColBool{}
+	_ ColResult      = (*ColBool)(nil)
+	_ Column         = (*ColBool)(nil)
+	_ ColumnOf[bool] = (*ColBool)(nil)
 )
+
+func (c ColBool) Row(i int) bool {
+	return c[i]
+}
+
+func (c *ColBool) Append(v bool) {
+	*c = append(*c, v)
+}
 
 // Type returns ColumnType of Bool.
 func (ColBool) Type() ColumnType {
