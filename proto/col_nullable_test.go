@@ -61,9 +61,7 @@ func TestColNullable_EncodeColumn(t *testing.T) {
 }
 
 func TestColNullable(t *testing.T) {
-	col := &ColNullable[string]{
-		Values: new(ColStr),
-	}
+	col := NewColNullable[string](new(ColStr))
 	v := []Nullable[string]{
 		NewNullable("foo"),
 		Null[string](),

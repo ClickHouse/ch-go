@@ -41,6 +41,13 @@ func (n Nullable[T]) Or(v T) T {
 	return n.Value
 }
 
+// NewColNullable returns new Nullable(T) from v column.
+func NewColNullable[T any](v ColumnOf[T]) *ColNullable[T] {
+	return &ColNullable[T]{
+		Values: v,
+	}
+}
+
 // ColNullable represents Nullable(T) column.
 //
 // Nulls is nullable "mask" on Values column.
