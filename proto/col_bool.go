@@ -33,3 +33,17 @@ func (c ColBool) Rows() int {
 func (c *ColBool) Reset() {
 	*c = (*c)[:0]
 }
+
+// Array is helper that creates Array(Bool).
+func (c *ColBool) Array() *ColArr[bool] {
+	return &ColArr[bool]{
+		Data: c,
+	}
+}
+
+// Nullable is helper that creates Nullable(Bool).
+func (c *ColBool) Nullable() *ColNullable[bool] {
+	return &ColNullable[bool]{
+		Values: c,
+	}
+}
