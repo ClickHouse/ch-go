@@ -21,7 +21,7 @@ type ColDateTime64Auto struct {
 func (c *ColDateTime64Auto) Infer(t ColumnType) error {
 	// TODO(ernado): handle (ignore) timezone
 	pRaw := t.Elem()
-	n, err := strconv.Atoi(string(pRaw))
+	n, err := strconv.ParseInt(string(pRaw), 10, 8)
 	if err != nil {
 		return errors.Wrap(err, "parse precision")
 	}
