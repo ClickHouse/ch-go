@@ -19,6 +19,14 @@ var (
 	}
 )
 
+// NewMap constructs Map(K, V).
+func NewMap[K comparable, V any](k ColumnOf[K], v ColumnOf[V]) *ColMap[K, V] {
+	return &ColMap[K, V]{
+		Keys:   k,
+		Values: v,
+	}
+}
+
 // ColMap implements Map(K, V) as ColumnOf[map[K]V].
 type ColMap[K comparable, V any] struct {
 	Offsets ColUInt64

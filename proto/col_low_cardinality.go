@@ -333,8 +333,8 @@ func (c *ColLowCardinality[T]) Array() *ColArr[T] {
 	}
 }
 
-// LowCardinalityOf creates new LowCardinality column from another column for T.
-func LowCardinalityOf[T comparable](c ColumnOf[T]) *ColLowCardinality[T] {
+// NewLowCardinality creates new LowCardinality column from another column for T.
+func NewLowCardinality[T comparable](c ColumnOf[T]) *ColLowCardinality[T] {
 	return &ColLowCardinality[T]{
 		index: c,
 	}

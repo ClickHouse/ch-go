@@ -11,9 +11,10 @@ import (
 )
 
 func TestColMapGolden(t *testing.T) {
-	v := ColMap[string, string]{
-		Keys: &ColStr{}, Values: &ColStr{},
-	}
+	v := NewMap[string, string](
+		new(ColStr), // k
+		new(ColStr), // v
+	)
 	require.Equal(t, ColumnType("Map(String, String)"), v.Type())
 	v.Append(map[string]string{
 		"foo": "bar",

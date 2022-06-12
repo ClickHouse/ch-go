@@ -24,8 +24,8 @@ func (m MapPair[V]) Append(k []string, v []V) {
 
 func NewMapPair[X comparable](v proto.ColumnOf[X]) MapPair[X] {
 	return MapPair[X]{
-		Keys:   proto.ArrayOf[string](new(proto.ColStr)),
-		Values: proto.ArrayOf(v),
+		Keys:   new(proto.ColStr).Array(),
+		Values: proto.NewArray(v),
 	}
 }
 

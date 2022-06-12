@@ -12,7 +12,7 @@ import (
 )
 
 func TestLowCardinalityOf(t *testing.T) {
-	v := (&ColStr{}).LowCardinality()
+	v := NewLowCardinality[string](new(ColStr))
 
 	require.NoError(t, v.Prepare())
 	require.Equal(t, ColumnType("LowCardinality(String)"), v.Type())

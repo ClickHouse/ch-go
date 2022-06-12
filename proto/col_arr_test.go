@@ -43,9 +43,9 @@ func TestColArrFrom(t *testing.T) {
 	arr.Append([]string{"foo", "bar"})
 	t.Logf("%T %+v", arr.Data, arr.Data)
 
-	_ = ArrayOf[string](new(ColStr))
+	_ = NewArray[string](new(ColStr))
 
-	arrArr := ArrayOf[[]string](data.Array())
+	arrArr := NewArray[[]string](data.Array())
 	arrArr.Append([][]string{
 		{"foo", "bar"},
 		{"baz"},
@@ -87,7 +87,7 @@ func TestColArrOfStr(t *testing.T) {
 }
 
 func TestArrOfLowCordStr(t *testing.T) {
-	col := ArrayOf[string](new(ColStr).LowCardinality())
+	col := NewArray[string](new(ColStr).LowCardinality())
 	col.Append([]string{"foo", "bar", "foo", "foo", "baz"})
 	col.Append([]string{"foo", "baz"})
 
@@ -101,7 +101,7 @@ func TestArrOfLowCordStr(t *testing.T) {
 	t.Run("Ok", func(t *testing.T) {
 		br := bytes.NewReader(buf.Buf)
 		r := NewReader(br)
-		dec := ArrayOf[string](new(ColStr).LowCardinality())
+		dec := NewArray[string](new(ColStr).LowCardinality())
 
 		require.NoError(t, dec.DecodeColumn(r, col.Rows()))
 		require.Equal(t, col.Rows(), dec.Rows())
@@ -111,11 +111,11 @@ func TestArrOfLowCordStr(t *testing.T) {
 	})
 	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
-		dec := ArrayOf[string](new(ColStr).LowCardinality())
+		dec := NewArray[string](new(ColStr).LowCardinality())
 		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.ErrUnexpectedEOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
-		dec := ArrayOf[string](new(ColStr).LowCardinality())
+		dec := NewArray[string](new(ColStr).LowCardinality())
 		requireNoShortRead(t, buf.Buf, colAware(dec, col.Rows()))
 	})
 }

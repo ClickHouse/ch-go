@@ -2,14 +2,14 @@ package proto
 
 import "github.com/go-faster/errors"
 
-// Compile-time assertions for ArrayOf.
+// Compile-time assertions for Array.
 var (
-	_ ColInput     = ArrayOf[string]((*ColStr)(nil))
-	_ ColResult    = ArrayOf[string]((*ColStr)(nil))
-	_ Column       = ArrayOf[string]((*ColStr)(nil))
-	_ StateEncoder = ArrayOf[string]((*ColStr)(nil))
-	_ StateDecoder = ArrayOf[string]((*ColStr)(nil))
-	_ Inferable    = ArrayOf[string]((*ColStr)(nil))
+	_ ColInput     = NewArray[string]((*ColStr)(nil))
+	_ ColResult    = NewArray[string]((*ColStr)(nil))
+	_ Column       = NewArray[string]((*ColStr)(nil))
+	_ StateEncoder = NewArray[string]((*ColStr)(nil))
+	_ StateDecoder = NewArray[string]((*ColStr)(nil))
+	_ Inferable    = NewArray[string]((*ColStr)(nil))
 )
 
 // Arrayable constraint specifies ability of column T to be Array(T).
@@ -23,10 +23,10 @@ type ColArr[T any] struct {
 	Data    ColumnOf[T]
 }
 
-// ArrayOf returns ColArr of c.
+// NewArray returns ColArr of c.
 //
-// Example: ArrayOf[string](&ColStr{})
-func ArrayOf[T any](c ColumnOf[T]) *ColArr[T] {
+// Example: NewArray[string](new(ColStr))
+func NewArray[T any](c ColumnOf[T]) *ColArr[T] {
 	return &ColArr[T]{
 		Data: c,
 	}

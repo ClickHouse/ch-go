@@ -142,7 +142,7 @@ Generic for `Array(T)`
 
 ```go
 // Array(String)
-arr := proto.Array[string](new(proto.ColStr))
+arr := proto.NewArray[string](new(proto.ColStr))
 // Or
 arr := new(proto.ColStr).Array()
 q := ch.Query{

@@ -483,7 +483,7 @@ func TestClient_Query(t *testing.T) {
 			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = Memory",
 		}), "create table")
 
-		v := proto.ArrayOf[string](new(proto.ColStr).LowCardinality())
+		v := new(proto.ColStr).LowCardinality().Array()
 		v.Append([]string{"foo", "bar"})
 		v.Append([]string{"baz"})
 
@@ -494,7 +494,7 @@ func TestClient_Query(t *testing.T) {
 			},
 		}), "insert")
 
-		gotData := proto.ArrayOf[string](new(proto.ColStr).LowCardinality())
+		gotData := new(proto.ColStr).LowCardinality().Array()
 		require.NoError(t, conn.Do(ctx, Query{
 			Body: "SELECT * FROM test_table",
 			Result: proto.Results{
