@@ -39,22 +39,22 @@ func (c *{{ .Type }}) Reset() {
 }
 
 // LowCardinality returns LowCardinality for {{ .Name }} .
-func (c *{{ .Type }}) LowCardinality() *ColLowCardinalityOf[{{ .ElemType }}] {
-	return &ColLowCardinalityOf[{{ .ElemType }}]{
+func (c *{{ .Type }}) LowCardinality() *ColLowCardinality[{{ .ElemType }}] {
+	return &ColLowCardinality[{{ .ElemType }}]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of {{ .ElemType }}.
-func (c *{{ .Type }}) Array() *ColArrOf[{{ .ElemType }}] {
-	return &ColArrOf[{{ .ElemType }}]{
+func (c *{{ .Type }}) Array() *ColArr[{{ .ElemType }}] {
+	return &ColArr[{{ .ElemType }}]{
 		Data: c,
 	}
 }
 
 // NewArr{{ .Name }} returns new Array({{ .Name }}).
-func NewArr{{ .Name }}() *ColArrOf[{{ .ElemType }}] {
-	return &ColArrOf[{{ .ElemType }}]{
+func NewArr{{ .Name }}() *ColArr[{{ .ElemType }}] {
+	return &ColArr[{{ .ElemType }}]{
 		Data: new({{ .Type }}),
 	}
 }
