@@ -171,9 +171,14 @@ func (b Block) EncodeRawBlock(buf *Buffer, input []InputColumn) error {
 	return nil
 }
 
+// This constrains can prevent accidental OOM and allow early detection
+// of erroneous column or row count.
+//
+// Just empirical values, there are no such limits in spec or in ClickHouse,
+// so is subject to change if false-positives occur.
 const (
 	maxColumnsInBlock = 1_000_000
-	maxRowsInBLock    = 1_000_000_000
+	maxRowsInBLock    = 100_000_000
 )
 
 func checkRows(n int) error {
@@ -181,7 +186,13 @@ func checkRows(n int) error {
 		return errors.New("negative")
 	}
 	if n > maxRowsInBLock {
-		return errors.Errorf("%d bigger than maximum %d (possible OOM)", n, maxRowsInBLock)
+		// Most blocks should be less than 100M values, but technically
+		// there is no limit (can be several billions).
+		// 1B rows is too big and probably several gigabytes in RSS.
+		//
+		// The 100M UInt64 block is ~655MB RSS, should be pretty safe and
+		// protect from accidental (e.g. cosmic rays) rows count corruption.
+		return errors.Errorf("%d is suspiciously big, maximum is %d (preventing possible OOM)", n, maxRowsInBLock)
 	}
 	return nil
 }
