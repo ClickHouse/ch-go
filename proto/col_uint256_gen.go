@@ -51,6 +51,13 @@ func (c *ColUInt256) Array() *ColArr[UInt256] {
 	}
 }
 
+// Nullable is helper that creates Nullable(UInt256).
+func (c *ColUInt256) Nullable() *ColNullable[UInt256] {
+	return &ColNullable[UInt256]{
+		Values: c,
+	}
+}
+
 // NewArrUInt256 returns new Array(UInt256).
 func NewArrUInt256() *ColArr[UInt256] {
 	return &ColArr[UInt256]{

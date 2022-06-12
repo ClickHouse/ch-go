@@ -51,6 +51,13 @@ func (c *ColInt32) Array() *ColArr[int32] {
 	}
 }
 
+// Nullable is helper that creates Nullable(int32).
+func (c *ColInt32) Nullable() *ColNullable[int32] {
+	return &ColNullable[int32]{
+		Values: c,
+	}
+}
+
 // NewArrInt32 returns new Array(Int32).
 func NewArrInt32() *ColArr[int32] {
 	return &ColArr[int32]{

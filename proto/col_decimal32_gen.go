@@ -51,6 +51,13 @@ func (c *ColDecimal32) Array() *ColArr[Decimal32] {
 	}
 }
 
+// Nullable is helper that creates Nullable(Decimal32).
+func (c *ColDecimal32) Nullable() *ColNullable[Decimal32] {
+	return &ColNullable[Decimal32]{
+		Values: c,
+	}
+}
+
 // NewArrDecimal32 returns new Array(Decimal32).
 func NewArrDecimal32() *ColArr[Decimal32] {
 	return &ColArr[Decimal32]{

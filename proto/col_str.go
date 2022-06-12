@@ -145,6 +145,13 @@ func (c *ColStr) Array() *ColArr[string] {
 	}
 }
 
+// Nullable is helper that creates Nullable(String).
+func (c *ColStr) Nullable() *ColNullable[string] {
+	return &ColNullable[string]{
+		Values: c,
+	}
+}
+
 // ColBytes is ColStr wrapper to be ColumnOf for []byte.
 type ColBytes struct {
 	ColStr
@@ -171,5 +178,12 @@ func (c *ColBytes) AppendArr(v [][]byte) {
 func (c *ColBytes) Array() *ColArr[[]byte] {
 	return &ColArr[[]byte]{
 		Data: c,
+	}
+}
+
+// Nullable is helper that creates Nullable(String).
+func (c *ColBytes) Nullable() *ColNullable[[]byte] {
+	return &ColNullable[[]byte]{
+		Values: c,
 	}
 }

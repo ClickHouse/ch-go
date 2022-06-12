@@ -51,6 +51,13 @@ func (c *ColEnum16) Array() *ColArr[Enum16] {
 	}
 }
 
+// Nullable is helper that creates Nullable(Enum16).
+func (c *ColEnum16) Nullable() *ColNullable[Enum16] {
+	return &ColNullable[Enum16]{
+		Values: c,
+	}
+}
+
 // NewArrEnum16 returns new Array(Enum16).
 func NewArrEnum16() *ColArr[Enum16] {
 	return &ColArr[Enum16]{

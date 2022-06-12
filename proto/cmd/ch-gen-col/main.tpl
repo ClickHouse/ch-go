@@ -52,6 +52,13 @@ func (c *{{ .Type }}) Array() *ColArr[{{ .ElemType }}] {
 	}
 }
 
+// Nullable is helper that creates Nullable({{ .ElemType }}).
+func (c *{{ .Type }}) Nullable() *ColNullable[{{ .ElemType }}] {
+	return &ColNullable[{{ .ElemType }}]{
+		Values: c,
+	}
+}
+
 // NewArr{{ .Name }} returns new Array({{ .Name }}).
 func NewArr{{ .Name }}() *ColArr[{{ .ElemType }}] {
 	return &ColArr[{{ .ElemType }}]{

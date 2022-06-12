@@ -51,6 +51,13 @@ func (c *ColDateTime64) Array() *ColArr[DateTime64] {
 	}
 }
 
+// Nullable is helper that creates Nullable(DateTime64).
+func (c *ColDateTime64) Nullable() *ColNullable[DateTime64] {
+	return &ColNullable[DateTime64]{
+		Values: c,
+	}
+}
+
 // NewArrDateTime64 returns new Array(DateTime64).
 func NewArrDateTime64() *ColArr[DateTime64] {
 	return &ColArr[DateTime64]{

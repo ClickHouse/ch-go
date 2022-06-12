@@ -51,6 +51,13 @@ func (c *ColDate32) Array() *ColArr[Date32] {
 	}
 }
 
+// Nullable is helper that creates Nullable(Date32).
+func (c *ColDate32) Nullable() *ColNullable[Date32] {
+	return &ColNullable[Date32]{
+		Values: c,
+	}
+}
+
 // NewArrDate32 returns new Array(Date32).
 func NewArrDate32() *ColArr[Date32] {
 	return &ColArr[Date32]{

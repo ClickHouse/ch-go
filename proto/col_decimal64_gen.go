@@ -51,6 +51,13 @@ func (c *ColDecimal64) Array() *ColArr[Decimal64] {
 	}
 }
 
+// Nullable is helper that creates Nullable(Decimal64).
+func (c *ColDecimal64) Nullable() *ColNullable[Decimal64] {
+	return &ColNullable[Decimal64]{
+		Values: c,
+	}
+}
+
 // NewArrDecimal64 returns new Array(Decimal64).
 func NewArrDecimal64() *ColArr[Decimal64] {
 	return &ColArr[Decimal64]{

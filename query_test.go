@@ -674,7 +674,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
-		data := &proto.ColNullableOf[string]{
+		data := &proto.ColNullable[string]{
 			Values: new(proto.ColStr),
 		}
 		data.AppendArr([]proto.Nullable[string]{
@@ -694,7 +694,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
-		gotData := &proto.ColNullableOf[string]{
+		gotData := &proto.ColNullable[string]{
 			Values: new(proto.ColStr),
 		}
 		selectData := Query{

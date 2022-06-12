@@ -51,6 +51,13 @@ func (c *ColIPv4) Array() *ColArr[IPv4] {
 	}
 }
 
+// Nullable is helper that creates Nullable(IPv4).
+func (c *ColIPv4) Nullable() *ColNullable[IPv4] {
+	return &ColNullable[IPv4]{
+		Values: c,
+	}
+}
+
 // NewArrIPv4 returns new Array(IPv4).
 func NewArrIPv4() *ColArr[IPv4] {
 	return &ColArr[IPv4]{

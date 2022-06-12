@@ -51,6 +51,13 @@ func (c *ColInt128) Array() *ColArr[Int128] {
 	}
 }
 
+// Nullable is helper that creates Nullable(Int128).
+func (c *ColInt128) Nullable() *ColNullable[Int128] {
+	return &ColNullable[Int128]{
+		Values: c,
+	}
+}
+
 // NewArrInt128 returns new Array(Int128).
 func NewArrInt128() *ColArr[Int128] {
 	return &ColArr[Int128]{
