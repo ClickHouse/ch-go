@@ -18,6 +18,11 @@ type ColDateTime64Auto struct {
 	Precision Precision
 }
 
+func (c ColDateTime64Auto) Type() ColumnType {
+	sub := ColumnType(strconv.Itoa(int(c.Precision)))
+	return ColumnTypeDateTime64.Sub(sub)
+}
+
 func (c *ColDateTime64Auto) Infer(t ColumnType) error {
 	// TODO(ernado): handle (ignore) timezone
 	pRaw := t.Elem()

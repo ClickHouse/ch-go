@@ -462,16 +462,31 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
-		var gotData proto.ColDateTime64
-		selectData := Query{
-			Body: "SELECT * FROM test_table",
-			Result: proto.Results{
-				{Name: "d", Data: &gotData},
-			},
-		}
-		require.NoError(t, conn.Do(ctx, selectData), "select")
-		require.Len(t, data, 1)
-		require.Equal(t, data, gotData)
+		t.Run("Read", func(t *testing.T) {
+			var gotData proto.ColDateTime64
+			selectData := Query{
+				Body: "SELECT * FROM test_table",
+				Result: proto.Results{
+					{Name: "d", Data: &gotData},
+				},
+			}
+			require.NoError(t, conn.Do(ctx, selectData), "select")
+			require.Len(t, data, 1)
+			require.Equal(t, data, gotData)
+		})
+		t.Run("ReadAuto", func(t *testing.T) {
+			var gotData proto.ColDateTime64Auto
+			selectData := Query{
+				Body: "SELECT * FROM test_table",
+				Result: proto.Results{
+					{Name: "d", Data: &gotData},
+				},
+			}
+			require.NoError(t, conn.Do(ctx, selectData), "select")
+			require.Len(t, data, 1)
+			require.Equal(t, data, gotData.ColDateTime64)
+			require.Equal(t, proto.ColumnType("DateTime64(9)"), gotData.Type())
+		})
 	})
 	t.Run("ArrayLowCardinality", func(t *testing.T) {
 		t.Parallel()
