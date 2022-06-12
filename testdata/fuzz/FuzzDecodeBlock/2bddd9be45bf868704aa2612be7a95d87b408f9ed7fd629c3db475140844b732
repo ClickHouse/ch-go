@@ -1,2 +1,0 @@
-go test fuzz v1
-[]byte("\x00\x00\x01\xc0\xc0\xc0\xc0\x03\x03foo\rArray(String)000000000\x1000000000000000\x03000\x03000\x01000")
