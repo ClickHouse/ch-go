@@ -9,6 +9,7 @@ var (
 	_ Column       = ArrayOf[string]((*ColStr)(nil))
 	_ StateEncoder = ArrayOf[string]((*ColStr)(nil))
 	_ StateDecoder = ArrayOf[string]((*ColStr)(nil))
+	_ Inferable    = ArrayOf[string]((*ColStr)(nil))
 )
 
 // ColumnOf is generic Column(T) constraint.
@@ -63,6 +64,16 @@ func (c *ColArrOf[T]) Prepare() error {
 	if v, ok := c.Data.(Preparable); ok {
 		if err := v.Prepare(); err != nil {
 			return errors.Wrap(err, "prepare data")
+		}
+	}
+	return nil
+}
+
+// Infer ensures Inferable column propagation.
+func (c *ColArrOf[T]) Infer(t ColumnType) error {
+	if v, ok := c.Data.(Inferable); ok {
+		if err := v.Infer(t.Elem()); err != nil {
+			return errors.Wrap(err, "infer data")
 		}
 	}
 	return nil
