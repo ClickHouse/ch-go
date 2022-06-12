@@ -296,7 +296,7 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 	// Handling input columns that require inference, e.g. enums.
 	for _, v := range info {
 		for _, inCol := range q.Input {
-			infer, ok := inCol.Data.(proto.InferColumn)
+			infer, ok := inCol.Data.(proto.Inferable)
 			if !ok || inCol.Name != v.Name {
 				continue
 			}

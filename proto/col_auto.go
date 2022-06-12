@@ -55,15 +55,9 @@ func (c *ColAuto) Infer(t ColumnType) error {
 }
 
 var (
-	_ Column      = &ColAuto{}
-	_ InferColumn = &ColAuto{}
+	_ Column    = &ColAuto{}
+	_ Inferable = &ColAuto{}
 )
-
-// InferColumn is Column that supports type inference.
-type InferColumn interface {
-	Column
-	Infer(t ColumnType) error
-}
 
 func (c ColAuto) Type() ColumnType {
 	return c.DataType

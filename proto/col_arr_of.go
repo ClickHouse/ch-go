@@ -15,7 +15,6 @@ var (
 type ColumnOf[T any] interface {
 	Column
 	Append(v T)
-	AppendArr(v []T)
 	Row(i int) T
 }
 
@@ -122,13 +121,6 @@ func (c *ColArrOf[T]) Append(v []T) {
 		c.Data.Append(s)
 	}
 	c.Offsets = append(c.Offsets, uint64(c.Data.Rows()))
-}
-
-// AppendArr appends multiple rows to column.
-func (c *ColArrOf[T]) AppendArr(v [][]T) {
-	for _, e := range v {
-		c.Append(e)
-	}
 }
 
 // Result for current column.
