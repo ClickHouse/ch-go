@@ -38,22 +38,22 @@ func (c *ColDecimal128) Reset() {
 }
 
 // LowCardinality returns LowCardinality for Decimal128 .
-func (c *ColDecimal128) LowCardinality() *ColLowCardinalityOf[Decimal128] {
-	return &ColLowCardinalityOf[Decimal128]{
+func (c *ColDecimal128) LowCardinality() *ColLowCardinality[Decimal128] {
+	return &ColLowCardinality[Decimal128]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of Decimal128.
-func (c *ColDecimal128) Array() *ColArrOf[Decimal128] {
-	return &ColArrOf[Decimal128]{
+func (c *ColDecimal128) Array() *ColArr[Decimal128] {
+	return &ColArr[Decimal128]{
 		Data: c,
 	}
 }
 
 // NewArrDecimal128 returns new Array(Decimal128).
-func NewArrDecimal128() *ColArrOf[Decimal128] {
-	return &ColArrOf[Decimal128]{
+func NewArrDecimal128() *ColArr[Decimal128] {
+	return &ColArr[Decimal128]{
 		Data: new(ColDecimal128),
 	}
 }

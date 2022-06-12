@@ -38,22 +38,22 @@ func (c *ColIPv4) Reset() {
 }
 
 // LowCardinality returns LowCardinality for IPv4 .
-func (c *ColIPv4) LowCardinality() *ColLowCardinalityOf[IPv4] {
-	return &ColLowCardinalityOf[IPv4]{
+func (c *ColIPv4) LowCardinality() *ColLowCardinality[IPv4] {
+	return &ColLowCardinality[IPv4]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of IPv4.
-func (c *ColIPv4) Array() *ColArrOf[IPv4] {
-	return &ColArrOf[IPv4]{
+func (c *ColIPv4) Array() *ColArr[IPv4] {
+	return &ColArr[IPv4]{
 		Data: c,
 	}
 }
 
 // NewArrIPv4 returns new Array(IPv4).
-func NewArrIPv4() *ColArrOf[IPv4] {
-	return &ColArrOf[IPv4]{
+func NewArrIPv4() *ColArr[IPv4] {
+	return &ColArr[IPv4]{
 		Data: new(ColIPv4),
 	}
 }

@@ -12,16 +12,13 @@ import (
 
 func encodeTestStrBlock() []byte {
 	b := &proto.Buffer{}
-	d := &proto.ColStr{}
-	arr := &proto.ColArr{
-		Data: d,
-	}
+	arr := new(proto.ColStr).Array()
 	for _, v := range [][]string{
 		{"foo", "bar"},
 		{"1", "2", "3", "4"},
 		{"", strings.Repeat("123", 3)},
 	} {
-		d.ArrAppend(arr, v)
+		arr.Append(v)
 	}
 	input := []proto.InputColumn{
 		{
@@ -118,9 +115,7 @@ func TestEncodeBlock(t *testing.T) {
 	d := proto.Results{
 		{
 			Name: "foo",
-			Data: &proto.ColArr{
-				Data: &proto.ColStr{},
-			},
+			Data: new(proto.ColStr).Array(),
 		},
 	}
 
@@ -147,9 +142,7 @@ func FuzzDecodeBlock(f *testing.F) {
 		d := proto.Results{
 			{
 				Name: "foo",
-				Data: &proto.ColArr{
-					Data: &proto.ColStr{},
-				},
+				Data: new(proto.ColStr).Array(),
 			},
 		}
 

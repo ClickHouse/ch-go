@@ -24,7 +24,7 @@ func TestClient_Query_Raw(t *testing.T) {
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		type K = [16]byte
-		data := &proto.ColMapOf[K, []string]{
+		data := &proto.ColMap[K, []string]{
 			Keys:   new(proto.ColRawOf[K]),
 			Values: new(proto.ColStr).Array(),
 		}
@@ -46,7 +46,7 @@ func TestClient_Query_Raw(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
-		gotData := &proto.ColMapOf[K, []string]{
+		gotData := &proto.ColMap[K, []string]{
 			Keys:   new(proto.ColRawOf[K]),
 			Values: new(proto.ColStr).Array(),
 		}

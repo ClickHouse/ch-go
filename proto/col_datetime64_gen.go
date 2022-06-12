@@ -38,22 +38,22 @@ func (c *ColDateTime64) Reset() {
 }
 
 // LowCardinality returns LowCardinality for DateTime64 .
-func (c *ColDateTime64) LowCardinality() *ColLowCardinalityOf[DateTime64] {
-	return &ColLowCardinalityOf[DateTime64]{
+func (c *ColDateTime64) LowCardinality() *ColLowCardinality[DateTime64] {
+	return &ColLowCardinality[DateTime64]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of DateTime64.
-func (c *ColDateTime64) Array() *ColArrOf[DateTime64] {
-	return &ColArrOf[DateTime64]{
+func (c *ColDateTime64) Array() *ColArr[DateTime64] {
+	return &ColArr[DateTime64]{
 		Data: c,
 	}
 }
 
 // NewArrDateTime64 returns new Array(DateTime64).
-func NewArrDateTime64() *ColArrOf[DateTime64] {
-	return &ColArrOf[DateTime64]{
+func NewArrDateTime64() *ColArr[DateTime64] {
+	return &ColArr[DateTime64]{
 		Data: new(ColDateTime64),
 	}
 }

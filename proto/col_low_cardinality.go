@@ -1,6 +1,45 @@
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"math"
+
+	"github.com/go-faster/errors"
+)
+
+// Compile-time assertions for ColLowCardinality.
+var (
+	_ ColInput  = (*ColLowCardinality[string])(nil)
+	_ ColResult = (*ColLowCardinality[string])(nil)
+	_ Column    = (*ColLowCardinality[string])(nil)
+)
+
+// DecodeState implements StateDecoder, ensuring state for index column.
+func (c *ColLowCardinality[T]) DecodeState(r *Reader) error {
+	keySerialization, err := r.Int64()
+	if err != nil {
+		return errors.Wrap(err, "version")
+	}
+	if keySerialization != int64(sharedDictionariesWithAdditionalKeys) {
+		return errors.Errorf("got version %d, expected %d",
+			keySerialization, sharedDictionariesWithAdditionalKeys,
+		)
+	}
+	if s, ok := c.index.(StateDecoder); ok {
+		if err := s.DecodeState(r); err != nil {
+			return errors.Wrap(err, "index state")
+		}
+	}
+	return nil
+}
+
+// EncodeState implements StateEncoder, ensuring state for index column.
+func (c ColLowCardinality[T]) EncodeState(b *Buffer) {
+	// Writing key serialization version.
+	b.PutInt64(int64(sharedDictionariesWithAdditionalKeys))
+	if s, ok := c.index.(StateEncoder); ok {
+		s.EncodeState(b)
+	}
+}
 
 //go:generate go run github.com/dmarkham/enumer -type CardinalityKey -trimprefix Key -output col_low_cardinality_enum.go
 
@@ -14,57 +53,6 @@ const (
 	KeyUInt32 CardinalityKey = 2
 	KeyUInt64 CardinalityKey = 3
 )
-
-// ColLowCardinality contains index and keys columns.
-//
-// Index (i.e. dictionary) column contains unique values, Keys column contains
-// sequence of indexes in Index column that represent actual values.
-//
-// For example, ["Eko", "Eko", "Amadela", "Amadela", "Amadela", "Amadela"] can
-// be encoded as:
-//	Index: ["Eko", "Amadela"] (String)
-//	Keys:  [0, 0, 1, 1, 1, 1] (UInt8)
-//
-// The CardinalityKey is chosen depending on Index size, i.e. maximum value
-// of chosen type should be able to represent any index of Index element.
-type ColLowCardinality struct {
-	Index Column // dictionary
-	Key   CardinalityKey
-
-	// Keeping all key column variants as fields to reuse
-	// memory more efficiently.
-
-	Keys8  ColUInt8
-	Keys16 ColUInt16
-	Keys32 ColUInt32
-	Keys64 ColUInt64
-}
-
-func (c *ColLowCardinality) DecodeState(r *Reader) error {
-	keySerialization, err := r.Int64()
-	if err != nil {
-		return errors.Wrap(err, "version")
-	}
-	if keySerialization != int64(sharedDictionariesWithAdditionalKeys) {
-		return errors.Errorf("got version %d, expected %d",
-			keySerialization, sharedDictionariesWithAdditionalKeys,
-		)
-	}
-	if s, ok := c.Index.(StateDecoder); ok {
-		if err := s.DecodeState(r); err != nil {
-			return errors.Wrap(err, "state")
-		}
-	}
-	return nil
-}
-
-func (c ColLowCardinality) EncodeState(b *Buffer) {
-	// Writing key serialization version.
-	b.PutInt64(int64(sharedDictionariesWithAdditionalKeys))
-	if s, ok := c.Index.(StateEncoder); ok {
-		s.EncodeState(b)
-	}
-}
 
 // Constants for low cardinality metadata value that is represented as int64
 // consisted of bitflags and key type.
@@ -94,53 +82,43 @@ type keySerializationVersion byte
 // sharedDictionariesWithAdditionalKeys is default key serialization.
 const sharedDictionariesWithAdditionalKeys keySerializationVersion = 1
 
-func (c *ColLowCardinality) AppendKey(i int) {
-	switch c.Key {
-	case KeyUInt8:
-		c.Keys8 = append(c.Keys8, uint8(i))
-	case KeyUInt16:
-		c.Keys16 = append(c.Keys16, uint16(i))
-	case KeyUInt32:
-		c.Keys32 = append(c.Keys32, uint32(i))
-	case KeyUInt64:
-		c.Keys64 = append(c.Keys64, uint64(i))
-	default:
-		panic("invalid key type")
-	}
+// ColLowCardinality is generic LowCardinality(T) column.
+//
+// ColLowCardinality contains index and keys columns.
+//
+// Index (i.e. dictionary) column contains unique values, Keys column contains
+// sequence of indexes in Index column that represent actual values.
+//
+// For example, ["Eko", "Eko", "Amadela", "Amadela", "Amadela", "Amadela"] can
+// be encoded as:
+//	Index: ["Eko", "Amadela"] (String)
+//	Keys:  [0, 0, 1, 1, 1, 1] (UInt8)
+//
+// The CardinalityKey is chosen depending on Index size, i.e. maximum value
+// of chosen type should be able to represent any index of Index element.
+type ColLowCardinality[T comparable] struct {
+	Values []T
+
+	index ColumnOf[T]
+	key   CardinalityKey
+
+	// Keeping all key column variants as fields to reuse
+	// memory more efficiently.
+
+	// Values[T], kv and keys columns adds memory overhead, but simplifies
+	// implementation.
+	// TODO(ernado): revisit tradeoffs
+
+	keys8  ColUInt8
+	keys16 ColUInt16
+	keys32 ColUInt32
+	keys64 ColUInt64
+
+	kv   map[T]int
+	keys []int
 }
 
-func (c *ColArr) AppendLowCardinality(data []int) {
-	d := c.Data.(*ColLowCardinality)
-	for _, v := range data {
-		d.AppendKey(v)
-	}
-	c.Offsets = append(c.Offsets, uint64(d.Keys().Rows()))
-}
-
-func (c *ColLowCardinality) Keys() Column {
-	switch c.Key {
-	case KeyUInt8:
-		return &c.Keys8
-	case KeyUInt16:
-		return &c.Keys16
-	case KeyUInt32:
-		return &c.Keys32
-	case KeyUInt64:
-		return &c.Keys64
-	default:
-		panic("invalid key type")
-	}
-}
-
-func (c ColLowCardinality) Type() ColumnType {
-	return ColumnTypeLowCardinality.Sub(c.Index.Type())
-}
-
-func (c ColLowCardinality) Rows() int {
-	return c.Keys().Rows()
-}
-
-func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
+func (c *ColLowCardinality[T]) DecodeColumn(r *Reader, rows int) error {
 	if rows == 0 {
 		// Skipping entirely of no rows.
 		return nil
@@ -160,7 +138,7 @@ func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
 	if !key.IsACardinalityKey() {
 		return errors.Errorf("invalid low cardinality keys type %d", key)
 	}
-	c.Key = key
+	c.key = key
 
 	indexRows, err := r.Int64()
 	if err != nil {
@@ -169,7 +147,7 @@ func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
 	if err := checkRows(int(indexRows)); err != nil {
 		return errors.Wrap(err, "index size")
 	}
-	if err := c.Index.DecodeColumn(r, int(indexRows)); err != nil {
+	if err := c.index.DecodeColumn(r, int(indexRows)); err != nil {
 		return errors.Wrap(err, "index column")
 	}
 
@@ -180,22 +158,47 @@ func (c *ColLowCardinality) DecodeColumn(r *Reader, rows int) error {
 	if err := checkRows(int(keyRows)); err != nil {
 		return errors.Wrap(err, "index size")
 	}
-	if err := c.Keys().DecodeColumn(r, int(keyRows)); err != nil {
-		return errors.Wrap(err, "keys column")
+	switch c.key {
+	case KeyUInt8:
+		if err := c.keys8.DecodeColumn(r, rows); err != nil {
+			return errors.Wrap(err, "keys")
+		}
+		c.keys = fillValues(c.keys, c.keys8)
+	case KeyUInt16:
+		if err := c.keys16.DecodeColumn(r, rows); err != nil {
+			return errors.Wrap(err, "keys")
+		}
+		c.keys = fillValues(c.keys, c.keys16)
+	case KeyUInt32:
+		if err := c.keys32.DecodeColumn(r, rows); err != nil {
+			return errors.Wrap(err, "keys")
+		}
+		c.keys = fillValues(c.keys, c.keys32)
+	case KeyUInt64:
+		if err := c.keys64.DecodeColumn(r, rows); err != nil {
+			return errors.Wrap(err, "keys")
+		}
+		c.keys = fillValues(c.keys, c.keys64)
+	default:
+		return errors.Errorf("invalid key format %s", c.key)
+	}
+
+	c.Values = c.Values[:0]
+	for _, idx := range c.keys {
+		c.Values = append(c.Values, c.index.Row(idx))
 	}
 
 	return nil
 }
 
-func (c *ColLowCardinality) Reset() {
-	c.Index.Reset()
-	c.Keys8.Reset()
-	c.Keys16.Reset()
-	c.Keys32.Reset()
-	c.Keys64.Reset()
+func (c ColLowCardinality[T]) Type() ColumnType {
+	return ColumnTypeLowCardinality.Sub(c.index.Type())
 }
 
-func (c ColLowCardinality) EncodeColumn(b *Buffer) {
+func (c *ColLowCardinality[T]) EncodeColumn(b *Buffer) {
+	// Using pointer receiver as Prepare() is expected to be called before
+	// encoding.
+
 	if c.Rows() == 0 {
 		// Skipping encoding entirely.
 		return
@@ -203,15 +206,136 @@ func (c ColLowCardinality) EncodeColumn(b *Buffer) {
 
 	// Meta encodes whether reader should update
 	// low cardinality metadata and keys column type.
-	meta := cardinalityUpdateAll | int64(c.Key)
+	meta := cardinalityUpdateAll | int64(c.key)
 	b.PutInt64(meta)
 
 	// Writing index (dictionary).
-	b.PutInt64(int64(c.Index.Rows()))
-	c.Index.EncodeColumn(b)
+	b.PutInt64(int64(c.index.Rows()))
+	c.index.EncodeColumn(b)
 
-	// Sequence of values as indexes in dictionary.
-	k := c.Keys()
-	b.PutInt64(int64(k.Rows()))
-	k.EncodeColumn(b)
+	b.PutInt64(int64(c.Rows()))
+	switch c.key {
+	case KeyUInt8:
+		c.keys8.EncodeColumn(b)
+	case KeyUInt16:
+		c.keys16.EncodeColumn(b)
+	case KeyUInt32:
+		c.keys32.EncodeColumn(b)
+	case KeyUInt64:
+		c.keys64.EncodeColumn(b)
+	}
+}
+
+func (c *ColLowCardinality[T]) Reset() {
+	for k := range c.kv {
+		delete(c.kv, k)
+	}
+	c.keys = c.keys[:0]
+
+	c.keys8 = c.keys8[:0]
+	c.keys16 = c.keys16[:0]
+	c.keys32 = c.keys32[:0]
+	c.keys64 = c.keys64[:0]
+	c.Values = c.Values[:0]
+
+	c.index.Reset()
+}
+
+type cardinalityKeyValue interface {
+	~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+func fillKeys[K cardinalityKeyValue](values []int, keys []K) []K {
+	for _, v := range values {
+		keys = append(keys, K(v))
+	}
+	return keys
+}
+
+func fillValues[K cardinalityKeyValue](values []int, keys []K) []int {
+	for _, v := range keys {
+		values = append(values, int(v))
+	}
+	return values
+}
+
+// Append value to column.
+func (c *ColLowCardinality[T]) Append(v T) {
+	c.Values = append(c.Values, v)
+}
+
+// AppendArr appends slice to column.
+func (c *ColLowCardinality[T]) AppendArr(v []T) {
+	c.Values = append(c.Values, v...)
+}
+
+// Row returns i-th row.
+func (c ColLowCardinality[T]) Row(i int) T {
+	return c.Values[i]
+}
+
+// Rows returns rows count.
+func (c ColLowCardinality[T]) Rows() int {
+	return len(c.Values)
+}
+
+// Prepare column for ingestion.
+func (c *ColLowCardinality[T]) Prepare() error {
+	// Select minimum possible size for key.
+	if n := len(c.Values); n < math.MaxUint8 {
+		c.key = KeyUInt8
+	} else if n < math.MaxUint16 {
+		c.key = KeyUInt16
+	} else if uint32(n) < math.MaxUint32 {
+		c.key = KeyUInt32
+	} else {
+		c.key = KeyUInt64
+	}
+
+	// Allocate keys slice.
+	c.keys = append(c.keys[:0], make([]int, len(c.Values))...)
+	if c.kv == nil {
+		c.kv = map[T]int{}
+	}
+
+	// Fill keys with value indexes.
+	var last int
+	for i, v := range c.Values {
+		idx, ok := c.kv[v]
+		if !ok {
+			c.index.Append(v)
+			c.kv[v] = last
+			idx = last
+			last++
+		}
+		c.keys[i] = idx
+	}
+
+	// Fill key column with key indexes.
+	switch c.key {
+	case KeyUInt8:
+		c.keys8 = fillKeys(c.keys, c.keys8)
+	case KeyUInt16:
+		c.keys16 = fillKeys(c.keys, c.keys16)
+	case KeyUInt32:
+		c.keys32 = fillKeys(c.keys, c.keys32)
+	case KeyUInt64:
+		c.keys64 = fillKeys(c.keys, c.keys64)
+	}
+
+	return nil
+}
+
+// Array is helper that creates Array(ColLowCardinality(T)).
+func (c *ColLowCardinality[T]) Array() *ColArr[T] {
+	return &ColArr[T]{
+		Data: c,
+	}
+}
+
+// LowCardinalityOf creates new LowCardinality column from another column for T.
+func LowCardinalityOf[T comparable](c ColumnOf[T]) *ColLowCardinality[T] {
+	return &ColLowCardinality[T]{
+		index: c,
+	}
 }

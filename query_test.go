@@ -18,6 +18,14 @@ import (
 	"github.com/ClickHouse/ch-go/proto"
 )
 
+func requireEqual[T any](t *testing.T, a, b proto.ColumnOf[T]) {
+	t.Helper()
+	require.Equal(t, a.Rows(), b.Rows(), "rows count should match")
+	for i := 0; i < a.Rows(); i++ {
+		require.Equalf(t, a.Row(i), b.Row(i), "[%d]", i)
+	}
+}
+
 func TestClient_Query(t *testing.T) {
 	ctx := context.Background()
 	t.Parallel()
@@ -214,31 +222,29 @@ func TestClient_Query(t *testing.T) {
 			{"ClickHouse", "", "Goes", "", "Fasta!"},
 		}
 
-		var data proto.ColStr
-		arr := proto.ColArr{Data: &data}
+		arr := new(proto.ColStr).Array()
 		for _, v := range values {
-			data.ArrAppend(&arr, v)
+			arr.Append(v)
 		}
 
 		insertArr := Query{
 			Body: "INSERT INTO test_array_table VALUES",
 			Input: []proto.InputColumn{
 				{Name: "id", Data: proto.ColUInt8{1, 2, 3}},
-				{Name: "v", Data: &arr},
+				{Name: "v", Data: arr},
 			},
 		}
 		require.NoError(t, conn.Do(ctx, insertArr), "insert")
 
-		var gotData proto.ColStr
-		gotArr := proto.ColArr{Data: &gotData}
+		gotArr := new(proto.ColStr).Array()
 		selectArr := Query{
 			Body: "SELECT v FROM test_array_table",
 			Result: proto.Results{
-				{Name: "v", Data: &gotArr},
+				{Name: "v", Data: gotArr},
 			},
 		}
 		require.NoError(t, conn.Do(ctx, selectArr), "select")
-		require.Equal(t, data, gotData)
+		requireEqual[[]string](t, arr, gotArr)
 		require.Equal(t, arr.Offsets, gotArr.Offsets)
 	})
 	t.Run("SelectOne", func(t *testing.T) {
@@ -294,7 +300,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		// Select single string row.
 		var data proto.ColStr
-		selectStr := Query{
+		require.NoError(t, Conn(t).Do(ctx, Query{
 			Body: "SELECT 'foo' AS s",
 			Result: proto.Results{
 				{
@@ -302,44 +308,32 @@ func TestClient_Query(t *testing.T) {
 					Data: &data,
 				},
 			},
-		}
-		require.NoError(t, Conn(t).Do(ctx, selectStr))
+		}))
 		require.Equal(t, 1, data.Rows())
 		require.Equal(t, "foo", data.First())
 	})
 	t.Run("SelectArr", func(t *testing.T) {
 		t.Parallel()
-		var data proto.ColUInt8
-		arr := proto.ColArr{
-			Data: &data,
-		}
-		selectArr := Query{
+		arr := new(proto.ColUInt8).Array()
+		require.NoError(t, Conn(t).Do(ctx, Query{
 			Body: "SELECT [1, 2, 3] AS arr",
 			Result: proto.Results{
-				{
-					Name: "arr",
-					Data: &arr,
-				},
+				{Name: "arr", Data: arr},
 			},
-		}
-		require.NoError(t, Conn(t).Do(ctx, selectArr))
+		}))
 		require.Equal(t, 1, arr.Rows())
-		require.Equal(t, 3, data.Rows())
-		require.Equal(t, proto.ColUInt8{1, 2, 3}, data)
+		require.Equal(t, 3, len(arr.Row(0)))
+		require.Equal(t, []uint8{1, 2, 3}, arr.Row(0))
 	})
 	t.Run("SelectIPv4", func(t *testing.T) {
 		t.Parallel()
 		var data proto.ColIPv4
-		selectArr := Query{
+		require.NoError(t, Conn(t).Do(ctx, Query{
 			Body: "SELECT toIPv4('127.1.1.5') AS ip",
 			Result: proto.Results{
-				{
-					Name: "ip",
-					Data: &data,
-				},
+				{Name: "ip", Data: &data},
 			},
-		}
-		require.NoError(t, Conn(t).Do(ctx, selectArr))
+		}))
 		require.Equal(t, 1, data.Rows())
 		t.Logf("%v %s", data[0], data[0].ToIP())
 		require.Equal(t, netip.MustParseAddr("127.1.1.5"), data[0].ToIP())
@@ -350,10 +344,7 @@ func TestClient_Query(t *testing.T) {
 		selectArr := Query{
 			Body: "SELECT toIPv6('2001:0DB8:AC10:FE01:FEED:BABE:CAFE:F00D') AS ip",
 			Result: proto.Results{
-				{
-					Name: "ip",
-					Data: &data,
-				},
+				{Name: "ip", Data: &data},
 			},
 		}
 		require.NoError(t, Conn(t).Do(ctx, selectArr))
@@ -372,10 +363,7 @@ func TestClient_Query(t *testing.T) {
 		selectArr := Query{
 			Body: fmt.Sprintf("SELECT toDateTime('%s', '%s') as time", dt, tz),
 			Result: proto.Results{
-				{
-					Name: "time",
-					Data: &data,
-				},
+				{Name: "time", Data: &data},
 			},
 		}
 		require.NoError(t, Conn(t).Do(ctx, selectArr))
@@ -525,132 +513,11 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
-		s := &proto.ColStr{}
-		data := proto.ColLowCardinality{
-			Key:   proto.KeyUInt8,
-			Keys8: proto.ColUInt8{0, 1, 0, 1, 0, 1, 1, 1, 0, 0},
-			Index: s,
-		}
-		s.Append("One")
-		s.Append("Two")
-
-		insertQuery := Query{
-			Body: "INSERT INTO test_table VALUES",
-			Input: []proto.InputColumn{
-				{Name: "v", Data: &data},
-			},
-		}
-		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
-
-		var (
-			gotIndex = &proto.ColStr{}
-			gotData  = &proto.ColLowCardinality{
-				Index: gotIndex,
-			}
-		)
-		selectData := Query{
-			Body: "SELECT * FROM test_table",
-			Result: proto.Results{
-				{Name: "v", Data: gotData},
-			},
-		}
-		require.NoError(t, conn.Do(ctx, selectData), "select")
-		require.Equal(t, data.Rows(), gotData.Rows())
-		require.Equal(t, data.Key, gotData.Key)
-
 		expected := []string{
 			"One", "Two", "One", "Two", "One", "Two", "Two", "Two", "One", "One",
 		}
-		for i, j := range gotData.Keys8 {
-			got := gotIndex.Row(int(j))
-			assert.Equal(t, expected[i], got, "[%d]", i)
-		}
-		t.Run("LowCardinalityOf", func(t *testing.T) {
-			v := new(proto.ColStr).LowCardinality()
-			require.NoError(t, conn.Do(ctx, Query{
-				Body: "SELECT * FROM test_table",
-				Result: proto.Results{
-					{Name: "v", Data: v},
-				},
-			}))
-			require.Equal(t, expected, v.Values)
-		})
-	})
-	t.Run("InsertArrayLowCardinalityString", func(t *testing.T) {
-		t.Parallel()
-		conn := Conn(t)
-
-		require.NoError(t, conn.Do(ctx, Query{
-			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = TinyLog",
-		}), "create table")
-
-		data := [][]string{
-			{"foo", "bar", "baz"},
-			{"foo"},
-			{"bar", "bar"},
-			{"foo", "foo"},
-			{"bar", "bar", "bar", "bar"},
-		}
-		str := &proto.ColStr{}
-		idx := &proto.ColLowCardinality{Index: str, Key: proto.KeyUInt8}
-		col := &proto.ColArr{Data: idx}
-
-		kv := map[string]int{} // creating index
-		for _, v := range data {
-			for _, s := range v {
-				if _, ok := kv[s]; ok {
-					continue
-				}
-				kv[s] = str.Rows()
-				str.Append(s)
-			}
-		}
-		for _, v := range data {
-			var keys []int
-			for _, k := range v {
-				keys = append(keys, kv[k]) // mapping indexes
-			}
-			col.AppendLowCardinality(keys) // adding row
-		}
-
-		require.NoError(t, conn.Do(ctx, Query{
-			Body: "INSERT INTO test_table VALUES",
-			Input: []proto.InputColumn{
-				{Name: "v", Data: col},
-			},
-		}), "insert")
-	})
-	t.Run("InsertMapStringString", func(t *testing.T) {
-		t.Parallel()
-		conn := Conn(t)
-		createTable := Query{
-			Body: "CREATE TABLE test_table (v Map(String, String)) ENGINE = TinyLog",
-		}
-		require.NoError(t, conn.Do(ctx, createTable), "create table")
-
-		var (
-			keys   = &proto.ColStr{}
-			values = &proto.ColStr{}
-			data   = &proto.ColMap{
-				Keys:   keys,
-				Values: values,
-			}
-		)
-
-		for _, v := range []struct {
-			Key, Value string
-		}{
-			{Key: "key1", Value: "value1"},
-			{Key: "key2", Value: "value2"},
-			{Key: "key3", Value: "value3"},
-		} {
-			keys.Append(v.Key)
-			values.Append(v.Value)
-		}
-		data.Offsets = proto.ColUInt64{
-			2, // [0:2]
-			3, // [2:3]
-		}
+		data := new(proto.ColStr).LowCardinality()
+		data.AppendArr(expected)
 
 		insertQuery := Query{
 			Body: "INSERT INTO test_table VALUES",
@@ -660,39 +527,62 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
-		var (
-			gotKeys   = &proto.ColStr{}
-			gotValues = &proto.ColStr{}
-			gotData   = &proto.ColMap{
-				Keys:   gotKeys,
-				Values: gotValues,
-			}
-		)
-		selectData := Query{
+		gotData := new(proto.ColStr).LowCardinality()
+		require.NoError(t, conn.Do(ctx, Query{
 			Body: "SELECT * FROM test_table",
 			Result: proto.Results{
 				{Name: "v", Data: gotData},
 			},
+		}), "select")
+		requireEqual[string](t, data, gotData)
+	})
+	t.Run("InsertArrayLowCardinalityString", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = Memory",
+		}), "create table")
+
+		data := [][]string{
+			{"foo", "bar", "baz"},
+			{"foo"},
+			{"bar", "bar"},
+			{"foo", "foo"},
+			{"bar", "bar", "bar", "bar"},
 		}
-		require.NoError(t, conn.Do(ctx, selectData), "select")
-		require.Equal(t, data.Rows(), gotData.Rows())
-		require.Equal(t, data, gotData)
+		col := new(proto.ColStr).LowCardinality().Array()
+		for _, v := range data {
+			col.Append(v)
+		}
+
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: col},
+			},
+		}), "insert")
+
+		gotData := new(proto.ColStr).LowCardinality().Array()
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: gotData},
+			},
+		}), "select")
+		requireEqual[[]string](t, col, gotData)
 	})
 	t.Run("SelectArray", func(t *testing.T) {
 		t.Parallel()
-		data := proto.ColUInt8{}
-		arr := proto.ColArr{Data: &data}
+		arr := new(proto.ColUInt8).Array()
 		selectArr := Query{
 			Body: "SELECT [1, 2, 3, 4]::Array(UInt8) as v",
 			Result: proto.Results{
-				{
-					Name: "v",
-					Data: &arr,
-				},
+				{Name: "v", Data: arr},
 			},
 		}
 		require.NoError(t, Conn(t).Do(ctx, selectArr))
-		require.Equal(t, proto.ColUInt8{1, 2, 3, 4}, data)
+		require.Equal(t, []uint8{1, 2, 3, 4}, arr.Row(0))
 	})
 	t.Run("SelectArrayOf", func(t *testing.T) {
 		t.Parallel()
@@ -736,7 +626,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
-		data := &proto.ColMapOf[string, int64]{
+		data := &proto.ColMap[string, int64]{
 			Keys:   new(proto.ColStr),
 			Values: new(proto.ColInt64),
 		}
@@ -760,7 +650,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
-		gotData := &proto.ColMapOf[string, int64]{
+		gotData := &proto.ColMap[string, int64]{
 			Keys:   new(proto.ColStr),
 			Values: new(proto.ColInt64),
 		}

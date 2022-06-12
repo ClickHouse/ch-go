@@ -38,22 +38,22 @@ func (c *ColInt16) Reset() {
 }
 
 // LowCardinality returns LowCardinality for Int16 .
-func (c *ColInt16) LowCardinality() *ColLowCardinalityOf[int16] {
-	return &ColLowCardinalityOf[int16]{
+func (c *ColInt16) LowCardinality() *ColLowCardinality[int16] {
+	return &ColLowCardinality[int16]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of int16.
-func (c *ColInt16) Array() *ColArrOf[int16] {
-	return &ColArrOf[int16]{
+func (c *ColInt16) Array() *ColArr[int16] {
+	return &ColArr[int16]{
 		Data: c,
 	}
 }
 
 // NewArrInt16 returns new Array(Int16).
-func NewArrInt16() *ColArrOf[int16] {
-	return &ColArrOf[int16]{
+func NewArrInt16() *ColArr[int16] {
+	return &ColArr[int16]{
 		Data: new(ColInt16),
 	}
 }

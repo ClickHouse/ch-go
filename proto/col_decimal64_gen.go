@@ -38,22 +38,22 @@ func (c *ColDecimal64) Reset() {
 }
 
 // LowCardinality returns LowCardinality for Decimal64 .
-func (c *ColDecimal64) LowCardinality() *ColLowCardinalityOf[Decimal64] {
-	return &ColLowCardinalityOf[Decimal64]{
+func (c *ColDecimal64) LowCardinality() *ColLowCardinality[Decimal64] {
+	return &ColLowCardinality[Decimal64]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of Decimal64.
-func (c *ColDecimal64) Array() *ColArrOf[Decimal64] {
-	return &ColArrOf[Decimal64]{
+func (c *ColDecimal64) Array() *ColArr[Decimal64] {
+	return &ColArr[Decimal64]{
 		Data: c,
 	}
 }
 
 // NewArrDecimal64 returns new Array(Decimal64).
-func NewArrDecimal64() *ColArrOf[Decimal64] {
-	return &ColArrOf[Decimal64]{
+func NewArrDecimal64() *ColArr[Decimal64] {
+	return &ColArr[Decimal64]{
 		Data: new(ColDecimal64),
 	}
 }

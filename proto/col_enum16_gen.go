@@ -38,22 +38,22 @@ func (c *ColEnum16) Reset() {
 }
 
 // LowCardinality returns LowCardinality for Enum16 .
-func (c *ColEnum16) LowCardinality() *ColLowCardinalityOf[Enum16] {
-	return &ColLowCardinalityOf[Enum16]{
+func (c *ColEnum16) LowCardinality() *ColLowCardinality[Enum16] {
+	return &ColLowCardinality[Enum16]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of Enum16.
-func (c *ColEnum16) Array() *ColArrOf[Enum16] {
-	return &ColArrOf[Enum16]{
+func (c *ColEnum16) Array() *ColArr[Enum16] {
+	return &ColArr[Enum16]{
 		Data: c,
 	}
 }
 
 // NewArrEnum16 returns new Array(Enum16).
-func NewArrEnum16() *ColArrOf[Enum16] {
-	return &ColArrOf[Enum16]{
+func NewArrEnum16() *ColArr[Enum16] {
+	return &ColArr[Enum16]{
 		Data: new(ColEnum16),
 	}
 }

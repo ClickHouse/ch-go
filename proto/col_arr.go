@@ -1,36 +1,43 @@
 package proto
 
-import (
-	"github.com/go-faster/errors"
-)
+import "github.com/go-faster/errors"
 
-// ColArr represents Array[T].
-type ColArr struct {
-	Offsets ColUInt64
-	Data    Column
-}
-
-// Compile-time assertions for ColArr.
+// Compile-time assertions for ArrayOf.
 var (
-	_ ColInput  = ColArr{}
-	_ ColResult = (*ColArr)(nil)
-	_ Column    = (*ColArr)(nil)
+	_ ColInput     = ArrayOf[string]((*ColStr)(nil))
+	_ ColResult    = ArrayOf[string]((*ColStr)(nil))
+	_ Column       = ArrayOf[string]((*ColStr)(nil))
+	_ StateEncoder = ArrayOf[string]((*ColStr)(nil))
+	_ StateDecoder = ArrayOf[string]((*ColStr)(nil))
+	_ Inferable    = ArrayOf[string]((*ColStr)(nil))
 )
 
-func (c ColArr) EncodeColumn(b *Buffer) {
-	c.Offsets.EncodeColumn(b)
-	c.Data.EncodeColumn(b)
+// ColArr is Array(T).
+type ColArr[T any] struct {
+	Offsets ColUInt64
+	Data    ColumnOf[T]
 }
 
-func (c ColArr) Type() ColumnType {
-	return c.Data.Type().Array()
+// ArrayOf returns ColArr of c.
+//
+// Example: ArrayOf[string](&ColStr{})
+func ArrayOf[T any](c ColumnOf[T]) *ColArr[T] {
+	return &ColArr[T]{
+		Data: c,
+	}
 }
 
-func (c ColArr) Rows() int {
-	return len(c.Offsets)
+// Type returns type of array, i.e. Array(T).
+func (c ColArr[T]) Type() ColumnType {
+	return ColumnTypeArray.Sub(c.Data.Type())
 }
 
-func (c *ColArr) DecodeState(r *Reader) error {
+// Rows returns rows count.
+func (c ColArr[T]) Rows() int {
+	return c.Offsets.Rows()
+}
+
+func (c *ColArr[T]) DecodeState(r *Reader) error {
 	if s, ok := c.Data.(StateDecoder); ok {
 		if err := s.DecodeState(r); err != nil {
 			return errors.Wrap(err, "data state")
@@ -39,13 +46,53 @@ func (c *ColArr) DecodeState(r *Reader) error {
 	return nil
 }
 
-func (c *ColArr) EncodeState(b *Buffer) {
+func (c *ColArr[T]) EncodeState(b *Buffer) {
 	if s, ok := c.Data.(StateEncoder); ok {
 		s.EncodeState(b)
 	}
 }
 
-func (c *ColArr) DecodeColumn(r *Reader, rows int) error {
+// Prepare ensures Preparable column propagation.
+func (c *ColArr[T]) Prepare() error {
+	if v, ok := c.Data.(Preparable); ok {
+		if err := v.Prepare(); err != nil {
+			return errors.Wrap(err, "prepare data")
+		}
+	}
+	return nil
+}
+
+// Infer ensures Inferable column propagation.
+func (c *ColArr[T]) Infer(t ColumnType) error {
+	if v, ok := c.Data.(Inferable); ok {
+		if err := v.Infer(t.Elem()); err != nil {
+			return errors.Wrap(err, "infer data")
+		}
+	}
+	return nil
+}
+
+// RowAppend appends i-th row to target and returns it.
+func (c ColArr[T]) RowAppend(i int, target []T) []T {
+	var start int
+	end := int(c.Offsets[i])
+	if i > 0 {
+		start = int(c.Offsets[i-1])
+	}
+	for idx := start; idx < end; idx++ {
+		target = append(target, c.Data.Row(idx))
+	}
+
+	return target
+}
+
+// Row returns i-th row.
+func (c ColArr[T]) Row(i int) []T {
+	return c.RowAppend(i, nil)
+}
+
+// DecodeColumn implements ColResult.
+func (c *ColArr[T]) DecodeColumn(r *Reader, rows int) error {
 	if err := c.Offsets.DecodeColumn(r, rows); err != nil {
 		return errors.Wrap(err, "read offsets")
 	}
@@ -57,46 +104,35 @@ func (c *ColArr) DecodeColumn(r *Reader, rows int) error {
 	if err := c.Data.DecodeColumn(r, size); err != nil {
 		return errors.Wrap(err, "decode data")
 	}
-
 	return nil
 }
 
-func (c *ColArr) Reset() {
-	c.Offsets = c.Offsets[:0]
+// Reset implements ColResult.
+func (c *ColArr[T]) Reset() {
 	c.Data.Reset()
+	c.Offsets.Reset()
 }
 
-// ColInfo wraps Name and Type of column.
-type ColInfo struct {
-	Name string
-	Type ColumnType
+// EncodeColumn implements ColInput.
+func (c ColArr[T]) EncodeColumn(b *Buffer) {
+	c.Offsets.EncodeColumn(b)
+	c.Data.EncodeColumn(b)
 }
 
-// ColInfoInput saves column info on decoding.
-type ColInfoInput []ColInfo
-
-func (s *ColInfoInput) Reset() {
-	*s = (*s)[:0]
-}
-
-func (s *ColInfoInput) DecodeResult(r *Reader, b Block) error {
-	s.Reset()
-	if b.Rows > 0 {
-		return errors.New("got unexpected rows")
+// Append appends new row to column.
+func (c *ColArr[T]) Append(v []T) {
+	for _, s := range v {
+		c.Data.Append(s)
 	}
-	for i := 0; i < b.Columns; i++ {
-		columnName, err := r.Str()
-		if err != nil {
-			return errors.Wrapf(err, "column [%d] name", i)
-		}
-		columnTypeRaw, err := r.Str()
-		if err != nil {
-			return errors.Wrapf(err, "column [%d] type", i)
-		}
-		*s = append(*s, ColInfo{
-			Name: columnName,
-			Type: ColumnType(columnTypeRaw),
-		})
-	}
-	return nil
+	c.Offsets = append(c.Offsets, uint64(c.Data.Rows()))
+}
+
+// Result for current column.
+func (c *ColArr[T]) Result(column string) ResultColumn {
+	return ResultColumn{Name: column, Data: c}
+}
+
+// Results return Results containing single column.
+func (c *ColArr[T]) Results(column string) Results {
+	return Results{c.Result(column)}
 }

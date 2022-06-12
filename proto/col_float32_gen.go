@@ -38,22 +38,22 @@ func (c *ColFloat32) Reset() {
 }
 
 // LowCardinality returns LowCardinality for Float32 .
-func (c *ColFloat32) LowCardinality() *ColLowCardinalityOf[float32] {
-	return &ColLowCardinalityOf[float32]{
+func (c *ColFloat32) LowCardinality() *ColLowCardinality[float32] {
+	return &ColLowCardinality[float32]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of float32.
-func (c *ColFloat32) Array() *ColArrOf[float32] {
-	return &ColArrOf[float32]{
+func (c *ColFloat32) Array() *ColArr[float32] {
+	return &ColArr[float32]{
 		Data: c,
 	}
 }
 
 // NewArrFloat32 returns new Array(Float32).
-func NewArrFloat32() *ColArrOf[float32] {
-	return &ColArrOf[float32]{
+func NewArrFloat32() *ColArr[float32] {
+	return &ColArr[float32]{
 		Data: new(ColFloat32),
 	}
 }

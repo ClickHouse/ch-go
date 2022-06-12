@@ -4,7 +4,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func requireEqual[T any](t *testing.T, a, b ColumnOf[T]) {
+	t.Helper()
+	require.Equal(t, a.Rows(), b.Rows(), "rows count should match")
+	for i := 0; i < a.Rows(); i++ {
+		require.Equalf(t, a.Row(i), b.Row(i), "[%d]", i)
+	}
+}
 
 func TestColumnType_Elem(t *testing.T) {
 	t.Run("Array", func(t *testing.T) {

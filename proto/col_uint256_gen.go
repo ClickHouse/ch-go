@@ -38,22 +38,22 @@ func (c *ColUInt256) Reset() {
 }
 
 // LowCardinality returns LowCardinality for UInt256 .
-func (c *ColUInt256) LowCardinality() *ColLowCardinalityOf[UInt256] {
-	return &ColLowCardinalityOf[UInt256]{
+func (c *ColUInt256) LowCardinality() *ColLowCardinality[UInt256] {
+	return &ColLowCardinality[UInt256]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of UInt256.
-func (c *ColUInt256) Array() *ColArrOf[UInt256] {
-	return &ColArrOf[UInt256]{
+func (c *ColUInt256) Array() *ColArr[UInt256] {
+	return &ColArr[UInt256]{
 		Data: c,
 	}
 }
 
 // NewArrUInt256 returns new Array(UInt256).
-func NewArrUInt256() *ColArrOf[UInt256] {
-	return &ColArrOf[UInt256]{
+func NewArrUInt256() *ColArr[UInt256] {
+	return &ColArr[UInt256]{
 		Data: new(ColUInt256),
 	}
 }

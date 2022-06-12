@@ -38,22 +38,22 @@ func (c *ColUInt32) Reset() {
 }
 
 // LowCardinality returns LowCardinality for UInt32 .
-func (c *ColUInt32) LowCardinality() *ColLowCardinalityOf[uint32] {
-	return &ColLowCardinalityOf[uint32]{
+func (c *ColUInt32) LowCardinality() *ColLowCardinality[uint32] {
+	return &ColLowCardinality[uint32]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of uint32.
-func (c *ColUInt32) Array() *ColArrOf[uint32] {
-	return &ColArrOf[uint32]{
+func (c *ColUInt32) Array() *ColArr[uint32] {
+	return &ColArr[uint32]{
 		Data: c,
 	}
 }
 
 // NewArrUInt32 returns new Array(UInt32).
-func NewArrUInt32() *ColArrOf[uint32] {
-	return &ColArrOf[uint32]{
+func NewArrUInt32() *ColArr[uint32] {
+	return &ColArr[uint32]{
 		Data: new(ColUInt32),
 	}
 }

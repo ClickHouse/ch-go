@@ -3,6 +3,8 @@ package proto
 import (
 	"fmt"
 	"strings"
+
+	"github.com/go-faster/errors"
 )
 
 // ColInput column.
@@ -23,6 +25,13 @@ type ColResult interface {
 type Column interface {
 	ColResult
 	ColInput
+}
+
+// ColumnOf is generic Column(T) constraint.
+type ColumnOf[T any] interface {
+	Column
+	Append(v T)
+	Row(i int) T
 }
 
 type StateEncoder interface {
@@ -231,4 +240,39 @@ func Alias(c Column, t ColumnType) Column {
 		Column: c,
 		t:      t,
 	}
+}
+
+// ColInfo wraps Name and Type of column.
+type ColInfo struct {
+	Name string
+	Type ColumnType
+}
+
+// ColInfoInput saves column info on decoding.
+type ColInfoInput []ColInfo
+
+func (s *ColInfoInput) Reset() {
+	*s = (*s)[:0]
+}
+
+func (s *ColInfoInput) DecodeResult(r *Reader, b Block) error {
+	s.Reset()
+	if b.Rows > 0 {
+		return errors.New("got unexpected rows")
+	}
+	for i := 0; i < b.Columns; i++ {
+		columnName, err := r.Str()
+		if err != nil {
+			return errors.Wrapf(err, "column [%d] name", i)
+		}
+		columnTypeRaw, err := r.Str()
+		if err != nil {
+			return errors.Wrapf(err, "column [%d] type", i)
+		}
+		*s = append(*s, ColInfo{
+			Name: columnName,
+			Type: ColumnType(columnTypeRaw),
+		})
+	}
+	return nil
 }

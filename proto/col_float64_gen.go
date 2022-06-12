@@ -38,22 +38,22 @@ func (c *ColFloat64) Reset() {
 }
 
 // LowCardinality returns LowCardinality for Float64 .
-func (c *ColFloat64) LowCardinality() *ColLowCardinalityOf[float64] {
-	return &ColLowCardinalityOf[float64]{
+func (c *ColFloat64) LowCardinality() *ColLowCardinality[float64] {
+	return &ColLowCardinality[float64]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of float64.
-func (c *ColFloat64) Array() *ColArrOf[float64] {
-	return &ColArrOf[float64]{
+func (c *ColFloat64) Array() *ColArr[float64] {
+	return &ColArr[float64]{
 		Data: c,
 	}
 }
 
 // NewArrFloat64 returns new Array(Float64).
-func NewArrFloat64() *ColArrOf[float64] {
-	return &ColArrOf[float64]{
+func NewArrFloat64() *ColArr[float64] {
+	return &ColArr[float64]{
 		Data: new(ColFloat64),
 	}
 }

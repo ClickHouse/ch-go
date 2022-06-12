@@ -38,22 +38,22 @@ func (c *ColDateTime) Reset() {
 }
 
 // LowCardinality returns LowCardinality for DateTime .
-func (c *ColDateTime) LowCardinality() *ColLowCardinalityOf[DateTime] {
-	return &ColLowCardinalityOf[DateTime]{
+func (c *ColDateTime) LowCardinality() *ColLowCardinality[DateTime] {
+	return &ColLowCardinality[DateTime]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of DateTime.
-func (c *ColDateTime) Array() *ColArrOf[DateTime] {
-	return &ColArrOf[DateTime]{
+func (c *ColDateTime) Array() *ColArr[DateTime] {
+	return &ColArr[DateTime]{
 		Data: c,
 	}
 }
 
 // NewArrDateTime returns new Array(DateTime).
-func NewArrDateTime() *ColArrOf[DateTime] {
-	return &ColArrOf[DateTime]{
+func NewArrDateTime() *ColArr[DateTime] {
+	return &ColArr[DateTime]{
 		Data: new(ColDateTime),
 	}
 }

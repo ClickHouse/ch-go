@@ -38,22 +38,22 @@ func (c *ColUInt64) Reset() {
 }
 
 // LowCardinality returns LowCardinality for UInt64 .
-func (c *ColUInt64) LowCardinality() *ColLowCardinalityOf[uint64] {
-	return &ColLowCardinalityOf[uint64]{
+func (c *ColUInt64) LowCardinality() *ColLowCardinality[uint64] {
+	return &ColLowCardinality[uint64]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of uint64.
-func (c *ColUInt64) Array() *ColArrOf[uint64] {
-	return &ColArrOf[uint64]{
+func (c *ColUInt64) Array() *ColArr[uint64] {
+	return &ColArr[uint64]{
 		Data: c,
 	}
 }
 
 // NewArrUInt64 returns new Array(UInt64).
-func NewArrUInt64() *ColArrOf[uint64] {
-	return &ColArrOf[uint64]{
+func NewArrUInt64() *ColArr[uint64] {
+	return &ColArr[uint64]{
 		Data: new(ColUInt64),
 	}
 }

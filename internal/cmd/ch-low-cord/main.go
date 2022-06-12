@@ -32,18 +32,14 @@ func run(ctx context.Context) error {
 	}
 
 	s := &proto.ColStr{}
-	data := proto.ColLowCardinality{
-		Key:   proto.KeyUInt8,
-		Keys8: proto.ColUInt8{0, 1, 0, 1, 0, 1, 1, 1, 0, 0},
-		Index: s,
-	}
+	data := s.LowCardinality()
 	s.Append("One")
 	s.Append("Two")
 
 	if err := c.Do(ctx, ch.Query{
 		Body: "INSERT INTO test_cardinality_table VALUES",
 		Input: []proto.InputColumn{
-			{Name: "v", Data: &data},
+			{Name: "v", Data: data},
 		},
 	}); err != nil {
 		return errors.Wrap(err, "insert")
@@ -51,7 +47,7 @@ func run(ctx context.Context) error {
 	if err := c.Do(ctx, ch.Query{
 		Body: "SELECT * FROM test_cardinality_table VALUES",
 		Result: proto.Results{
-			{Name: "v", Data: &data},
+			{Name: "v", Data: data},
 		},
 	}); err != nil {
 		return errors.Wrap(err, "insert")

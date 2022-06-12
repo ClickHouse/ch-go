@@ -1,15 +1,40 @@
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+)
 
-// ColMap represents Map column.
-type ColMap struct {
+// Compile-time assertions for ColMap.
+var (
+	_ ColInput                 = (*ColMap[string, string])(nil)
+	_ ColResult                = (*ColMap[string, string])(nil)
+	_ Column                   = (*ColMap[string, string])(nil)
+	_ ColumnOf[map[string]int] = (*ColMap[string, int])(nil)
+	_ StateEncoder             = (*ColMap[string, string])(nil)
+	_ StateDecoder             = (*ColMap[string, string])(nil)
+
+	_ = ColMap[int64, string]{
+		Keys:   new(ColInt64),
+		Values: new(ColStr),
+	}
+)
+
+// ColMap implements Map(K, V) as ColumnOf[map[K]V].
+type ColMap[K comparable, V any] struct {
 	Offsets ColUInt64
-	Keys    Column
-	Values  Column
+	Keys    ColumnOf[K]
+	Values  ColumnOf[V]
 }
 
-func (c *ColMap) DecodeState(r *Reader) error {
+func (c ColMap[K, V]) Type() ColumnType {
+	return ColumnTypeMap.Sub(c.Keys.Type(), c.Values.Type())
+}
+
+func (c ColMap[K, V]) Rows() int {
+	return c.Offsets.Rows()
+}
+
+func (c *ColMap[K, V]) DecodeState(r *Reader) error {
 	if s, ok := c.Keys.(StateDecoder); ok {
 		if err := s.DecodeState(r); err != nil {
 			return errors.Wrap(err, "keys state")
@@ -23,7 +48,7 @@ func (c *ColMap) DecodeState(r *Reader) error {
 	return nil
 }
 
-func (c ColMap) EncodeState(b *Buffer) {
+func (c ColMap[K, V]) EncodeState(b *Buffer) {
 	if s, ok := c.Keys.(StateEncoder); ok {
 		s.EncodeState(b)
 	}
@@ -32,15 +57,34 @@ func (c ColMap) EncodeState(b *Buffer) {
 	}
 }
 
-func (c ColMap) Type() ColumnType {
-	return ColumnTypeMap.Sub(c.Keys.Type(), c.Values.Type())
+func (c ColMap[K, V]) Row(i int) map[K]V {
+	m := make(map[K]V)
+	var start int
+	end := int(c.Offsets[i])
+	if i > 0 {
+		start = int(c.Offsets[i-1])
+	}
+	for idx := start; idx < end; idx++ {
+		m[c.Keys.Row(idx)] = c.Values.Row(idx)
+	}
+	return m
 }
 
-func (c ColMap) Rows() int {
-	return c.Offsets.Rows()
+func (c *ColMap[K, V]) Append(m map[K]V) {
+	for k, v := range m {
+		c.Keys.Append(k)
+		c.Values.Append(v)
+	}
+	c.Offsets.Append(uint64(c.Keys.Rows()))
 }
 
-func (c *ColMap) DecodeColumn(r *Reader, rows int) error {
+func (c *ColMap[K, V]) AppendArr(v []map[K]V) {
+	for _, m := range v {
+		c.Append(m)
+	}
+}
+
+func (c *ColMap[K, V]) DecodeColumn(r *Reader, rows int) error {
 	if rows == 0 {
 		return nil
 	}
@@ -62,13 +106,13 @@ func (c *ColMap) DecodeColumn(r *Reader, rows int) error {
 	return nil
 }
 
-func (c *ColMap) Reset() {
+func (c *ColMap[K, V]) Reset() {
 	c.Offsets.Reset()
 	c.Keys.Reset()
 	c.Values.Reset()
 }
 
-func (c ColMap) EncodeColumn(b *Buffer) {
+func (c ColMap[K, V]) EncodeColumn(b *Buffer) {
 	if c.Rows() == 0 {
 		return
 	}

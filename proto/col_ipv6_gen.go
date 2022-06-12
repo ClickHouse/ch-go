@@ -38,22 +38,22 @@ func (c *ColIPv6) Reset() {
 }
 
 // LowCardinality returns LowCardinality for IPv6 .
-func (c *ColIPv6) LowCardinality() *ColLowCardinalityOf[IPv6] {
-	return &ColLowCardinalityOf[IPv6]{
+func (c *ColIPv6) LowCardinality() *ColLowCardinality[IPv6] {
+	return &ColLowCardinality[IPv6]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of IPv6.
-func (c *ColIPv6) Array() *ColArrOf[IPv6] {
-	return &ColArrOf[IPv6]{
+func (c *ColIPv6) Array() *ColArr[IPv6] {
+	return &ColArr[IPv6]{
 		Data: c,
 	}
 }
 
 // NewArrIPv6 returns new Array(IPv6).
-func NewArrIPv6() *ColArrOf[IPv6] {
-	return &ColArrOf[IPv6]{
+func NewArrIPv6() *ColArr[IPv6] {
+	return &ColArr[IPv6]{
 		Data: new(ColIPv6),
 	}
 }

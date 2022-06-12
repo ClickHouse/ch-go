@@ -14,9 +14,8 @@ func ExampleQuery_multipleInputColumns() {
 		name      proto.ColStr
 		sevText   proto.ColEnum8Auto
 		sevNumber proto.ColUInt8
-		arrValues proto.ColStr
 
-		arr = proto.ColArr{Data: &arrValues} // Array(String)
+		arr = new(proto.ColStr).Array() // Array(String)
 		now = time.Date(2010, 1, 1, 10, 22, 33, 345678, time.UTC)
 	)
 	// Append 10 rows.
@@ -26,7 +25,7 @@ func ExampleQuery_multipleInputColumns() {
 		name.Append("name")
 		sevText.Values = append(sevText.Values, "INFO")
 		sevNumber = append(sevNumber, 10)
-		arrValues.ArrAppend(&arr, []string{"foo", "bar", "baz"})
+		arr.Append([]string{"foo", "bar", "baz"})
 	}
 	input := proto.Input{
 		{Name: "timestamp", Data: timestamp.Wrap(proto.PrecisionNano)},

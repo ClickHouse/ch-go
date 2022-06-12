@@ -9,8 +9,8 @@ import (
 )
 
 type MapPair[V comparable] struct {
-	Keys   *proto.ColArrOf[string]
-	Values *proto.ColArrOf[V]
+	Keys   *proto.ColArr[string]
+	Values *proto.ColArr[V]
 }
 
 func (m MapPair[V]) Row(i int) ([]string, []V) {

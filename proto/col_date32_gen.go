@@ -38,22 +38,22 @@ func (c *ColDate32) Reset() {
 }
 
 // LowCardinality returns LowCardinality for Date32 .
-func (c *ColDate32) LowCardinality() *ColLowCardinalityOf[Date32] {
-	return &ColLowCardinalityOf[Date32]{
+func (c *ColDate32) LowCardinality() *ColLowCardinality[Date32] {
+	return &ColLowCardinality[Date32]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array of Date32.
-func (c *ColDate32) Array() *ColArrOf[Date32] {
-	return &ColArrOf[Date32]{
+func (c *ColDate32) Array() *ColArr[Date32] {
+	return &ColArr[Date32]{
 		Data: c,
 	}
 }
 
 // NewArrDate32 returns new Array(Date32).
-func NewArrDate32() *ColArrOf[Date32] {
-	return &ColArrOf[Date32]{
+func NewArrDate32() *ColArr[Date32] {
+	return &ColArr[Date32]{
 		Data: new(ColDate32),
 	}
 }

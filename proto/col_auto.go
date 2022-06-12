@@ -32,9 +32,7 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		switch t.Base() {
 		case ColumnTypeLowCardinality:
 			if t.Elem() == ColumnTypeString {
-				c.Data = &ColLowCardinality{
-					Index: new(ColStr),
-				}
+				c.Data = new(ColStr).LowCardinality()
 				c.DataType = t
 				return nil
 			}

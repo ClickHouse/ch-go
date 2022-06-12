@@ -41,16 +41,6 @@ func (c *ColStr) AppendArr(v []string) {
 	}
 }
 
-// ArrAppend appends data to array of ColStr.
-func (ColStr) ArrAppend(arr *ColArr, data []string) {
-	c := arr.Data.(*ColStr)
-	for _, v := range data {
-		c.Append(v)
-	}
-	c.Rows()
-	arr.Offsets = append(arr.Offsets, uint64(len(c.Pos)))
-}
-
 // Compile-time assertions for ColStr.
 var (
 	_ ColInput  = ColStr{}
@@ -140,15 +130,15 @@ func (c *ColStr) DecodeColumn(r *Reader, rows int) error {
 }
 
 // LowCardinality returns LowCardinality(String).
-func (c *ColStr) LowCardinality() *ColLowCardinalityOf[string] {
-	return &ColLowCardinalityOf[string]{
+func (c *ColStr) LowCardinality() *ColLowCardinality[string] {
+	return &ColLowCardinality[string]{
 		index: c,
 	}
 }
 
 // Array is helper that creates Array(String).
-func (c *ColStr) Array() *ColArrOf[string] {
-	return &ColArrOf[string]{
+func (c *ColStr) Array() *ColArr[string] {
+	return &ColArr[string]{
 		Data: c,
 	}
 }
@@ -176,8 +166,8 @@ func (c *ColBytes) AppendArr(v [][]byte) {
 }
 
 // Array is helper that creates Array(String).
-func (c *ColBytes) Array() *ColArrOf[[]byte] {
-	return &ColArrOf[[]byte]{
+func (c *ColBytes) Array() *ColArr[[]byte] {
+	return &ColArr[[]byte]{
 		Data: c,
 	}
 }
