@@ -12,6 +12,11 @@ var (
 	_ Inferable    = ArrayOf[string]((*ColStr)(nil))
 )
 
+// Arrayable constraint specifies ability of column T to be Array(T).
+type Arrayable[T any] interface {
+	Array() *ColArr[T]
+}
+
 // ColArr is Array(T).
 type ColArr[T any] struct {
 	Offsets ColUInt64
