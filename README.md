@@ -1,6 +1,8 @@
 # ch [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/ClickHouse/ch-go#section-documentation)
 Low level TCP [ClickHouse](https://clickhouse.com/) client and protocol implementation in Go. Designed for very fast data block streaming with low network, cpu and memory overhead.
 
+Use [clickhouse-go](https://github.com/ClickHouse/clickhouse-go) for high-level `database/sql`-compatible client.
+
 * [Feedback](https://github.com/ClickHouse/ch-go/discussions/6)
 * [Benchmarks](https://github.com/ClickHouse/ch-go-bench#benchmarks)
 * [Protocol reference](https://go-faster.org/docs/clickhouse)
@@ -85,7 +87,7 @@ q := ch.Query{
 * OpenTelemetry support
 * No reflection or `interface{}`
 * Generics (go1.18) for `ArrayOf[T]`, `LowCardinaliyOf[T]`, `MapOf[K, V]`, `NullableOf[T]`
-* **Column**-oriented design that operates with **blocks**
+* **Column**-oriented design that operates directly with **blocks** of data
   * [Dramatically more efficient](https://github.com/ClickHouse/ch-go-bench)
   * Up to 100x faster than row-first design around `sql`
   * Up to 700x faster than HTTP API
@@ -97,10 +99,10 @@ q := ch.Query{
   * Profiles
   * Logs
   * [Profile events](https://github.com/ClickHouse/ClickHouse/issues/26177)
-* LZ4, ZSTD or *None* (just checksums) compression
+* LZ4, ZSTD or *None* (just checksums for integrity check) compression
 * [External data](https://clickhouse.com/docs/en/engines/table-engines/special/external-data/) support
 * Rigorously tested
-  * **ARM**64, Windows, Mac, Linux (also x86)
+  * Windows, Mac, Linux (also x86)
   * Unit tests for encoding and decoding
     * ClickHouse **Server** in **Go** for faster tests
     * Golden files for all packets, columns
@@ -119,7 +121,7 @@ q := ch.Query{
 * UInt8, UInt16, UInt32, UInt64, UInt128, UInt256
 * Int8, Int16, Int32, Int64, Int128, Int256
 * Date, Date32, DateTime, DateTime64
-* Decimal32, Decimal64, Decimal128, Decimal256
+* Decimal32, Decimal64, Decimal128, Decimal256 (only low-level raw values)
 * IPv4, IPv6
 * String, FixedString(N)
 * UUID
@@ -152,26 +154,18 @@ arr.Row(0) // ["foo", "bar", "baz"]
 ```
 
 ## TODO
-- [x] Connection pools
-- [ ] Improved i/o timeout handling
+- [ ] Types
+  - [ ] [Decimal(P, S)](https://clickhouse.com/docs/en/sql-reference/data-types/decimal/) API
+  - [ ] JSON
+  - [ ] SimpleAggregateFunction
+  - [ ] AggregateFunction
+  - [ ] Nothing
+  - [ ] Interval
+  - [ ] Nested
+- [ ] Reading and writing *Native* format dumps
+- [ ] Improved i/o timeout handling for reading packets from server
   - [ ] Close connection on context cancellation in all cases
   - [ ] Ensure that reads can't block forever
-- [x] TLS
-- [ ] API UX Improvements (with 1.18 generics)
-    - [x] Enum
-    - [x] LowCardinality
-    - [x] Array(T)
-    - [x] FixedString(N)
-    - [x] Map(K, V)
-    - [ ] [Decimal(P, S)](https://clickhouse.com/docs/en/sql-reference/data-types/decimal/)
-    - [x] Nullable(T)
-- [ ] Code generation from DDL
-  - [ ] Parser
-  - [ ] Code generator for SELECT/INSERT
-  - [ ] Query builder
-- [ ] DSL for DDL
-- [ ] `database/sql` integration
-- [ ] Reading and writing *Native* format dumps
 
 ## Reference
 * [clickhouse-cpp](https://github.com/ClickHouse/clickhouse-cpp)
