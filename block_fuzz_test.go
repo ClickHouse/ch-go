@@ -201,6 +201,37 @@ func FuzzDecodeBlockAuto(f *testing.F) {
 			{"1", "2", strings.Repeat("abc", 60)},
 		}),
 	})
+	{
+		v := new(proto.ColStr).LowCardinality().Array()
+		v.Append([]string{"foo", "bar", "baz"})
+		v.Append([]string{"foo", "bar", "baz"})
+		v.Append([]string{"foo", "bar"})
+		v.Append([]string{"bar"})
+		v.Append([]string{""})
+		v.Append([]string{"hello world"})
+		v.Append([]string{"", ""})
+		addCorpus(f, []proto.ColInput{v})
+	}
+	{
+		v := new(proto.ColInt16).Nullable()
+		v.Append(proto.NewNullable[int16](1))
+		v.Append(proto.NewNullable[int16](2))
+		v.Append(proto.Null[int16]())
+		v.Append(proto.NewNullable[int16](100))
+		addCorpus(f, []proto.ColInput{v})
+	}
+	{
+		v := proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr))
+		v.Append(map[string]string{
+			"foo":   "bar",
+			"blank": "",
+			"hello": "world",
+		})
+		v.Append(map[string]string{
+			"bar": "baz",
+		})
+		addCorpus(f, []proto.ColInput{v})
+	}
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		r := proto.NewReader(bytes.NewReader(data))
