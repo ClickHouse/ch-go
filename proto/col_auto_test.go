@@ -7,13 +7,16 @@ import (
 )
 
 func TestColAuto_Infer(t *testing.T) {
-	r := AutoResult("foo")
 	for _, columnType := range []ColumnType{
 		ColumnTypeString,
+		ColumnTypeArray.Sub(ColumnTypeString),
+		ColumnTypeArray.Sub(ColumnTypeLowCardinality.Sub(ColumnTypeString)),
 		ColumnTypeDate,
 		ColumnTypeDate32,
 		ColumnTypeInt8,
 		ColumnTypeInt16,
+		ColumnTypeArray.Sub(ColumnTypeInt16),
+		ColumnTypeNullable.Sub(ColumnTypeInt16),
 		ColumnTypeInt32,
 		ColumnTypeInt64,
 		ColumnTypeInt128,
@@ -31,7 +34,10 @@ func TestColAuto_Infer(t *testing.T) {
 		ColumnTypeLowCardinality.Sub(ColumnTypeString),
 		ColumnTypeDateTime.Sub("Europe/Berlin"),
 		ColumnTypeDateTime64.Sub("9"),
+		"Map(String,String)",
+		"Enum8('hello'=1,'world'=2)",
 	} {
+		r := AutoResult("foo")
 		require.NoError(t, r.Data.(Inferable).Infer(columnType))
 		require.Equal(t, columnType, r.Data.Type())
 		r.Data.Reset()
