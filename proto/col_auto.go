@@ -15,29 +15,42 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		c.DataType = t // update subtype if needed
 		return nil
 	}
-	if c.inferNumeric(t) {
+	if v := inferGenerated(t); v != nil {
+		c.Data = v
 		c.DataType = t
 		return nil
 	}
 	switch t {
 	case ColumnTypeString:
 		c.Data = new(ColStr)
+	case ColumnTypeArray.Sub(ColumnTypeString):
+		c.Data = new(ColStr).Array()
+	case ColumnTypeNullable.Sub(ColumnTypeString):
+		c.Data = new(ColStr).Nullable()
+	case ColumnTypeLowCardinality.Sub(ColumnTypeString):
+		c.Data = new(ColStr).LowCardinality()
+	case ColumnTypeArray.Sub(ColumnTypeLowCardinality.Sub(ColumnTypeString)):
+		c.Data = new(ColStr).LowCardinality().Array()
 	case ColumnTypeBool:
 		c.Data = new(ColBool)
 	case ColumnTypeDateTime:
 		c.Data = new(ColDateTime)
 	case ColumnTypeDate:
 		c.Data = new(ColDate)
+	case "Map(String,String)":
+		c.Data = NewMap[string, string](new(ColStr), new(ColStr))
 	default:
 		switch t.Base() {
-		case ColumnTypeLowCardinality:
-			if t.Elem() == ColumnTypeString {
-				c.Data = new(ColStr).LowCardinality()
-				c.DataType = t
-				return nil
-			}
 		case ColumnTypeDateTime:
 			c.Data = new(ColDateTime)
+			c.DataType = t
+			return nil
+		case ColumnTypeEnum8:
+			v := new(ColEnum8Auto)
+			if err := v.Infer(t); err != nil {
+				return errors.Wrap(err, "enum")
+			}
+			c.Data = v
 			c.DataType = t
 			return nil
 		case ColumnTypeDateTime64:

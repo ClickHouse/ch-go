@@ -3,15 +3,17 @@
 
 package proto
 
-// inferNumeric infers t as numeric type, otherwise returns false.
-func (c *ColAuto) inferNumeric(t ColumnType) bool {
+func inferGenerated(t ColumnType) Column {
 	switch t {
 	{{- range . }}
+	case ColumnTypeArray.Sub({{ .ColumnType }}):
+		return new({{ .Type }}).Array()
+	case ColumnTypeNullable.Sub({{ .ColumnType }}):
+		return new({{ .Type }}).Nullable()
 	case {{ .ColumnType }}:
-		c.Data = new({{ .Type }})
+		return new({{ .Type }})
 	{{- end }}
 	default:
-		return false
+		return nil
 	}
-	return true
 }
