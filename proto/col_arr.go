@@ -1,6 +1,8 @@
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"github.com/go-faster/errors"
+)
 
 // Compile-time assertions for Array.
 var (
@@ -105,6 +107,9 @@ func (c *ColArr[T]) DecodeColumn(r *Reader, rows int) error {
 	if l := len(c.Offsets); l > 0 {
 		// Pick last offset as total size of "elements" column.
 		size = int(c.Offsets[l-1])
+	}
+	if err := checkRows(size); err != nil {
+		return errors.Wrap(err, "array size")
 	}
 	if err := c.Data.DecodeColumn(r, size); err != nil {
 		return errors.Wrap(err, "decode data")
