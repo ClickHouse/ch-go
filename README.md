@@ -87,7 +87,7 @@ q := ch.Query{
 * OpenTelemetry support
 * No reflection or `interface{}`
 * Generics (go1.18) for `Array[T]`, `LowCardinaliy[T]`, `Map[K, V]`, `Nullable[T]`
-* Reading or writing ClickHouse dumps in `Native` format
+* [Reading or writing](#dumps) ClickHouse dumps in `Native` format
 * **Column**-oriented design that operates directly with **blocks** of data
   * [Dramatically more efficient](https://github.com/ClickHouse/ch-go-bench)
   * Up to 100x faster than row-first design around `sql`
@@ -156,7 +156,7 @@ arr.Row(0) // ["foo", "bar", "baz"]
 
 ## Dumps
 
-## Reading
+### Reading
 
 Use `proto.Block.DecodeRawBlock` on `proto.NewReader`:
 
@@ -188,7 +188,7 @@ func TestDump(t *testing.T) {
 }
 ```
 
-## Writing
+### Writing
 
 Use `proto.Block.EncodeRawBlock` on `proto.Buffer` with `Rows` and `Columns` set:
 
