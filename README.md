@@ -87,6 +87,7 @@ q := ch.Query{
 * OpenTelemetry support
 * No reflection or `interface{}`
 * Generics (go1.18) for `Array[T]`, `LowCardinaliy[T]`, `Map[K, V]`, `Nullable[T]`
+* Reading or writing ClickHouse dumps in `Native` format
 * **Column**-oriented design that operates directly with **blocks** of data
   * [Dramatically more efficient](https://github.com/ClickHouse/ch-go-bench)
   * Up to 100x faster than row-first design around `sql`
@@ -153,6 +154,103 @@ q := ch.Query{
 arr.Row(0) // ["foo", "bar", "baz"]
 ```
 
+## Dumps
+
+## Reading
+
+Use `proto.Block.DecodeRawBlock` on `proto.NewReader`:
+
+```go
+func TestDump(t *testing.T) {
+	// Testing decoding of Native format dump.
+	//
+	// CREATE TABLE test_dump (id Int8, v String)
+	//   ENGINE = MergeTree()
+	// ORDER BY id;
+	//
+	// SELECT * FROM test_dump
+	//   ORDER BY id
+	// INTO OUTFILE 'test_dump_native.raw' FORMAT Native;
+	data, err := os.ReadFile(filepath.Join("_testdata", "test_dump_native.raw"))
+	require.NoError(t, err)
+	var (
+		dec    proto.Block
+		ids    proto.ColInt8
+		values proto.ColStr
+	)
+	require.NoError(t, dec.DecodeRawBlock(
+		proto.NewReader(bytes.NewReader(data)),
+		proto.Results{
+			{Name: "id", Data: &ids},
+			{Name: "v", Data: &values},
+		}),
+	)
+}
+```
+
+## Writing
+
+Use `proto.Block.EncodeRawBlock` on `proto.Buffer` with `Rows` and `Columns` set:
+
+```go
+func TestLocalNativeDump(t *testing.T) {
+	ctx := context.Background()
+	// Testing clickhouse-local.
+	var v proto.ColStr
+	for _, s := range data {
+		v.Append(s)
+	}
+	buf := new(proto.Buffer)
+	b := proto.Block{Rows: 2, Columns: 2}
+	require.NoError(t, b.EncodeRawBlock(buf, []proto.InputColumn{
+		{Name: "title", Data: v},
+		{Name: "data", Data: proto.ColInt64{1, 2}},
+	}), "encode")
+
+	dir := t.TempDir()
+	inFile := filepath.Join(dir, "data.native")
+	require.NoError(t, os.WriteFile(inFile, buf.Buf, 0600), "write file")
+
+	cmd := exec.Command("clickhouse-local", "local",
+		"--logger.console",
+		"--log-level", "trace",
+		"--file", inFile,
+		"--input-format", "Native",
+		"--output-format", "JSON",
+		"--query", "SELECT * FROM table",
+	)
+	out := new(bytes.Buffer)
+	errOut := new(bytes.Buffer)
+	cmd.Stdout = out
+	cmd.Stderr = errOut
+
+	t.Log(cmd.Args)
+	require.NoError(t, cmd.Run(), "run: %s", errOut)
+	t.Log(errOut)
+
+	v := struct {
+		Rows int `json:"rows"`
+		Data []struct {
+			Title string `json:"title"`
+			Data  int    `json:"data,string"`
+		}
+	}{}
+	require.NoError(t, json.Unmarshal(out.Bytes(), &v), "json")
+	assert.Equal(t, 2, v.Rows)
+	if assert.Len(t, v.Data, 2) {
+		for i, r := range []struct {
+			Title string `json:"title"`
+			Data  int    `json:"data,string"`
+		}{
+			{"Foo", 1},
+			{"Bar", 2},
+		} {
+			assert.Equal(t, r, v.Data[i])
+		}
+	}
+}
+```
+
 ## TODO
 - [ ] Types
   - [ ] [Decimal(P, S)](https://clickhouse.com/docs/en/sql-reference/data-types/decimal/) API
@@ -162,7 +260,6 @@ arr.Row(0) // ["foo", "bar", "baz"]
   - [ ] Nothing
   - [ ] Interval
   - [ ] Nested
-- [ ] Reading and writing *Native* format dumps
 - [ ] Improved i/o timeout handling for reading packets from server
   - [ ] Close connection on context cancellation in all cases
   - [ ] Ensure that reads can't block forever
