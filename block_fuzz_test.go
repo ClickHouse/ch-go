@@ -158,6 +158,90 @@ func FuzzDecodeBlock(f *testing.F) {
 	})
 }
 
+func makeArr[T any](v proto.ColumnOf[T], data [][]T) *proto.ColArr[T] {
+	a := proto.NewArray(v)
+	for _, s := range data {
+		a.Append(s)
+	}
+	return a
+}
+
+func FuzzDecodeBlockAuto(f *testing.F) {
+	addCorpus(f, []proto.ColInput{
+		proto.ColInt8{1, 2, 3, 4, 5},
+		make(proto.ColUInt256, 10),
+		makeArr[string](new(proto.ColStr), [][]string{
+			{"foo", "bar", "baz"},
+			{"1000", "20000", "3000", "40000", "5000", "6000", "abc"},
+			{"foo", "bar"},
+			{"1"},
+			{},
+			{"1", "2", strings.Repeat("abc", 60)},
+		}),
+		makeArr[int8](new(proto.ColInt8), [][]int8{
+			{1, 2, 3},
+			make([]int8, 100),
+			make([]int8, 1024),
+			make([]int8, 2058),
+			{},
+			{100},
+		}),
+		proto.ColDateTime64Auto{
+			Precision: 9,
+			ColDateTime64: proto.ColDateTime64{
+				1, 2, 3,
+			},
+		},
+		makeArr[string](new(proto.ColStr).LowCardinality(), [][]string{
+			{"foo", "bar", "baz"},
+			{"1000", "20000", "3000", "40000", "5000", "6000", "abc"},
+			{"foo", "bar"},
+			{"1"},
+			{},
+			{"1", "2", strings.Repeat("abc", 60)},
+		}),
+	})
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		r := proto.NewReader(bytes.NewReader(data))
+		v := proto.Version
+		d := new(proto.Results).Auto()
+
+		// Skip table name.
+		if _, err := r.Str(); err != nil {
+			t.Skip(err)
+		}
+
+		var block proto.Block
+		if err := block.DecodeBlock(r, v, d); err != nil {
+			t.Skip(err)
+		}
+	})
+}
+
+func addCorpus(f *testing.F, data []proto.ColInput) {
+	for _, v := range data {
+		b := &proto.Buffer{}
+		input := []proto.InputColumn{
+			{
+				Name: "foo",
+				Data: v,
+			},
+		}
+		block := &proto.Block{
+			Info:    proto.BlockInfo{BucketNum: -1},
+			Columns: 1,
+			Rows:    v.Rows(),
+		}
+		block.EncodeAware(b, proto.Version)
+		for _, col := range input {
+			col.EncodeStart(b)
+			col.Data.EncodeColumn(b)
+		}
+		f.Add(b.Buf)
+	}
+}
+
 func FuzzDecodeArrayIPv6ArrayBlock(f *testing.F) {
 	f.Add(encodeTestStrBlock())
 
