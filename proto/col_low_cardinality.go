@@ -185,7 +185,7 @@ func (c *ColLowCardinality[T]) DecodeColumn(r *Reader, rows int) error {
 
 	c.Values = c.Values[:0]
 	for _, idx := range c.keys {
-		if int64(idx) >= indexRows {
+		if int64(idx) >= indexRows || idx < 0 {
 			return errors.Errorf("key index out of range [%d] with length %d", idx, indexRows)
 		}
 		c.Values = append(c.Values, c.index.Row(idx))
