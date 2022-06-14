@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/ClickHouse/ch-go/internal/gold"
 	"github.com/ClickHouse/ch-go/proto"
 )
@@ -230,6 +232,24 @@ func FuzzDecodeBlockAuto(f *testing.F) {
 		v.Append(map[string]string{
 			"bar": "baz",
 		})
+		addCorpus(f, []proto.ColInput{v})
+	}
+	{
+		v := &proto.ColEnum{}
+		require.NoError(f, v.Infer(`Enum8('TRACE'=1, 'DEBUG'=2, 'INFO'=3, 'WARN'=4, 'ERROR'=5, 'FATAL'=6)`))
+		v.Append("TRACE")
+		v.Append("INFO")
+		v.Append("INFO")
+		v.Append("ERROR")
+		addCorpus(f, []proto.ColInput{v})
+	}
+	{
+		v := &proto.ColEnum{}
+		require.NoError(f, v.Infer(`Enum16('TRACE'=1, 'DEBUG'=2, 'INFO'=3, 'WARN'=4, 'ERROR'=5, 'FATAL'=6)`))
+		v.Append("TRACE")
+		v.Append("INFO")
+		v.Append("INFO")
+		v.Append("ERROR")
 		addCorpus(f, []proto.ColInput{v})
 	}
 
