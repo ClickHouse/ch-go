@@ -57,6 +57,58 @@ func TestColTuple_DecodeColumn(t *testing.T) {
 	})
 }
 
+func TestColTuple_DecodeColumn_Named(t *testing.T) {
+	const rows = 50
+	var (
+		dataStr ColStr
+		dataInt ColInt64
+	)
+	for i := 0; i < rows; i++ {
+		dataStr.Append(fmt.Sprintf("<%d>", i))
+		dataInt = append(dataInt, int64(i))
+	}
+
+	data := ColTuple{
+		ColNamed[string]{Name: "strings", ColumnOf: &dataStr},
+		ColNamed[int64]{Name: "ints", ColumnOf: &dataInt},
+	}
+
+	var buf Buffer
+	data.EncodeColumn(&buf)
+	t.Run("Golden", func(t *testing.T) {
+		gold.Bytes(t, buf.Buf, "col_tuple_named_str_int64")
+	})
+	t.Run("Ok", func(t *testing.T) {
+		br := bytes.NewReader(buf.Buf)
+		r := NewReader(br)
+		dec := ColTuple{
+			ColNamed[string]{Name: "strings", ColumnOf: new(ColStr)},
+			ColNamed[int64]{Name: "ints", ColumnOf: new(ColInt64)},
+		}
+		require.NoError(t, dec.DecodeColumn(r, rows))
+		require.Equal(t, data, dec)
+		require.Equal(t, rows, dec.Rows())
+		dec.Reset()
+		require.Equal(t, 0, dec.Rows())
+		require.Equal(t, ColumnType("Tuple(strings String, ints Int64)"), dec.Type())
+	})
+	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(nil))
+		dec := ColTuple{
+			ColNamed[string]{Name: "strings", ColumnOf: new(ColStr)},
+			ColNamed[int64]{Name: "ints", ColumnOf: new(ColInt64)},
+		}
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+	})
+	t.Run("NoShortRead", func(t *testing.T) {
+		dec := ColTuple{
+			ColNamed[string]{Name: "strings", ColumnOf: new(ColStr)},
+			ColNamed[int64]{Name: "ints", ColumnOf: new(ColInt64)},
+		}
+		requireNoShortRead(t, buf.Buf, colAware(&dec, rows))
+	})
+}
+
 func BenchmarkColTuple_DecodeColumn(b *testing.B) {
 	const rows = 50_000
 

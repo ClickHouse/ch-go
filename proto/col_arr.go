@@ -12,6 +12,7 @@ var (
 	_ StateEncoder = NewArray[string]((*ColStr)(nil))
 	_ StateDecoder = NewArray[string]((*ColStr)(nil))
 	_ Inferable    = NewArray[string]((*ColStr)(nil))
+	_ Preparable   = NewArray[string]((*ColStr)(nil))
 )
 
 // Arrayable constraint specifies ability of column T to be Array(T).
