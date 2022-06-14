@@ -46,7 +46,7 @@ func (c *ColAuto) Infer(t ColumnType) error {
 			c.DataType = t
 			return nil
 		case ColumnTypeEnum8:
-			v := new(ColEnum8Auto)
+			v := new(ColEnum)
 			if err := v.Infer(t); err != nil {
 				return errors.Wrap(err, "enum")
 			}
