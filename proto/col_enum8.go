@@ -7,6 +7,13 @@ import (
 	"github.com/go-faster/errors"
 )
 
+var (
+	_ Column           = (*ColEnum8Auto)(nil)
+	_ ColumnOf[string] = (*ColEnum8Auto)(nil)
+	_ Inferable        = (*ColEnum8Auto)(nil)
+	_ Preparable       = (*ColEnum8Auto)(nil)
+)
+
 // ColEnum8Auto is inference helper for ColEnum8.
 //
 // You can set Values and actual enum mapping will be inferred during query
@@ -20,6 +27,10 @@ type ColEnum8Auto struct {
 
 	// Values of Enum8.
 	Values []string
+}
+
+func (e ColEnum8Auto) Row(i int) string {
+	return e.Values[i]
 }
 
 // Append value to Enum8 column.
