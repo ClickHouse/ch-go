@@ -9,7 +9,7 @@ import (
 	"github.com/ClickHouse/ch-go/proto"
 )
 
-func newCol[T any](c proto.ColumnOf[T], v ...T) proto.ColumnOf[T] {
+func newCol[T any, C proto.ColumnOf[T]](c C, v ...T) C {
 	for _, vv := range v {
 		c.Append(vv)
 	}
