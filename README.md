@@ -137,7 +137,19 @@ q := ch.Query{
 
 ## Generics
 
-### ArrayOf
+Most columns implement [proto.ColumnOf\[T\]](https://pkg.go.dev/github.com/ClickHouse/ch-go/proto#ColumnOf) generic constraint:
+```go
+type ColumnOf[T any] interface {
+	Column
+	Append(v T)
+	Row(i int) T
+}
+```
+
+For example, [ColStr](https://pkg.go.dev/github.com/ClickHouse/ch-go/proto#ColStr) (and [ColStr.LowCardinality](https://pkg.go.dev/github.com/ClickHouse/ch-go/proto#ColStr.LowCardinality)) implements `ColumnOf[string]`.
+Same for arrays: `new(proto.ColStr).Array()` implements `ColumnOf[[]string]`, column of `[]string` values.
+
+### Array
 
 Generic for `Array(T)`
 
