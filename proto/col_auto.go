@@ -45,8 +45,8 @@ func (c *ColAuto) Infer(t ColumnType) error {
 			c.Data = new(ColDateTime)
 			c.DataType = t
 			return nil
-		case ColumnTypeEnum8:
-			v := new(ColEnum8Auto)
+		case ColumnTypeEnum8, ColumnTypeEnum16:
+			v := new(ColEnum)
 			if err := v.Infer(t); err != nil {
 				return errors.Wrap(err, "enum")
 			}

@@ -45,7 +45,7 @@ func NewMapPairs() MapPairs {
 type OTEL struct {
 	Body      proto.ColStr
 	Timestamp proto.ColDateTime64
-	SevText   proto.ColEnum8Auto
+	SevText   proto.ColEnum
 	SevNumber proto.ColUInt8
 
 	TraceID proto.ColFixedStr

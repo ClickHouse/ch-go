@@ -97,7 +97,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
-		data := proto.ColEnum8Auto{
+		data := proto.ColEnum{
 			Values: []string{"foo", "bar"},
 		}
 		insertQuery := Query{
@@ -108,7 +108,38 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
 
-		var gotData proto.ColEnum8Auto
+		var gotData proto.ColEnum
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: &gotData},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, selectData), "select")
+		require.Equal(t, data.Values, gotData.Values)
+		t.Log(gotData.Values)
+	})
+	t.Run("InsertEnum16", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v Enum16('foo' = 1, 'bar' = 2)) ENGINE = TinyLog",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		data := proto.ColEnum{
+			Values: []string{"foo", "bar"},
+		}
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: &data},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		var gotData proto.ColEnum
 		selectData := Query{
 			Body: "SELECT * FROM test_table",
 			Result: proto.Results{

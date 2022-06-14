@@ -12,7 +12,7 @@ func ExampleQuery_multipleInputColumns() {
 		body      proto.ColStr
 		timestamp proto.ColDateTime64
 		name      proto.ColStr
-		sevText   proto.ColEnum8Auto
+		sevText   proto.ColEnum
 		sevNumber proto.ColUInt8
 
 		arr = new(proto.ColStr).Array() // Array(String)
