@@ -109,13 +109,7 @@ q := ch.Query{
     * Golden files for all packets, columns
     * Both server and client structures
     * Ensuring that partial read leads to failure
-  * End-to-end [tests](.github/workflows/e2e.yml)
-    - 21.8.13.6-lts
-    - 21.9.6.24-stable
-    - 21.10.4.26-stable
-    - 21.11.10.1-stable
-    - 21.12.3.32-stable
-    - 22.1.3.7-stable
+  * End-to-end [tests](.github/workflows/e2e.yml) on multiple LTS and stable versions
   * Fuzzing
 
 ## Supported types
