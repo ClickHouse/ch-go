@@ -740,6 +740,39 @@ func TestClient_Query(t *testing.T) {
 			require.Equal(t, data.Row(i), gotData.Row(i))
 		}
 	})
+	t.Run("InsertDecimal32", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v Decimal32(2)) ENGINE = Memory",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		var data proto.ColDecimal32
+		data.Append(1234)
+		data.Append(5678)
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: proto.Alias(&data, "Decimal(9, 2)")},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		var gotData proto.ColDecimal32
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: proto.Alias(&gotData, "Decimal(9, 2)")},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, selectData), "select")
+		require.Equal(t, data.Rows(), gotData.Rows())
+		for i := 0; i < data.Rows(); i++ {
+			require.Equal(t, data.Row(i), gotData.Row(i))
+		}
+	})
 	t.Run("InsertGeoPoint", func(t *testing.T) {
 		t.Parallel()
 		conn := ConnOpt(t, Options{
