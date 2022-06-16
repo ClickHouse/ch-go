@@ -4,7 +4,7 @@ Low level TCP [ClickHouse](https://clickhouse.com/) client and protocol implemen
 Use [clickhouse-go](https://github.com/ClickHouse/clickhouse-go) for high-level `database/sql`-compatible client.
 
 * [Feedback](https://github.com/ClickHouse/ch-go/discussions/6)
-* [Benchmarks](https://github.com/ClickHouse/ch-go-bench#benchmarks)
+* [Benchmarks](https://github.com/go-faster/ch-bench#benchmarks)
 * [Protocol reference](https://go-faster.org/docs/clickhouse)
 
 *[ClickHouse](https://clickhouse.com/) is an open-source, high performance columnar OLAP database management system for real-time analytics using SQL.*
