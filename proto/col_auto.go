@@ -42,7 +42,11 @@ func (c *ColAuto) Infer(t ColumnType) error {
 	default:
 		switch t.Base() {
 		case ColumnTypeDateTime:
-			c.Data = new(ColDateTime)
+			v := new(ColDateTime)
+			if err := v.Infer(t); err != nil {
+				return errors.Wrap(err, "datetime")
+			}
+			c.Data = v
 			c.DataType = t
 			return nil
 		case ColumnTypeEnum8, ColumnTypeEnum16:
@@ -56,7 +60,7 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		case ColumnTypeDateTime64:
 			v := new(ColDateTime64)
 			if err := v.Infer(t); err != nil {
-				return errors.Wrap(err, "datetime")
+				return errors.Wrap(err, "datetime64")
 			}
 			c.Data = v
 			c.DataType = t
