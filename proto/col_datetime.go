@@ -51,7 +51,8 @@ func (c *ColDateTime) Infer(t ColumnType) error {
 
 func (c ColDateTime) loc() *time.Location {
 	if c.Location == nil {
-		return time.UTC
+		// Defaulting to local timezone (not UTC).
+		return time.Local
 	}
 	return c.Location
 }
@@ -61,7 +62,7 @@ func (c ColDateTime) Row(i int) time.Time {
 }
 
 func (c *ColDateTime) Append(v time.Time) {
-	c.Data = append(c.Data, ToDateTime(v.In(c.loc())))
+	c.Data = append(c.Data, ToDateTime(v))
 }
 
 // LowCardinality returns LowCardinality for Enum8 .

@@ -59,11 +59,15 @@ func (c *ColDateTime64) Infer(t ColumnType) error {
 }
 
 func (c ColDateTime64) Row(i int) time.Time {
-	loc := time.UTC
-	if c.Location != nil {
-		loc = c.Location
+	return c.Data[i].Time(c.Precision).In(c.loc())
+}
+
+func (c ColDateTime64) loc() *time.Location {
+	if c.Location == nil {
+		// Defaulting to local timezone (not UTC).
+		return time.Local
 	}
-	return c.Data[i].Time(c.Precision).In(loc)
+	return c.Location
 }
 
 func (c *ColDateTime64) Append(v time.Time) {
