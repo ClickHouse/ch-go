@@ -12,24 +12,9 @@ var (
 	_ Column    = (*ColDate)(nil)
 )
 
-// Type returns ColumnType of Date.
-func (ColDate) Type() ColumnType {
-	return ColumnTypeDate
-}
-
 // Rows returns count of rows in column.
 func (c ColDate) Rows() int {
 	return len(c)
-}
-
-// Row returns i-th row of column.
-func (c ColDate) Row(i int) Date {
-	return c[i]
-}
-
-// Append Date to column.
-func (c *ColDate) Append(v Date) {
-	*c = append(*c, v)
 }
 
 // Reset resets data in row, preserving capacity for efficiency.
@@ -37,30 +22,7 @@ func (c *ColDate) Reset() {
 	*c = (*c)[:0]
 }
 
-// LowCardinality returns LowCardinality for Date .
-func (c *ColDate) LowCardinality() *ColLowCardinality[Date] {
-	return &ColLowCardinality[Date]{
-		index: c,
-	}
-}
-
-// Array is helper that creates Array of Date.
-func (c *ColDate) Array() *ColArr[Date] {
-	return &ColArr[Date]{
-		Data: c,
-	}
-}
-
-// Nullable is helper that creates Nullable(Date).
-func (c *ColDate) Nullable() *ColNullable[Date] {
-	return &ColNullable[Date]{
-		Values: c,
-	}
-}
-
-// NewArrDate returns new Array(Date).
-func NewArrDate() *ColArr[Date] {
-	return &ColArr[Date]{
-		Data: new(ColDate),
-	}
+// Type returns ColumnType of Date.
+func (ColDate) Type() ColumnType {
+	return ColumnTypeDate
 }

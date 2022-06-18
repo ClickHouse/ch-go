@@ -38,16 +38,17 @@ func (c *ColInt256) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes Int256 rows to *Buffer.
 func (c ColInt256) EncodeColumn(b *Buffer) {
-	if len(c) == 0 {
+	v := c
+	if len(v) == 0 {
 		return
 	}
 	const size = 256 / 8
 	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
+	b.Buf = append(b.Buf, make([]byte, size*len(v))...)
+	for _, vv := range v {
 		binPutUInt256(
 			b.Buf[offset:offset+size],
-			UInt256(v),
+			UInt256(vv),
 		)
 		offset += size
 	}

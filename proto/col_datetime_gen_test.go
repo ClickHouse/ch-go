@@ -17,9 +17,7 @@ func TestColDateTime_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColDateTime
 	for i := 0; i < rows; i++ {
-		v := DateTime(i)
-		data.Append(v)
-		require.Equal(t, v, data.Row(i))
+		data.Data = append(data.Data, DateTime(i))
 	}
 
 	var buf Buffer
@@ -38,7 +36,7 @@ func TestColDateTime_DecodeColumn(t *testing.T) {
 		require.Equal(t, rows, dec.Rows())
 		dec.Reset()
 		require.Equal(t, 0, dec.Rows())
-		require.Equal(t, ColumnTypeDateTime, dec.Type())
+
 	})
 	t.Run("ZeroRows", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
@@ -62,47 +60,11 @@ func TestColDateTime_DecodeColumn(t *testing.T) {
 	})
 }
 
-func TestColDateTimeArray(t *testing.T) {
-	const rows = 50
-	data := NewArrDateTime()
-	for i := 0; i < rows; i++ {
-		data.Append([]DateTime{
-			DateTime(i),
-			DateTime(i + 1),
-			DateTime(i + 2),
-		})
-	}
-
-	var buf Buffer
-	data.EncodeColumn(&buf)
-	t.Run("Golden", func(t *testing.T) {
-		gold.Bytes(t, buf.Buf, "col_arr_datetime")
-	})
-	t.Run("Ok", func(t *testing.T) {
-		br := bytes.NewReader(buf.Buf)
-		r := NewReader(br)
-
-		dec := NewArrDateTime()
-		require.NoError(t, dec.DecodeColumn(r, rows))
-		require.Equal(t, data, dec)
-		require.Equal(t, rows, dec.Rows())
-		dec.Reset()
-		require.Equal(t, 0, dec.Rows())
-		require.Equal(t, ColumnTypeDateTime.Array(), dec.Type())
-	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
-		r := NewReader(bytes.NewReader(nil))
-
-		dec := NewArrDateTime()
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
-	})
-}
-
 func BenchmarkColDateTime_DecodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColDateTime
 	for i := 0; i < rows; i++ {
-		data = append(data, DateTime(i))
+		data.Data = append(data.Data, DateTime(i))
 	}
 
 	var buf Buffer
@@ -134,7 +96,7 @@ func BenchmarkColDateTime_EncodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColDateTime
 	for i := 0; i < rows; i++ {
-		data = append(data, DateTime(i))
+		data.Data = append(data.Data, DateTime(i))
 	}
 
 	var buf Buffer

@@ -17,9 +17,7 @@ func TestColDate32_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColDate32
 	for i := 0; i < rows; i++ {
-		v := Date32(i)
-		data.Append(v)
-		require.Equal(t, v, data.Row(i))
+		data = append(data, Date32(i))
 	}
 
 	var buf Buffer
@@ -38,7 +36,7 @@ func TestColDate32_DecodeColumn(t *testing.T) {
 		require.Equal(t, rows, dec.Rows())
 		dec.Reset()
 		require.Equal(t, 0, dec.Rows())
-		require.Equal(t, ColumnTypeDate32, dec.Type())
+
 	})
 	t.Run("ZeroRows", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
@@ -59,42 +57,6 @@ func TestColDate32_DecodeColumn(t *testing.T) {
 	t.Run("ZeroRowsEncode", func(t *testing.T) {
 		var v ColDate32
 		v.EncodeColumn(nil) // should be no-op
-	})
-}
-
-func TestColDate32Array(t *testing.T) {
-	const rows = 50
-	data := NewArrDate32()
-	for i := 0; i < rows; i++ {
-		data.Append([]Date32{
-			Date32(i),
-			Date32(i + 1),
-			Date32(i + 2),
-		})
-	}
-
-	var buf Buffer
-	data.EncodeColumn(&buf)
-	t.Run("Golden", func(t *testing.T) {
-		gold.Bytes(t, buf.Buf, "col_arr_date32")
-	})
-	t.Run("Ok", func(t *testing.T) {
-		br := bytes.NewReader(buf.Buf)
-		r := NewReader(br)
-
-		dec := NewArrDate32()
-		require.NoError(t, dec.DecodeColumn(r, rows))
-		require.Equal(t, data, dec)
-		require.Equal(t, rows, dec.Rows())
-		dec.Reset()
-		require.Equal(t, 0, dec.Rows())
-		require.Equal(t, ColumnTypeDate32.Array(), dec.Type())
-	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
-		r := NewReader(bytes.NewReader(nil))
-
-		dec := NewArrDate32()
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 	})
 }
 

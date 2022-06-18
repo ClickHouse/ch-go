@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColFloat32)(nil)
 )
 
-// Type returns ColumnType of Float32.
-func (ColFloat32) Type() ColumnType {
-	return ColumnTypeFloat32
-}
-
 // Rows returns count of rows in column.
 func (c ColFloat32) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColFloat32) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Float32.
+func (ColFloat32) Type() ColumnType {
+	return ColumnTypeFloat32
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColFloat32) Row(i int) float32 {
 // Append float32 to column.
 func (c *ColFloat32) Append(v float32) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColFloat32) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Float32 .

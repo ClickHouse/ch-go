@@ -91,7 +91,7 @@ type OTELRow struct {
 
 func (t *OTEL) Append(row OTELRow) {
 	t.Body.AppendBytes(row.Body)
-	t.Timestamp.Append(proto.DateTime64(row.Timestamp))
+	t.Timestamp.Append(proto.DateTime64(row.Timestamp).Time(proto.PrecisionNano))
 	t.SevNumber.Append(row.SeverityNumber)
 	t.SevText.Append(row.SeverityText)
 

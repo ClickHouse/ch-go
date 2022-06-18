@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColDecimal64)(nil)
 )
 
-// Type returns ColumnType of Decimal64.
-func (ColDecimal64) Type() ColumnType {
-	return ColumnTypeDecimal64
-}
-
 // Rows returns count of rows in column.
 func (c ColDecimal64) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColDecimal64) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Decimal64.
+func (ColDecimal64) Type() ColumnType {
+	return ColumnTypeDecimal64
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColDecimal64) Row(i int) Decimal64 {
 // Append Decimal64 to column.
 func (c *ColDecimal64) Append(v Decimal64) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColDecimal64) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Decimal64 .

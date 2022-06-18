@@ -146,6 +146,27 @@ func (v Variant) ElemLower() string {
 	return strings.ToLower(v.ElemType())
 }
 
+func (v Variant) Complex() bool {
+	return v.Time()
+}
+
+func (v Variant) Time() bool {
+	switch v.Kind {
+	case KindDate, KindDateTime:
+		return true
+	default:
+		return false
+	}
+}
+
+func (v Variant) Date() bool {
+	return v.Kind == KindDate
+}
+
+func (v Variant) DateTime() bool {
+	return v.Kind == KindDateTime
+}
+
 func (v Variant) ElemType() string {
 	if v.Kind == KindEnum {
 		return fmt.Sprintf("Enum%d", v.Bits)
@@ -193,20 +214,18 @@ func (v Variant) ElemType() string {
 	return b.String()
 }
 
-//go:embed main.tpl
-var mainTemplate string
-
-//go:embed test.tpl
-var testTemplate string
-
-//go:embed infer.tpl
-var inferTemplate string
-
-//go:embed safe.tpl
-var safeTemplate string
-
-//go:embed unsafe.tpl
-var unsafeTemplate string
+var (
+	//go:embed main.go.tmpl
+	mainTemplate string
+	//go:embed test.go.tmpl
+	testTemplate string
+	//go:embed infer.go.tmpl
+	inferTemplate string
+	//go:embed safe.go.tmpl
+	safeTemplate string
+	//go:embed unsafe.go.tmpl
+	unsafeTemplate string
+)
 
 func write(name string, v interface{}, t *template.Template) error {
 	out := new(bytes.Buffer)
@@ -322,8 +341,10 @@ func run() error {
 			v.GenerateUnsafe = true
 		}
 		base := "col_" + v.ElemLower()
-		if err := write(base+"_gen", v, tpl); err != nil {
-			return errors.Wrap(err, "write")
+		if !v.DateTime() {
+			if err := write(base+"_gen", v, tpl); err != nil {
+				return errors.Wrap(err, "write")
+			}
 		}
 		if err := write(base+"_safe_gen", v, tplSafe); err != nil {
 			return errors.Wrap(err, "write")

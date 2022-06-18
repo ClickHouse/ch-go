@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColDecimal32)(nil)
 )
 
-// Type returns ColumnType of Decimal32.
-func (ColDecimal32) Type() ColumnType {
-	return ColumnTypeDecimal32
-}
-
 // Rows returns count of rows in column.
 func (c ColDecimal32) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColDecimal32) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Decimal32.
+func (ColDecimal32) Type() ColumnType {
+	return ColumnTypeDecimal32
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColDecimal32) Row(i int) Decimal32 {
 // Append Decimal32 to column.
 func (c *ColDecimal32) Append(v Decimal32) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColDecimal32) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Decimal32 .

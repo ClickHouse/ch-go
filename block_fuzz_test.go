@@ -188,9 +188,9 @@ func FuzzDecodeBlockAuto(f *testing.F) {
 			{},
 			{100},
 		}),
-		proto.ColDateTime64Auto{
+		proto.ColDateTime64{
 			Precision: 9,
-			ColDateTime64: proto.ColDateTime64{
+			Data: []proto.DateTime64{
 				1, 2, 3,
 			},
 		},

@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColIPv4)(nil)
 )
 
-// Type returns ColumnType of IPv4.
-func (ColIPv4) Type() ColumnType {
-	return ColumnTypeIPv4
-}
-
 // Rows returns count of rows in column.
 func (c ColIPv4) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColIPv4) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of IPv4.
+func (ColIPv4) Type() ColumnType {
+	return ColumnTypeIPv4
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColIPv4) Row(i int) IPv4 {
 // Append IPv4 to column.
 func (c *ColIPv4) Append(v IPv4) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColIPv4) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for IPv4 .

@@ -29,13 +29,14 @@ func (c *ColIPv6) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes IPv6 rows to *Buffer.
 func (c ColIPv6) EncodeColumn(b *Buffer) {
-	if len(c) == 0 {
+	v := c
+	if len(v) == 0 {
 		return
 	}
 	offset := len(b.Buf)
 	const size = 128 / 8
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	s := *(*slice)(unsafe.Pointer(&c))
+	b.Buf = append(b.Buf, make([]byte, size*len(v))...)
+	s := *(*slice)(unsafe.Pointer(&v))
 	s.Len *= size
 	s.Cap *= size
 	src := *(*[]byte)(unsafe.Pointer(&s))

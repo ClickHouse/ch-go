@@ -42,7 +42,7 @@ func (s Logs) All() []Log {
 	var out []Log
 	for i := 0; i < s.Source.Rows(); i++ {
 		out = append(out, Log{
-			Time:     s.Time[i].Time(),
+			Time:     s.Time.Row(i),
 			Host:     s.HostName.Row(i),
 			QueryID:  s.QueryID.Row(i),
 			ThreadID: s.ThreadID[i],
