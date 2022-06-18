@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColInt128)(nil)
 )
 
-// Type returns ColumnType of Int128.
-func (ColInt128) Type() ColumnType {
-	return ColumnTypeInt128
-}
-
 // Rows returns count of rows in column.
 func (c ColInt128) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColInt128) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Int128.
+func (ColInt128) Type() ColumnType {
+	return ColumnTypeInt128
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColInt128) Row(i int) Int128 {
 // Append Int128 to column.
 func (c *ColInt128) Append(v Int128) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColInt128) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Int128 .

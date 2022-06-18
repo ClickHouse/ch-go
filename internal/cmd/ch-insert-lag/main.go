@@ -38,11 +38,13 @@ func main() {
 				return errors.Wrap(err, "create")
 			}
 			close(ready)
-			data := make(proto.ColDateTime64, 50_000)
+			data := proto.ColDateTime64{
+				Data: make([]proto.DateTime64, 50_000),
+			}
 			fill := func() {
 				now := proto.ToDateTime64(time.Now(), precision)
-				for i := range data {
-					data[i] = now
+				for i := range data.Data {
+					data.Data[i] = now
 				}
 			}
 			fill()
@@ -89,15 +91,14 @@ func main() {
 				}); err != nil {
 					return errors.Wrap(err, "select")
 				}
-				if len(data) == 0 {
+				if data.Rows() == 0 {
 					continue
 				}
-				v := data[0]
-				if v == 0 {
+				v := data.Row(0)
+				if v.IsZero() {
 					continue
 				}
-				latest := v.Time(precision)
-				lag := time.Since(latest)
+				lag := time.Since(v)
 				fmt.Println(lag.Round(time.Millisecond))
 			}
 			return nil

@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColDecimal256)(nil)
 )
 
-// Type returns ColumnType of Decimal256.
-func (ColDecimal256) Type() ColumnType {
-	return ColumnTypeDecimal256
-}
-
 // Rows returns count of rows in column.
 func (c ColDecimal256) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColDecimal256) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Decimal256.
+func (ColDecimal256) Type() ColumnType {
+	return ColumnTypeDecimal256
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColDecimal256) Row(i int) Decimal256 {
 // Append Decimal256 to column.
 func (c *ColDecimal256) Append(v Decimal256) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColDecimal256) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Decimal256 .

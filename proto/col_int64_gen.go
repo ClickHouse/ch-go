@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColInt64)(nil)
 )
 
-// Type returns ColumnType of Int64.
-func (ColInt64) Type() ColumnType {
-	return ColumnTypeInt64
-}
-
 // Rows returns count of rows in column.
 func (c ColInt64) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColInt64) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Int64.
+func (ColInt64) Type() ColumnType {
+	return ColumnTypeInt64
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColInt64) Row(i int) int64 {
 // Append int64 to column.
 func (c *ColInt64) Append(v int64) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColInt64) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Int64 .

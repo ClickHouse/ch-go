@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColInt256)(nil)
 )
 
-// Type returns ColumnType of Int256.
-func (ColInt256) Type() ColumnType {
-	return ColumnTypeInt256
-}
-
 // Rows returns count of rows in column.
 func (c ColInt256) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColInt256) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Int256.
+func (ColInt256) Type() ColumnType {
+	return ColumnTypeInt256
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColInt256) Row(i int) Int256 {
 // Append Int256 to column.
 func (c *ColInt256) Append(v Int256) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColInt256) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Int256 .

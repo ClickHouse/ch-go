@@ -270,7 +270,9 @@ ENGINE = Distributed('nexus', default, hits, rand())`,
 						{
 							Name: "EventDate",
 							Data: proto.ColDateTime{
-								proto.ToDateTime(time.Now()),
+								Data: []proto.DateTime{
+									proto.ToDateTime(time.Now()),
+								},
 							},
 						},
 						{

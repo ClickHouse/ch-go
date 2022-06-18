@@ -38,7 +38,9 @@ func TestColInt32_DecodeColumn(t *testing.T) {
 		require.Equal(t, rows, dec.Rows())
 		dec.Reset()
 		require.Equal(t, 0, dec.Rows())
+
 		require.Equal(t, ColumnTypeInt32, dec.Type())
+
 	})
 	t.Run("ZeroRows", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
@@ -61,7 +63,6 @@ func TestColInt32_DecodeColumn(t *testing.T) {
 		v.EncodeColumn(nil) // should be no-op
 	})
 }
-
 func TestColInt32Array(t *testing.T) {
 	const rows = 50
 	data := NewArrInt32()

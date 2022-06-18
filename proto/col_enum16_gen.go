@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColEnum16)(nil)
 )
 
-// Type returns ColumnType of Enum16.
-func (ColEnum16) Type() ColumnType {
-	return ColumnTypeEnum16
-}
-
 // Rows returns count of rows in column.
 func (c ColEnum16) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColEnum16) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Enum16.
+func (ColEnum16) Type() ColumnType {
+	return ColumnTypeEnum16
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColEnum16) Row(i int) Enum16 {
 // Append Enum16 to column.
 func (c *ColEnum16) Append(v Enum16) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColEnum16) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Enum16 .

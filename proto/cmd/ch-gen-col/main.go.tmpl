@@ -13,16 +13,22 @@ var (
 	_ Column    = (*{{ .Type }})(nil)
 )
 
-// Type returns ColumnType of {{ .Name }}.
-func ({{ .Type }}) Type() ColumnType {
-	return {{ .ColumnType }}
-}
-
 // Rows returns count of rows in column.
 func (c {{ .Type }}) Rows() int {
 	return len(c)
 }
 
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *{{ .Type }}) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of {{ .Name }}.
+func ({{ .Type }}) Type() ColumnType {
+	return {{ .ColumnType }}
+}
+
+{{ if not .Time }}
 // Row returns i-th row of column.
 func (c {{ .Type }}) Row(i int) {{ .ElemType }} {
 	return c[i]
@@ -33,10 +39,6 @@ func (c *{{ .Type }}) Append(v {{ .ElemType }})  {
 	*c = append(*c, v)
 }
 
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *{{ .Type }}) Reset() {
-	*c = (*c)[:0]
-}
 
 // LowCardinality returns LowCardinality for {{ .Name }} .
 func (c *{{ .Type }}) LowCardinality() *ColLowCardinality[{{ .ElemType }}] {
@@ -65,3 +67,5 @@ func NewArr{{ .Name }}() *ColArr[{{ .ElemType }}] {
 		Data: new({{ .Type }}),
 	}
 }
+
+{{ end }}

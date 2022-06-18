@@ -402,7 +402,7 @@ func TestClient_Query(t *testing.T) {
 		loc, err := time.LoadLocation(tz)
 		require.NoError(t, err)
 		exp, err := time.ParseInLocation("2006-01-02 15:04:05", dt, loc)
-		v := data[0].Time().In(loc)
+		v := data.Row(0).In(loc)
 		require.NoError(t, err)
 		require.True(t, exp.Equal(v))
 		t.Logf("%s %d", v, v.Unix())
@@ -440,7 +440,7 @@ func TestClient_Query(t *testing.T) {
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
-		data := proto.ColDateTime{1546290000}
+		data := proto.ColDateTime{Data: []proto.DateTime{1546290000}}
 		insertQuery := Query{
 			Body: "INSERT INTO test_table VALUES",
 			Input: []proto.InputColumn{
@@ -457,7 +457,7 @@ func TestClient_Query(t *testing.T) {
 			},
 		}
 		require.NoError(t, conn.Do(ctx, selectData), "select")
-		require.Len(t, data, 1)
+		require.Equal(t, 1, data.Rows())
 		require.Equal(t, data, gotData)
 	})
 	t.Run("InsertDateTime64", func(t *testing.T) {
@@ -471,12 +471,14 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColDateTime64{
-			proto.DateTime64(time.Unix(1546290000, 0).UnixNano()),
+			Data: []proto.DateTime64{
+				proto.DateTime64(time.Unix(1546290000, 0).UnixNano()),
+			},
 		}
 		insertQuery := Query{
 			Body: "INSERT INTO test_table VALUES",
 			Input: []proto.InputColumn{
-				{Name: "d", Data: data.Wrap(p)},
+				{Name: "d", Data: data.WithPrecision(p)},
 			},
 		}
 		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
@@ -490,21 +492,8 @@ func TestClient_Query(t *testing.T) {
 				},
 			}
 			require.NoError(t, conn.Do(ctx, selectData), "select")
-			require.Len(t, data, 1)
+			require.Equal(t, 1, data.Rows())
 			require.Equal(t, data, gotData)
-		})
-		t.Run("ReadAuto", func(t *testing.T) {
-			var gotData proto.ColDateTime64Auto
-			selectData := Query{
-				Body: "SELECT * FROM test_table",
-				Result: proto.Results{
-					{Name: "d", Data: &gotData},
-				},
-			}
-			require.NoError(t, conn.Do(ctx, selectData), "select")
-			require.Len(t, data, 1)
-			require.Equal(t, data, gotData.ColDateTime64)
-			require.Equal(t, proto.ColumnType("DateTime64(9)"), gotData.Type())
 		})
 	})
 	t.Run("ArrayLowCardinality", func(t *testing.T) {

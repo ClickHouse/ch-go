@@ -29,13 +29,14 @@ func (c *ColInt32) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes Int32 rows to *Buffer.
 func (c ColInt32) EncodeColumn(b *Buffer) {
-	if len(c) == 0 {
+	v := c
+	if len(v) == 0 {
 		return
 	}
 	offset := len(b.Buf)
 	const size = 32 / 8
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	s := *(*slice)(unsafe.Pointer(&c))
+	b.Buf = append(b.Buf, make([]byte, size*len(v))...)
+	s := *(*slice)(unsafe.Pointer(&v))
 	s.Len *= size
 	s.Cap *= size
 	src := *(*[]byte)(unsafe.Pointer(&s))

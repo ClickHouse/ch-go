@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColUInt8)(nil)
 )
 
-// Type returns ColumnType of UInt8.
-func (ColUInt8) Type() ColumnType {
-	return ColumnTypeUInt8
-}
-
 // Rows returns count of rows in column.
 func (c ColUInt8) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColUInt8) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of UInt8.
+func (ColUInt8) Type() ColumnType {
+	return ColumnTypeUInt8
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColUInt8) Row(i int) uint8 {
 // Append uint8 to column.
 func (c *ColUInt8) Append(v uint8) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColUInt8) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for UInt8 .

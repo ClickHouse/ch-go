@@ -18,9 +18,15 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data {{ .Type }}
 	for i := 0; i < rows; i++ {
+		{{- if .DateTime }}
+		data.Data = append(data.Data, {{ .New }}(i))
+		{{- else if .Date }}
+		data = append(data, {{ .New }}(i))
+		{{- else }}
 		v := {{ .New }}(i)
 		data.Append(v)
 		require.Equal(t, v, data.Row(i))
+		{{- end }}
 	}
 
 	var buf Buffer
@@ -39,7 +45,9 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
 		require.Equal(t, rows, dec.Rows())
 		dec.Reset()
 		require.Equal(t, 0, dec.Rows())
+		{{ if not .Time }}
 		require.Equal(t, {{ .ColumnType }}, dec.Type())
+		{{ end }}
 	})
 	t.Run("ZeroRows", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
@@ -63,6 +71,7 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
 	})
 }
 
+{{- if not .Time }}
 func Test{{ .Type }}Array(t *testing.T) {
 	const rows = 50
 	data := NewArr{{ .Name }}()
@@ -98,12 +107,17 @@ func Test{{ .Type }}Array(t *testing.T) {
 		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
 	})
 }
+{{ end }}
 
 func Benchmark{{ .Type }}_DecodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data {{ .Type }}
 	for i := 0; i < rows; i++ {
+		{{- if .DateTime }}
+		data.Data = append(data.Data, {{ .New }}(i))
+		{{- else -}}
 		data = append(data, {{ .New }}(i))
+		{{- end -}}
 	}
 
 	var buf Buffer
@@ -135,7 +149,11 @@ func Benchmark{{ .Type }}_EncodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data {{ .Type }}
 	for i := 0; i < rows; i++ {
+		{{- if .DateTime }}
+		data.Data = append(data.Data, {{ .New }}(i))
+		{{- else -}}
 		data = append(data, {{ .New }}(i))
+		{{- end -}}
 	}
 
 	var buf Buffer

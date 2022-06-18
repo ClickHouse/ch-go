@@ -40,7 +40,11 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
 	}
 	*c = v
 	{{- else }}
+	{{- if .DateTime }}
+	v := c.Data
+	{{- else }}
 	v := *c
+	{{- end }}
 	// Move bound check out of loop.
 	//
 	// See https://github.com/golang/go/issues/30945.
@@ -54,39 +58,48 @@ func (c *{{ .Type }}) DecodeColumn(r *Reader, rows int) error {
 		{{- else }}
 			{{ .BinGet }}(data[i : i+size]),
 		{{- end }}
-	)
+		)
 	}
+	{{- if .DateTime }}
+	c.Data = v
+	{{- else }}
 	*c = v
+	{{- end }}
 	{{- end }}
 	return nil
 }
 
 // EncodeColumn encodes {{ .Name }} rows to *Buffer.
 func (c {{ .Type }}) EncodeColumn(b *Buffer) {
-	if len(c) == 0 {
+	{{- if .DateTime }}
+	v := c.Data
+	{{- else }}
+	v := c
+	{{- end }}
+	if len(v) == 0 {
 		return
 	}
 	{{- if .Byte }}
-	b.Buf = append(b.Buf, c...)
+	b.Buf = append(b.Buf, v...)
 	{{- else if .SingleByte }}
 	start := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, len(c))...)
-	for i := range c {
-		b.Buf[i+start] = {{ .UnsignedType }}(c[i])
+	b.Buf = append(b.Buf, make([]byte, len(v))...)
+	for i := range v {
+		b.Buf[i+start] = {{ .UnsignedType }}(v[i])
 	}
 	{{- else }}
 	const size = {{ .Bits }} / 8
 	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
+	b.Buf = append(b.Buf, make([]byte, size*len(v))...)
+	for _, vv := range v {
 		{{ .BinPut }}(
 			b.Buf[offset : offset+size],
 		{{- if .IsFloat }}
-			math.{{ .Name }}bits(v),
+			math.{{ .Name }}bits(vv),
 		{{- else if .Cast }}
-			{{ .UnsignedType }}(v),
+			{{ .UnsignedType }}(vv),
 		{{- else }}
-			v,
+			vv,
 		{{- end }}
 	)
 		offset += size

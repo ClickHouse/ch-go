@@ -15,8 +15,8 @@ func (c *ColDateTime) DecodeColumn(r *Reader, rows int) error {
 	if rows == 0 {
 		return nil
 	}
-	*c = append(*c, make([]DateTime, rows)...)
-	s := *(*slice)(unsafe.Pointer(c))
+	c.Data = append(c.Data, make([]DateTime, rows)...)
+	s := *(*slice)(unsafe.Pointer(&c.Data))
 	const size = 32 / 8
 	s.Len *= size
 	s.Cap *= size
@@ -29,13 +29,14 @@ func (c *ColDateTime) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes DateTime rows to *Buffer.
 func (c ColDateTime) EncodeColumn(b *Buffer) {
-	if len(c) == 0 {
+	v := c.Data
+	if len(v) == 0 {
 		return
 	}
 	offset := len(b.Buf)
 	const size = 32 / 8
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	s := *(*slice)(unsafe.Pointer(&c))
+	b.Buf = append(b.Buf, make([]byte, size*len(v))...)
+	s := *(*slice)(unsafe.Pointer(&v))
 	s.Len *= size
 	s.Cap *= size
 	src := *(*[]byte)(unsafe.Pointer(&s))

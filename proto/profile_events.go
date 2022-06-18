@@ -20,7 +20,7 @@ func (d *ProfileEvents) All() ([]ProfileEvent, error) {
 	var out []ProfileEvent
 	for i := range d.Type {
 		e := ProfileEvent{
-			Time:     d.Time[i].Time(),
+			Time:     d.Time.Row(i),
 			Host:     d.Host.Row(i),
 			ThreadID: d.ThreadID[i],
 			Type:     ProfileEventType(d.Type[i]),

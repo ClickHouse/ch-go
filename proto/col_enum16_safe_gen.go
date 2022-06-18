@@ -38,16 +38,17 @@ func (c *ColEnum16) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes Enum16 rows to *Buffer.
 func (c ColEnum16) EncodeColumn(b *Buffer) {
-	if len(c) == 0 {
+	v := c
+	if len(v) == 0 {
 		return
 	}
 	const size = 16 / 8
 	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c))...)
-	for _, v := range c {
+	b.Buf = append(b.Buf, make([]byte, size*len(v))...)
+	for _, vv := range v {
 		binary.LittleEndian.PutUint16(
 			b.Buf[offset:offset+size],
-			uint16(v),
+			uint16(vv),
 		)
 		offset += size
 	}

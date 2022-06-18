@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColEnum8)(nil)
 )
 
-// Type returns ColumnType of Enum8.
-func (ColEnum8) Type() ColumnType {
-	return ColumnTypeEnum8
-}
-
 // Rows returns count of rows in column.
 func (c ColEnum8) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColEnum8) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of Enum8.
+func (ColEnum8) Type() ColumnType {
+	return ColumnTypeEnum8
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColEnum8) Row(i int) Enum8 {
 // Append Enum8 to column.
 func (c *ColEnum8) Append(v Enum8) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColEnum8) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for Enum8 .

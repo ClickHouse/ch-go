@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColUInt16)(nil)
 )
 
-// Type returns ColumnType of UInt16.
-func (ColUInt16) Type() ColumnType {
-	return ColumnTypeUInt16
-}
-
 // Rows returns count of rows in column.
 func (c ColUInt16) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColUInt16) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of UInt16.
+func (ColUInt16) Type() ColumnType {
+	return ColumnTypeUInt16
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColUInt16) Row(i int) uint16 {
 // Append uint16 to column.
 func (c *ColUInt16) Append(v uint16) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColUInt16) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for UInt16 .

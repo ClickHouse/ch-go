@@ -12,14 +12,19 @@ var (
 	_ Column    = (*ColUInt128)(nil)
 )
 
-// Type returns ColumnType of UInt128.
-func (ColUInt128) Type() ColumnType {
-	return ColumnTypeUInt128
-}
-
 // Rows returns count of rows in column.
 func (c ColUInt128) Rows() int {
 	return len(c)
+}
+
+// Reset resets data in row, preserving capacity for efficiency.
+func (c *ColUInt128) Reset() {
+	*c = (*c)[:0]
+}
+
+// Type returns ColumnType of UInt128.
+func (ColUInt128) Type() ColumnType {
+	return ColumnTypeUInt128
 }
 
 // Row returns i-th row of column.
@@ -30,11 +35,6 @@ func (c ColUInt128) Row(i int) UInt128 {
 // Append UInt128 to column.
 func (c *ColUInt128) Append(v UInt128) {
 	*c = append(*c, v)
-}
-
-// Reset resets data in row, preserving capacity for efficiency.
-func (c *ColUInt128) Reset() {
-	*c = (*c)[:0]
 }
 
 // LowCardinality returns LowCardinality for UInt128 .
