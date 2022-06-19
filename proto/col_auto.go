@@ -1,6 +1,10 @@
 package proto
 
-import "github.com/go-faster/errors"
+import (
+	"strings"
+
+	"github.com/go-faster/errors"
+)
 
 // ColAuto is column that is initialized during decoding.
 type ColAuto struct {
@@ -20,7 +24,22 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		c.DataType = t
 		return nil
 	}
+	if strings.HasPrefix(t.String(), ColumnTypeInterval.String()) {
+		v := new(ColInterval)
+		if err := v.Infer(t); err != nil {
+			return errors.Wrap(err, "interval")
+		}
+		c.Data = v
+		c.DataType = t
+		return nil
+	}
 	switch t {
+	case ColumnTypeNothing:
+		c.Data = new(ColNothing)
+	case ColumnTypeNullable.Sub(ColumnTypeNothing):
+		c.Data = new(ColNothing).Nullable()
+	case ColumnTypeArray.Sub(ColumnTypeNothing):
+		c.Data = new(ColNothing).Array()
 	case ColumnTypeString:
 		c.Data = new(ColStr)
 	case ColumnTypeArray.Sub(ColumnTypeString):

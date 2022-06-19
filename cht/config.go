@@ -114,6 +114,8 @@ type Config struct {
 	MMAPCacheSize int64 `xml:"mmap_cache_size"`
 
 	OpenTelemetrySpanLog *OpenTelemetry `xml:"opentelemetry_span_log,omitempty"`
+	// Sets the probability that the ClickHouse can start a trace for executed queries (if no parent trace context is supplied).
+	OpenTelemetryStartTraceProbability *float64 `xml:"opentelemetry_start_trace_probability"`
 
 	// ZooKeeper configures ZooKeeper nodes.
 	ZooKeeper      []ZooKeeperNode `xml:"zookeeper>node,omitempty"`

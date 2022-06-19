@@ -802,6 +802,32 @@ func TestClient_Query(t *testing.T) {
 			require.Equal(t, data.Row(i), gotData.Row(i))
 		}
 	})
+	t.Run("SelectInterval", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		data := new(proto.ColInterval)
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT toIntervalWeek(1) AS w",
+			Result: proto.Results{
+				{Name: "w", Data: data},
+			},
+		}), "select table")
+		require.Equal(t, proto.Interval{Scale: proto.IntervalWeek, Value: 1}, data.Row(0))
+	})
+	t.Run("SelectNothing", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		data := proto.NewColNullable[proto.Nothing](new(proto.ColNothing))
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT NULL as w",
+			Result: proto.Results{
+				{Name: "w", Data: data},
+			},
+		}), "select table")
+		require.False(t, data.Row(0).Set)
+	})
 }
 
 func TestClientCompression(t *testing.T) {
