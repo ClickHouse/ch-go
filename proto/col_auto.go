@@ -34,6 +34,12 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		return nil
 	}
 	switch t {
+	case ColumnTypeNothing:
+		c.Data = new(ColNothing)
+	case ColumnTypeNullable.Sub(ColumnTypeNothing):
+		c.Data = new(ColNothing).Nullable()
+	case ColumnTypeArray.Sub(ColumnTypeNothing):
+		c.Data = new(ColNothing).Array()
 	case ColumnTypeString:
 		c.Data = new(ColStr)
 	case ColumnTypeArray.Sub(ColumnTypeString):

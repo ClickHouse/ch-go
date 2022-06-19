@@ -40,6 +40,9 @@ func TestColAuto_Infer(t *testing.T) {
 		"IntervalSecond",
 		"IntervalMinute",
 		ColumnType(IntervalHour.String()),
+		ColumnTypeNothing,
+		"Nullable(Nothing)",
+		"Array(Nothing)",
 	} {
 		r := AutoResult("foo")
 		require.NoError(t, r.Data.(Inferable).Infer(columnType))
