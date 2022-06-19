@@ -12,7 +12,7 @@ type Nothing struct{}
 type ColNothing int
 
 func (c *ColNothing) Append(v Nothing) {
-	*c += 1
+	*c++
 }
 
 func (c ColNothing) Row(i int) Nothing {
