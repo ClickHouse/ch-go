@@ -188,12 +188,11 @@ func FuzzDecodeBlockAuto(f *testing.F) {
 			{},
 			{100},
 		}),
-		proto.ColDateTime64{
-			Precision: 9,
+		(&proto.ColDateTime64{
 			Data: []proto.DateTime64{
 				1, 2, 3,
 			},
-		},
+		}).WithPrecision(9),
 		makeArr[string](new(proto.ColStr).LowCardinality(), [][]string{
 			{"foo", "bar", "baz"},
 			{"1000", "20000", "3000", "40000", "5000", "6000", "abc"},
