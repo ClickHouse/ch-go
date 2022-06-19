@@ -39,7 +39,9 @@ func main() {
 			}
 			close(ready)
 			data := proto.ColDateTime64{
-				Data: make([]proto.DateTime64, 50_000),
+				Data:         make([]proto.DateTime64, 50_000),
+				Precision:    precision,
+				PrecisionSet: true,
 			}
 			fill := func() {
 				now := proto.ToDateTime64(time.Now(), precision)
@@ -64,7 +66,7 @@ func main() {
 					}
 				},
 				Input: proto.Input{
-					{Name: "ts", Data: data.Wrap(precision)},
+					{Name: "ts", Data: data},
 				},
 			})
 		})

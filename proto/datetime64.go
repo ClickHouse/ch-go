@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"strconv"
 	"time"
 )
 
@@ -63,9 +62,4 @@ func (d DateTime64) Time(p Precision) time.Time {
 	}
 	nsec := int64(d) * p.Scale()
 	return time.Unix(nsec/1e9, nsec%1e9)
-}
-
-// Wrap column with explicit precision.
-func (c *ColDateTime64) Wrap(p Precision) Column {
-	return Wrap(c, strconv.FormatInt(int64(p), 10))
 }
