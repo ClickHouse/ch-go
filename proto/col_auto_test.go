@@ -37,6 +37,9 @@ func TestColAuto_Infer(t *testing.T) {
 		"Map(String,String)",
 		"Enum8('hello'=1,'world'=2)",
 		"Enum16('hello'=-1,'world'=10)",
+		"IntervalSecond",
+		"IntervalMinute",
+		ColumnType(IntervalHour.String()),
 	} {
 		r := AutoResult("foo")
 		require.NoError(t, r.Data.(Inferable).Infer(columnType))

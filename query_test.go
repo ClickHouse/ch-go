@@ -802,6 +802,59 @@ func TestClient_Query(t *testing.T) {
 			require.Equal(t, data.Row(i), gotData.Row(i))
 		}
 	})
+	t.Run("InsertGeoPoint", func(t *testing.T) {
+		t.Parallel()
+		conn := ConnOpt(t, Options{
+			Settings: []Setting{
+				// https://clickhouse.com/docs/en/sql-reference/data-types/geo/
+				SettingInt("allow_experimental_geo_types", 1),
+			},
+		})
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "CREATE TABLE test_table (v Point) ENGINE = Memory",
+		}), "create table")
+
+		data := new(proto.ColPoint)
+		data.AppendArr([]proto.Point{
+			{X: 1, Y: 0},
+			{X: 0, Y: 1},
+			{X: 1, Y: 1},
+			{X: 0, Y: 0},
+			{X: 0, Y: -1},
+		})
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: data},
+			},
+		}), "insert")
+
+		gotData := new(proto.ColPoint)
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: gotData},
+			},
+		}), "select")
+
+		require.Equal(t, data.Rows(), gotData.Rows())
+		for i := 0; i < data.Rows(); i++ {
+			require.Equal(t, data.Row(i), gotData.Row(i))
+		}
+	})
+	t.Run("SelectInterval", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		data := new(proto.ColInterval)
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT toIntervalWeek(1) AS w",
+			Result: proto.Results{
+				{Name: "w", Data: data},
+			},
+		}), "select table")
+		require.Equal(t, proto.Interval{Scale: proto.IntervalWeek, Value: 1}, data.Row(0))
+	})
 }
 
 func TestClientCompression(t *testing.T) {

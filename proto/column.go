@@ -210,6 +210,7 @@ const (
 	ColumnTypeDecimal128     ColumnType = "Decimal128"
 	ColumnTypeDecimal256     ColumnType = "Decimal256"
 	ColumnTypePoint          ColumnType = "Point"
+	ColumnTypeInterval       ColumnType = "Interval"
 )
 
 // colWrap wraps Column with type t.
