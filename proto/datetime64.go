@@ -50,11 +50,17 @@ type DateTime64 int64
 
 // ToDateTime64 converts time.Time to DateTime64.
 func ToDateTime64(t time.Time, p Precision) DateTime64 {
+	if t.IsZero() {
+		return 0
+	}
 	return DateTime64(t.UnixNano() / p.Scale())
 }
 
 // Time returns DateTime64 as time.Time.
 func (d DateTime64) Time(p Precision) time.Time {
+	if d == 0 {
+		return time.Time{}
+	}
 	nsec := int64(d) * p.Scale()
 	return time.Unix(nsec/1e9, nsec%1e9)
 }
