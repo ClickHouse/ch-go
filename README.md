@@ -263,8 +263,8 @@ func TestLocalNativeDump(t *testing.T) {
   - [ ] JSON
   - [ ] SimpleAggregateFunction
   - [ ] AggregateFunction
-  - [ ] Nothing
-  - [ ] Interval
+  - [x] Nothing
+  - [x] Interval
   - [ ] Nested
 - [ ] Improved i/o timeout handling for reading packets from server
   - [ ] Close connection on context cancellation in all cases
