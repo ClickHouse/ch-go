@@ -13,16 +13,20 @@ type Precision byte
 
 // Duration returns duration of single tick for precision.
 func (p Precision) Duration() time.Duration {
-	d := time.Nanosecond
-	for i := PrecisionNano; i > p; i-- {
-		d *= 10
-	}
-	return d
+	return time.Nanosecond * time.Duration(p.Scale())
 }
 
 // Valid reports whether precision is valid.
 func (p Precision) Valid() bool {
 	return p <= PrecisionMax
+}
+
+func (p Precision) Scale() int64 {
+	d := int64(1)
+	for i := PrecisionNano; i > p; i-- {
+		d *= 10
+	}
+	return d
 }
 
 const (
@@ -46,38 +50,13 @@ type DateTime64 int64
 
 // ToDateTime64 converts time.Time to DateTime64.
 func ToDateTime64(t time.Time, p Precision) DateTime64 {
-	switch p {
-	case PrecisionMicro:
-		return DateTime64(t.UnixMicro())
-	case PrecisionMilli:
-		return DateTime64(t.UnixMilli())
-	case PrecisionNano:
-		return DateTime64(t.UnixNano())
-	case PrecisionSecond:
-		return DateTime64(t.Unix())
-	default:
-		// TODO(ernado): support all precisions
-		panic("precision not supported")
-	}
+	return DateTime64(t.UnixNano() / p.Scale())
 }
 
 // Time returns DateTime64 as time.Time.
 func (d DateTime64) Time(p Precision) time.Time {
-	switch p {
-	case PrecisionMicro:
-		return time.UnixMicro(int64(d))
-	case PrecisionMilli:
-		return time.UnixMilli(int64(d))
-	case PrecisionNano:
-		nsec := int64(d)
-		return time.Unix(nsec/1e9, nsec%1e9)
-	case PrecisionSecond:
-		sec := int64(d)
-		return time.Unix(sec, 0)
-	default:
-		// TODO(ernado): support all precisions
-		panic("precision not supported")
-	}
+	nsec := int64(d) * p.Scale()
+	return time.Unix(nsec/1e9, nsec%1e9)
 }
 
 // Wrap column with explicit precision.

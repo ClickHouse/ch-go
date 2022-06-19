@@ -59,7 +59,7 @@ type OTEL struct {
 func (t *OTEL) Input() proto.Input {
 	return proto.Input{
 		{Name: "body", Data: t.Body},
-		{Name: "timestamp", Data: t.Timestamp.Wrap(proto.PrecisionNano)},
+		{Name: "timestamp", Data: t.Timestamp},
 		{Name: "trace_id", Data: t.TraceID},
 		{Name: "span_id", Data: t.SpanID},
 		{Name: "severity_text", Data: &t.SevText},
@@ -91,7 +91,7 @@ type OTELRow struct {
 
 func (t *OTEL) Append(row OTELRow) {
 	t.Body.AppendBytes(row.Body)
-	t.Timestamp.Append(proto.DateTime64(row.Timestamp).Time(proto.PrecisionNano))
+	t.Timestamp.AppendRaw(proto.DateTime64(row.Timestamp))
 	t.SevNumber.Append(row.SeverityNumber)
 	t.SevText.Append(row.SeverityText)
 

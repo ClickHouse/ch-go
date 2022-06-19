@@ -1,7 +1,9 @@
 package proto
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-faster/errors"
@@ -14,14 +16,19 @@ var (
 )
 
 // ColDateTime64 implements ColumnOf[time.Time].
+//
+// If Precision is not set, Append and Row() panics.
+// Use ColDateTime64Raw to work with raw DateTime64 values.
 type ColDateTime64 struct {
-	Data      []DateTime64
-	Precision Precision
-	Location  *time.Location
+	Data         []DateTime64
+	Location     *time.Location
+	Precision    Precision
+	PrecisionSet bool
 }
 
 func (c *ColDateTime64) WithPrecision(p Precision) *ColDateTime64 {
 	c.Precision = p
+	c.PrecisionSet = true
 	return c
 }
 
@@ -39,14 +46,26 @@ func (c *ColDateTime64) Reset() {
 }
 
 func (c ColDateTime64) Type() ColumnType {
-	sub := ColumnType(strconv.Itoa(int(c.Precision)))
-	return ColumnTypeDateTime64.Sub(sub)
+	var elems []string
+	if p := c.Precision; c.PrecisionSet {
+		elems = append(elems, strconv.Itoa(int(p)))
+	}
+	if loc := c.Location; loc != nil {
+		elems = append(elems, fmt.Sprintf(`'%s'`, loc))
+	}
+	return ColumnTypeDateTime64.With(elems...)
 }
 
 func (c *ColDateTime64) Infer(t ColumnType) error {
-	// TODO(ernado): handle (ignore) timezone
-	pRaw := t.Elem()
-	n, err := strconv.ParseUint(string(pRaw), 10, 8)
+	elem := string(t.Elem())
+	if elem == "" {
+		return errors.Errorf("invalid DateTime64: no elements in %q", t)
+	}
+	elems := strings.SplitN(elem, ",", 2)
+	for i := range elems {
+		elems[i] = strings.Trim(elems[i], `' `)
+	}
+	n, err := strconv.ParseUint(elems[0], 10, 8)
 	if err != nil {
 		return errors.Wrap(err, "parse precision")
 	}
@@ -55,10 +74,21 @@ func (c *ColDateTime64) Infer(t ColumnType) error {
 		return errors.Errorf("precision %d is invalid", n)
 	}
 	c.Precision = p
+	c.PrecisionSet = true
+	if len(elems) > 1 {
+		loc, err := time.LoadLocation(elems[1])
+		if err != nil {
+			return errors.Wrap(err, "invalid location")
+		}
+		c.Location = loc
+	}
 	return nil
 }
 
 func (c ColDateTime64) Row(i int) time.Time {
+	if !c.PrecisionSet {
+		panic("DateTime64: no precision set")
+	}
 	return c.Data[i].Time(c.Precision).In(c.loc())
 }
 
@@ -70,6 +100,32 @@ func (c ColDateTime64) loc() *time.Location {
 	return c.Location
 }
 
-func (c *ColDateTime64) Append(v time.Time) {
-	c.Data = append(c.Data, ToDateTime64(v, c.Precision))
+func (c *ColDateTime64) AppendRaw(v DateTime64) {
+	c.Data = append(c.Data, v)
 }
+
+func (c *ColDateTime64) Append(v time.Time) {
+	if !c.PrecisionSet {
+		panic("DateTime64: no precision set")
+	}
+	c.AppendRaw(ToDateTime64(v, c.Precision))
+}
+
+// Raw version of ColDateTime64 for ColumnOf[DateTime64].
+func (c ColDateTime64) Raw() *ColDateTime64Raw {
+	return &ColDateTime64Raw{ColDateTime64: c}
+}
+
+var (
+	_ ColumnOf[DateTime64] = (*ColDateTime64Raw)(nil)
+	_ Inferable            = (*ColDateTime64Raw)(nil)
+	_ Column               = (*ColDateTime64Raw)(nil)
+)
+
+// ColDateTime64Raw is DateTime64 wrapper to implement ColumnOf[DateTime64].
+type ColDateTime64Raw struct {
+	ColDateTime64
+}
+
+func (c *ColDateTime64Raw) Append(v DateTime64) { c.AppendRaw(v) }
+func (c ColDateTime64Raw) Row(i int) DateTime64 { return c.Data[i] }
