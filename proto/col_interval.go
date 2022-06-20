@@ -3,6 +3,7 @@ package proto
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-faster/errors"
 )
@@ -27,11 +28,38 @@ type Interval struct {
 	Value int64
 }
 
+// Add Interval to time.Time.
+func (i Interval) Add(t time.Time) time.Time {
+	switch i.Scale {
+	case IntervalSecond:
+		return t.Add(time.Second * time.Duration(i.Value))
+	case IntervalMinute:
+		return t.Add(time.Minute * time.Duration(i.Value))
+	case IntervalHour:
+		return t.Add(time.Hour * time.Duration(i.Value))
+	case IntervalDay:
+		return t.AddDate(0, 0, int(i.Value))
+	case IntervalWeek:
+		return t.AddDate(0, 0, int(i.Value)*7)
+	case IntervalMonth:
+		return t.AddDate(0, int(i.Value), 0)
+	case IntervalQuarter:
+		return t.AddDate(0, int(i.Value)*4, 0)
+	case IntervalYear:
+		return t.AddDate(int(i.Value), 0, 0)
+	default:
+		panic(fmt.Sprintf("unknown interval scale %s", i.Scale))
+	}
+}
+
 func (i Interval) String() string {
 	var out strings.Builder
 	out.WriteString(fmt.Sprintf("%d", i.Value))
 	out.WriteRune(' ')
 	out.WriteString(strings.ToLower(strings.TrimPrefix(i.Scale.String(), ColumnTypeInterval.String())))
+	if i.Value > 1 || i.Value < 1 {
+		out.WriteRune('s')
+	}
 	return out.String()
 }
 
