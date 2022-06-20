@@ -128,6 +128,7 @@ q := ch.Query{
 * Tuple(T1, T2, ..., Tn)
 * Nullable(T)
 * Point
+* Nothing, Interval
 
 ## Generics
 
@@ -266,6 +267,11 @@ func TestLocalNativeDump(t *testing.T) {
   - [x] Nothing
   - [x] Interval
   - [ ] Nested
+  - [ ] [Geo types](https://clickhouse.com/docs/en/sql-reference/data-types/geo/)
+    - [x] Point
+    - [ ] Ring
+    - [ ] Polygon
+    - [ ] MultiPolygon
 - [ ] Improved i/o timeout handling for reading packets from server
   - [ ] Close connection on context cancellation in all cases
   - [ ] Ensure that reads can't block forever
