@@ -1,6 +1,10 @@
 package proto
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/go-faster/errors"
+)
 
 // Nothing represents NULL value.
 type Nothing struct{}
@@ -32,8 +36,13 @@ func (c ColNothing) Rows() int {
 
 func (c *ColNothing) DecodeColumn(r *Reader, rows int) error {
 	*c = ColNothing(rows)
-	_, err := r.ReadRaw(rows)
-	return err
+	if rows == 0 {
+		return nil
+	}
+	if _, err := r.ReadRaw(rows); err != nil {
+		return errors.Wrap(err, "read")
+	}
+	return nil
 }
 
 func (c *ColNothing) Reset() {
@@ -53,5 +62,8 @@ func (c *ColNothing) Array() *ColArr[Nothing] {
 }
 
 func (c ColNothing) EncodeColumn(b *Buffer) {
-	b.Ensure(int(c))
+	if c == 0 {
+		return
+	}
+	b.PutRaw(make([]byte, c))
 }
