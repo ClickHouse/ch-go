@@ -27,7 +27,7 @@ import (
 
 func main() {
   ctx := context.Background()
-  c, err := ch.Dial(ctx, "localhost:9000", ch.Options{})
+  c, err := ch.Dial(ctx, ch.Options{Address: "localhost:9000"})
   if err != nil {
     panic(err)
   }
@@ -37,13 +37,13 @@ func main() {
   )
   if err := c.Do(ctx, ch.Query{
     Body: "SELECT number FROM system.numbers LIMIT 500000000",
+    Result: proto.Results{
+      {Name: "number", Data: &data},
+    },
     // OnResult will be called on next received data block.
     OnResult: func(ctx context.Context, b proto.Block) error {
       numbers += len(data)
       return nil
-    },
-    Result: proto.Results{
-      {Name: "number", Data: &data},
     },
   }); err != nil {
     panic(err)
