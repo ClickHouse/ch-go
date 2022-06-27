@@ -85,7 +85,10 @@ func (r *Reader) readBlock() error {
 		if r.zstd == nil {
 			// Lazily initializing to prevent spawning goroutines in NewReader.
 			// See https://github.com/golang/go/issues/47056#issuecomment-997436820
-			zstdReader, err := zstd.NewReader(nil, zstd.WithDecoderConcurrency(1))
+			zstdReader, err := zstd.NewReader(nil,
+				zstd.WithDecoderConcurrency(1),
+				zstd.WithDecoderLowmem(true),
+			)
 			if err != nil {
 				return errors.Wrap(err, "zstd")
 			}

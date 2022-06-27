@@ -56,8 +56,16 @@ func (w *Writer) Compress(m Method, buf []byte) error {
 }
 
 func NewWriter() *Writer {
+	w, err := zstd.NewWriter(nil,
+		zstd.WithEncoderLevel(zstd.SpeedDefault),
+		zstd.WithEncoderConcurrency(1),
+		zstd.WithLowerEncoderMem(true),
+	)
+	if err != nil {
+		panic(err)
+	}
 	return &Writer{
 		lz4:  &lz4.Compressor{},
-		zstd: &zstd.Encoder{},
+		zstd: w,
 	}
 }
