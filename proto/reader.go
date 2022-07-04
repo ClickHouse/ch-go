@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-faster/errors"
 
-	"github.com/ClickHouse/ch-go/internal/compress"
+	"github.com/ClickHouse/ch-go/compress"
 )
 
 // Decoder implements decoding from Reader.
