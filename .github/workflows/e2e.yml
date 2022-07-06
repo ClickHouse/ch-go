@@ -24,7 +24,7 @@ jobs:
           - v22.3.7.28-lts
           - v22.4.5.9-stable
           - v22.5.1.2079-stable
-          - v22.6.2.12-stable
+          - v22.6.3.35-stable
     steps:
       - uses: actions/checkout@v3
 
