@@ -98,7 +98,15 @@ func withTableMacros(shard, replica int) cht.Option {
 }
 
 func TestCluster(t *testing.T) {
-	cht.Skip(t)
+	{
+		ctx := context.Background()
+		server := cht.New(t, cht.WithLog(ztest.NewLogger(t)))
+		client, err := ch.Dial(ctx, ch.Options{Address: server.TCP})
+		require.NoError(t, err)
+		if v := client.ServerInfo(); (v.Major < 22) || (v.Major == 22 && v.Minor < 6) {
+			t.Skip("Skipping (not supported)")
+		}
+	}
 	var (
 		ports = cht.Ports(t, 3*4)
 
@@ -163,6 +171,7 @@ func TestCluster(t *testing.T) {
 			Profile:  "default",
 			Path:     "/nexus/task_queue/ddl",
 		})
+		withInterHost = cht.WithInterServerHost(host)
 		withZooKeeper = cht.WithZooKeeper(nodes)
 		coordination  = cht.CoordinationConfig{
 			ElectionTimeoutLowerBoundMs: 250,
@@ -173,7 +182,7 @@ func TestCluster(t *testing.T) {
 		}
 		retry = backoff.WithMaxRetries(backoff.NewConstantBackOff(time.Millisecond*20), 20)
 
-		withOptions = cht.With(withCluster, withZooKeeper, withDDL)
+		withOptions = cht.With(withCluster, withZooKeeper, withDDL, withInterHost)
 		servers     = cht.Many(t,
 			cht.With(
 				cht.WithKeeper(cht.KeeperConfig{
