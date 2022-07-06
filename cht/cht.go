@@ -91,15 +91,16 @@ func Ports(t testing.TB, n int) []int {
 }
 
 type options struct {
-	tcp          int
-	http         int
-	httpInternal *int
-	clusters     Clusters
-	lg           *zap.Logger
-	zooKeeper    []ZooKeeperNode
-	keeper       *KeeperConfig
-	macros       Map
-	ddl          *DistributedDDL
+	tcp              int
+	http             int
+	httpInternal     *int
+	httpInternalHost *string
+	clusters         Clusters
+	lg               *zap.Logger
+	zooKeeper        []ZooKeeperNode
+	keeper           *KeeperConfig
+	macros           Map
+	ddl              *DistributedDDL
 }
 
 func WithKeeper(cfg KeeperConfig) Option {
@@ -123,6 +124,12 @@ func WithZooKeeper(nodes []ZooKeeperNode) Option {
 func WithInterServerHTTP(port int) Option {
 	return func(o *options) {
 		o.httpInternal = &port
+	}
+}
+
+func WithInterServerHost(host string) Option {
+	return func(o *options) {
+		o.httpInternalHost = &host
 	}
 }
 
