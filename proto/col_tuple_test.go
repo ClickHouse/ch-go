@@ -45,11 +45,11 @@ func TestColTuple_DecodeColumn(t *testing.T) {
 		require.Equal(t, 0, dec.Rows())
 		require.Equal(t, ColumnType("Tuple(String, Int64)"), dec.Type())
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 
 		dec := ColTuple{new(ColStr), new(ColInt64)}
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := ColTuple{new(ColStr), new(ColInt64)}
@@ -92,13 +92,13 @@ func TestColTuple_DecodeColumn_Named(t *testing.T) {
 		require.Equal(t, 0, dec.Rows())
 		require.Equal(t, ColumnType("Tuple(strings String, ints Int64)"), dec.Type())
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 		dec := ColTuple{
 			ColNamed[string]{Name: "strings", ColumnOf: new(ColStr)},
 			ColNamed[int64]{Name: "ints", ColumnOf: new(ColInt64)},
 		}
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := ColTuple{

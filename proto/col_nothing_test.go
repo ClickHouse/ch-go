@@ -47,11 +47,11 @@ func TestColNothing(t *testing.T) {
 		var dec ColNothing
 		require.NoError(t, dec.DecodeColumn(r, 0))
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 
 		dec := new(ColNothing).Nullable()
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := new(ColNothing).Nullable()

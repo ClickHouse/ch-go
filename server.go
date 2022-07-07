@@ -273,7 +273,7 @@ func (s *Server) Serve(ln net.Listener) error {
 				_ = c.Close()
 			}()
 			defer wg.Done()
-			if err := s.handle(c); err != nil && !errors.Is(err, io.ErrUnexpectedEOF) {
+			if err := s.handle(c); err != nil && !errors.Is(err, io.EOF) {
 				s.lg.Error("Handle", zap.Error(err))
 				s.onErr(err)
 			}

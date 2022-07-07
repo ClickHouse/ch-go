@@ -64,12 +64,12 @@ func TestColMap(t *testing.T) {
 		dec.Reset()
 		require.Equal(t, 0, dec.Rows())
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 		dec := &ColMap[string, string]{
 			Keys: &ColStr{}, Values: &ColStr{},
 		}
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := &ColMap[string, string]{

@@ -50,11 +50,11 @@ func TestColFixedStr_EncodeColumn(t *testing.T) {
 			require.Equal(t, h[:], b)
 		}
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 
 		dec := ColFixedStr{Size: 32}
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("ZeroRows", func(t *testing.T) {
 		var v ColFixedStr
