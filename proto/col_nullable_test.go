@@ -49,10 +49,10 @@ func TestColNullable_EncodeColumn(t *testing.T) {
 		require.Equal(t, 0, dec.Rows())
 		require.Equal(t, ColumnType("Nullable(String)"), dec.Type())
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 		dec := new(ColStr).Nullable()
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := new(ColStr).Nullable()
@@ -87,10 +87,10 @@ func TestColNullable(t *testing.T) {
 		}
 		assert.Equal(t, ColumnType("Nullable(String)"), dec.Type())
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 		dec := &ColNullable[string]{Values: new(ColStr)}
-		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := &ColNullable[string]{Values: new(ColStr)}

@@ -173,6 +173,6 @@ func TestBuffer(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, vFloat64, v)
 		}
-		assert.ErrorIs(t, r.ReadFull([]byte{1}), io.ErrUnexpectedEOF)
+		assert.ErrorIs(t, r.ReadFull([]byte{1}), io.EOF)
 	})
 }

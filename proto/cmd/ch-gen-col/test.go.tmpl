@@ -55,11 +55,11 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
 		var dec {{ .Type }}
 		require.NoError(t, dec.DecodeColumn(r, 0))
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 
 		var dec {{ .Type }}
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		var dec {{ .Type }}
@@ -100,11 +100,11 @@ func Test{{ .Type }}Array(t *testing.T) {
 		require.Equal(t, 0, dec.Rows())
 		require.Equal(t, {{ .ColumnType }}.Array(), dec.Type())
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 
 		dec := NewArr{{ .Name }}()
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 }
 {{ end }}

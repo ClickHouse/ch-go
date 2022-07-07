@@ -60,9 +60,6 @@ func (r *Reader) Decode(v Decoder) error {
 
 func (r *Reader) ReadFull(buf []byte) error {
 	if _, err := io.ReadFull(r, buf); err != nil {
-		if err == io.EOF {
-			err = io.ErrUnexpectedEOF
-		}
 		return errors.Wrap(err, "read")
 	}
 	return nil
@@ -85,9 +82,6 @@ func (r *Reader) ReadRaw(n int) ([]byte, error) {
 // UVarInt reads uint64 from internal reader.
 func (r *Reader) UVarInt() (uint64, error) {
 	n, err := binary.ReadUvarint(r)
-	if err == io.EOF {
-		err = io.ErrUnexpectedEOF
-	}
 	if err != nil {
 		return 0, errors.Wrap(err, "read")
 	}

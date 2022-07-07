@@ -42,10 +42,10 @@ func TestLowCardinalityOfStr(t *testing.T) {
 		}
 		assert.Equal(t, ColumnType("LowCardinality(String)"), dec.Type())
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 		dec := (&ColStr{}).LowCardinality()
-		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := (&ColStr{}).LowCardinality()
@@ -84,10 +84,10 @@ func TestArrLowCardinalityStr(t *testing.T) {
 		require.Equal(t, 0, dec.Rows())
 		require.Equal(t, ColumnType("Array(LowCardinality(String))"), dec.Type())
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 		dec := new(ColStr).LowCardinality().Array()
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := new(ColStr).LowCardinality().Array()
@@ -124,10 +124,10 @@ func TestColLowCardinality_DecodeColumn(t *testing.T) {
 			require.Equal(t, 0, dec.Rows())
 			require.Equal(t, ColumnTypeLowCardinality.Sub(ColumnTypeString), dec.Type())
 		})
-		t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+		t.Run("EOF", func(t *testing.T) {
 			r := NewReader(bytes.NewReader(nil))
 			dec := new(ColStr).LowCardinality()
-			require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+			require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 		})
 		t.Run("NoShortRead", func(t *testing.T) {
 			dec := new(ColStr).LowCardinality()

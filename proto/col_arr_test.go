@@ -75,10 +75,10 @@ func TestColArrOfStr(t *testing.T) {
 		require.Equal(t, []string{"foo", "bar", "foo", "foo", "baz"}, dec.Row(0))
 		require.Equal(t, []string{"foo", "baz"}, dec.Row(1))
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 		dec := (&ColStr{}).Array()
-		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := (&ColStr{}).Array()
@@ -109,10 +109,10 @@ func TestArrOfLowCordStr(t *testing.T) {
 		require.Equal(t, []string{"foo", "bar", "foo", "foo", "baz"}, dec.Row(0))
 		require.Equal(t, []string{"foo", "baz"}, dec.Row(1))
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 		dec := NewArray[string](new(ColStr).LowCardinality())
-		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, col.Rows()), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		dec := NewArray[string](new(ColStr).LowCardinality())

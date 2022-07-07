@@ -44,11 +44,11 @@ func TestColDateTime64_DecodeColumn(t *testing.T) {
 		var dec ColDateTime64
 		require.NoError(t, dec.DecodeColumn(r, 0))
 	})
-	t.Run("ErrUnexpectedEOF", func(t *testing.T) {
+	t.Run("EOF", func(t *testing.T) {
 		r := NewReader(bytes.NewReader(nil))
 
 		var dec ColDateTime64
-		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.ErrUnexpectedEOF)
+		require.ErrorIs(t, dec.DecodeColumn(r, rows), io.EOF)
 	})
 	t.Run("NoShortRead", func(t *testing.T) {
 		var dec ColDateTime64
