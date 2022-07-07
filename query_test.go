@@ -26,6 +26,22 @@ func requireEqual[T any](t *testing.T, a, b proto.ColumnOf[T]) {
 	}
 }
 
+func TestDateTimeOverflow(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := Conn(t)
+	var data proto.ColDateTime
+	query := Query{
+		Body: "SELECT toDateTime('2061-02-01 00:00:00') as v",
+		Result: proto.Results{
+			{Name: "v", Data: &data},
+		},
+	}
+	require.NoError(t, conn.Do(ctx, query))
+	require.Equal(t, 1, data.Rows())
+	require.Equal(t, "2061-02-01 00:00:00", data.Row(0).Format("2006-01-02 15:04:05"))
+}
+
 func TestClient_Query(t *testing.T) {
 	ctx := context.Background()
 	t.Parallel()
