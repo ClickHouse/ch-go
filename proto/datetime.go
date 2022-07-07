@@ -3,7 +3,7 @@ package proto
 import "time"
 
 // DateTime represents DateTime type.
-type DateTime int32
+type DateTime uint32
 
 // ToDateTime converts time.Time to DateTime.
 func ToDateTime(t time.Time) DateTime {
