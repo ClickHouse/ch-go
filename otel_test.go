@@ -24,7 +24,7 @@ func (m MapPair[V]) Append(k []string, v []V) {
 
 func NewMapPair[X comparable](v proto.ColumnOf[X]) MapPair[X] {
 	return MapPair[X]{
-		Keys:   new(proto.ColStr).Array(),
+		Keys:   new(proto.ColStr).LowCardinality().Array(),
 		Values: proto.NewArray(v),
 	}
 }
@@ -168,12 +168,6 @@ func BenchmarkOTEL(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			buf.Reset()
 			buf.PutString("")
-
-			// Important!
-			// Simulating "Reset" to new values.
-			v := data.SevText.Values
-			data.SevText.Reset()
-			data.SevText.Values = v
 
 			if err := block.EncodeBlock(buf, proto.Version, input); err != nil {
 				b.Fatal(err)

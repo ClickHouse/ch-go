@@ -142,9 +142,8 @@ func (e *ColEnum) Reset() {
 }
 
 func (e *ColEnum) Prepare() error {
-	if e.raw().Rows() != 0 {
-		return errors.New("already prepared")
-	}
+	e.raw8 = e.raw8[:0]
+	e.raw16 = e.raw16[:0]
 	for _, v := range e.Values {
 		raw, ok := e.strToRaw[v]
 		if !ok {

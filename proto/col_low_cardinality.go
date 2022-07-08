@@ -91,6 +91,7 @@ const sharedDictionariesWithAdditionalKeys keySerializationVersion = 1
 //
 // For example, ["Eko", "Eko", "Amadela", "Amadela", "Amadela", "Amadela"] can
 // be encoded as:
+//
 //	Index: ["Eko", "Amadela"] (String)
 //	Keys:  [0, 0, 1, 1, 1, 1] (UInt8)
 //
@@ -249,6 +250,7 @@ type cardinalityKeyValue interface {
 }
 
 func fillKeys[K cardinalityKeyValue](values []int, keys []K) []K {
+	keys = keys[:0]
 	for _, v := range values {
 		keys = append(keys, K(v))
 	}
