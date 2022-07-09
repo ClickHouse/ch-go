@@ -101,6 +101,14 @@ type options struct {
 	keeper           *KeeperConfig
 	macros           Map
 	ddl              *DistributedDDL
+
+	maxServerMemoryUsage int
+}
+
+func WithMaxServerMemoryUsage(n int) Option {
+	return func(o *options) {
+		o.maxServerMemoryUsage = n
+	}
 }
 
 func WithKeeper(cfg KeeperConfig) Option {
@@ -261,6 +269,8 @@ func New(t testing.TB, opts ...Option) Server {
 		Path:          filepath.Join(dir, "data"),
 		TempPath:      filepath.Join(dir, "tmp"),
 		UserFilesPath: filepath.Join(dir, "users"),
+
+		MaxServerMemoryUsage: o.maxServerMemoryUsage,
 
 		MarkCacheSize: 5368709120,
 		MMAPCacheSize: 1000,
