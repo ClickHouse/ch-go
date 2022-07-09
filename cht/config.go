@@ -106,6 +106,8 @@ type Config struct {
 	InterServerHTTP     *int    `xml:"interserver_http_port,omitempty"`
 	InterServerHTTPHost *string `xml:"interserver_http_host,omitempty"`
 
+	MaxServerMemoryUsage int `xml:"max_server_memory_usage,omitempty"`
+
 	Path            string  `xml:"path"`
 	TempPath        string  `xml:"tmp_path"`
 	UserFilesPath   string  `xml:"user_files_path"`

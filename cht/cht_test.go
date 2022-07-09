@@ -50,7 +50,10 @@ func TestXML(t *testing.T) {
 
 func TestConnect(t *testing.T) {
 	ctx := context.Background()
-	server := cht.New(t, cht.WithLog(ztest.NewLogger(t)))
+	server := cht.New(t,
+		cht.WithLog(ztest.NewLogger(t)),
+		cht.WithMaxServerMemoryUsage(1024*1024*256),
+	)
 	t.Parallel()
 
 	client, err := ch.Dial(ctx, ch.Options{Address: server.TCP})
