@@ -31,13 +31,13 @@ func TestNamedTuples(t *testing.T) {
 	}
 	ctx := context.Background()
 	require.NoError(t, conn.Do(ctx, Query{
-		Body: "CREATE TABLE named_tuples (`a` Tuple(s String, i Int64)) ENGINE = Memory",
+		Body: "CREATE TABLE named_tuples (`1` Tuple(`s` String, `i` Int64)) ENGINE = Memory",
 	}))
 	require.NoError(t, conn.Do(ctx, Query{
 		Body: "INSERT INTO named_tuples VALUES",
 		Input: proto.Input{
 			{
-				Name: "a",
+				Name: "1",
 				Data: proto.ColTuple{
 					proto.ColNamed[string]{
 						ColumnOf: newCol[string](new(proto.ColStr), "foo", "bar", "baz"),
@@ -64,7 +64,7 @@ func TestNamedTuples(t *testing.T) {
 	require.NoError(t, conn.Do(ctx, Query{
 		Body: "SELECT * FROM named_tuples",
 		Result: proto.Results{
-			{Name: "a", Data: proto.ColTuple{strData, intData}},
+			{Name: "1", Data: proto.ColTuple{strData, intData}},
 		},
 	}))
 }
