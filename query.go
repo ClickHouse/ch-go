@@ -343,6 +343,19 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 		if err := f(ctx); err != nil {
 			if errors.Is(err, io.EOF) {
 				// No more data.
+				if tailRows := q.Input[0].Data.Rows(); tailRows > 0 {
+					// Write data tail on next tick and break.
+					//
+					// This is required to resemble io.Reader behavior.
+					if ce := c.lg.Check(zap.DebugLevel, "Writing tail of input data (not empty and io.EOF)"); ce != nil {
+						ce.Write(
+							zap.Int("rows", tailRows),
+						)
+					}
+					f = nil
+					continue
+				}
+
 				break
 			}
 			// ClickHouse server persists blocks after receive.
