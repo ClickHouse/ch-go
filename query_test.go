@@ -245,7 +245,7 @@ func TestClient_Query(t *testing.T) {
 			OnInput: func(ctx context.Context) error {
 				data = append(data[:0], uint8(total), 2, 3, 4)
 				total++
-				if total > blocks {
+				if total >= blocks {
 					return io.EOF
 				}
 				return nil
