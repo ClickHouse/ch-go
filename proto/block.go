@@ -67,6 +67,15 @@ func (i *BlockInfo) Decode(r *Reader) error {
 // Input of query.
 type Input []InputColumn
 
+// Reset all columns that implement proto.Resettable.
+func (i Input) Reset() {
+	for _, c := range i {
+		if col, ok := c.Data.(Resettable); ok {
+			col.Reset()
+		}
+	}
+}
+
 // Into returns INSERT INTO table (c0, c..., cn) VALUES query.
 func (i Input) Into(table string) string {
 	return fmt.Sprintf("INSERT INTO %s %s VALUES", strconv.QuoteToASCII(table), i.Columns())

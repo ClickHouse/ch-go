@@ -19,7 +19,7 @@ type ColResult interface {
 	Type() ColumnType
 	Rows() int
 	DecodeColumn(r *Reader, rows int) error
-	Reset()
+	Resettable
 }
 
 type Column interface {
