@@ -15,30 +15,6 @@ jobs:
     env:
       CH_VER: 21.12.2.17-stable
     steps:
-      - name: Set up ClickHouse cache
-        uses: actions/cache@v3
-        with:
-          path: /opt/ch/clickhouse
-          key: ClickHouse-${{ env.CH_VER }}
-
-      - name: Check ClickHouse
-        id: "ch_exists"
-        uses: andstor/file-existence-action@v1
-        with:
-          files: /opt/ch/clickhouse
-
-      - name: Get ClickHouse asset version
-        id: asset
-        run: echo "::set-output name=version::$(echo '${{ env.CH_VER }}' | cut -f1 -d'-')"
-
-      - name: Download ClickHouse
-        if: steps.ch_exists.outputs.files_exists != 'true'
-        run: wget -O /tmp/static.tgz "https://github.com/ClickHouse/ClickHouse/releases/download/v${{ env.CH_VER }}/clickhouse-common-static-${{ steps.asset.outputs.version }}.tgz"
-
-      - name: Install ClickHouse
-        if: steps.ch_exists.outputs.files_exists != 'true'
-        run: mkdir /opt/ch && tar -C /opt/ch -v --strip-components 4 --extract --file /tmp/static.tgz --wildcards "*/bin/clickhouse" && rm /tmp/static.tgz
-
       - name: Install Go
         uses: actions/setup-go@v3
         with:
@@ -62,6 +38,22 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set up ClickHouse cache
+        uses: actions/cache@v3
+        with:
+          path: /opt/ch/clickhouse
+          key: ClickHouse-${{ env.CH_VER }}
+
+      - name: Check ClickHouse
+        id: "ch_exists"
+        uses: andstor/file-existence-action@v1
+        with:
+          files: /opt/ch/clickhouse
+
+      - name: Download ClickHouse
+        if: steps.ch_exists.outputs.files_exists != 'true'
+        run: cd internal/cmd/ch-dl && go run . ${{ matrix.clickhouse }}
 
       - name: Run tests with coverage
         run: make coverage
