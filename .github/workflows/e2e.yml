@@ -21,10 +21,10 @@ jobs:
           - v21.12.4.1-stable
           - v22.1.4.30-stable
           - v22.2.3.5-stable
-          - v22.3.7.28-lts
+          - v22.3.9.19-lts
           - v22.4.5.9-stable
-          - v22.5.1.2079-stable
-          - v22.6.3.35-stable
+          - v22.5.3.21-stable
+          - v22.6.4.35-stable
           - v22.7.1.2484-stable
     steps:
       - uses: actions/checkout@v3
