@@ -31,7 +31,7 @@ func (d Date) String() string {
 	return d.Time().UTC().Format(DateLayout)
 }
 
-// ToDate returns Date of time.Time in UTC.
+// ToDate returns Date of time.Time.
 func ToDate(t time.Time) Date {
 	_, offset := t.Zone()
 	return Date((t.Unix() + int64(offset)) / secInDay)

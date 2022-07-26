@@ -26,7 +26,7 @@ func (d Date32) String() string {
 	return d.Time().Format(DateLayout)
 }
 
-// ToDate32 returns Date32 of time.Time in UTC.
+// ToDate32 returns Date32 of time.Time.
 func ToDate32(t time.Time) Date32 {
 	_, offset := t.Zone()
 	return Date32((t.Unix() + int64(offset) - date32Epoch) / secInDay)

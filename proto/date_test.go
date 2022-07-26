@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDate_Time(t *testing.T) {
@@ -32,6 +33,27 @@ func TestDate_Time(t *testing.T) {
 			assert.Equal(t, v.Format("2006-01-02"), date.String())
 		}
 	})
+}
+
+func TestToDate(t *testing.T) {
+	for _, tc := range []struct {
+		Value string
+	}{
+		{Value: "2006-01-02T06:04:03+07:00"},
+		{Value: "2008-01-02T06:44:15+03:00"},
+		{Value: "2009-01-01T06:03:31+12:00"},
+		{Value: "2006-12-31T22:04:41-06:30"},
+	} {
+		t.Run(tc.Value, func(t *testing.T) {
+			v, err := time.Parse(time.RFC3339, tc.Value)
+			require.NoError(t, err)
+			d := ToDate(v)
+			expected := NewDate(v.Year(), v.Month(), v.Day())
+			assert.Equal(t, v.Format(DateLayout), d.String())
+			assert.Equal(t, expected.String(), d.String())
+			assert.Equal(t, expected, d)
+		})
+	}
 }
 
 func BenchmarkDate_Time(b *testing.B) {
