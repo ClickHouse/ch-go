@@ -33,7 +33,8 @@ func (d Date) String() string {
 
 // ToDate returns Date of time.Time in UTC.
 func ToDate(t time.Time) Date {
-	return Date(t.Unix() / secInDay)
+	_, offset := t.Zone()
+	return Date((t.Unix() + int64(offset)) / secInDay)
 }
 
 // NewDate returns the Date corresponding to year, month and day in UTC.
