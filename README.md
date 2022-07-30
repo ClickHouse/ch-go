@@ -1,7 +1,9 @@
 # ch [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/ClickHouse/ch-go#section-documentation)
 Low level TCP [ClickHouse](https://clickhouse.com/) client and protocol implementation in Go. Designed for very fast data block streaming with low network, cpu and memory overhead.
 
-Use [clickhouse-go](https://github.com/ClickHouse/clickhouse-go) for high-level `database/sql`-compatible client.
+NB: **No pooling, reconnects** and **not** goroutine-safe by default, only single connection.
+Use [clickhouse-go](https://github.com/ClickHouse/clickhouse-go) for high-level `database/sql`-compatible client,
+pooling for ch-go is available as [chpool](https://pkg.go.dev/github.com/ClickHouse/ch-go/chpool) package.
 
 * [Feedback](https://github.com/ClickHouse/ch-go/discussions/6)
 * [Benchmarks](https://github.com/go-faster/ch-bench#benchmarks)
