@@ -14,7 +14,7 @@ jobs:
       fail-fast: true
       matrix:
         go:
-          - 1.18
+          - 1.18.3
           - 1.19
         clickhouse:
           - v21.8.14.5-lts
