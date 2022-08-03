@@ -13,12 +13,12 @@ jobs:
   run:
     runs-on: ubuntu-latest
     env:
-      CH_VER: 21.12.2.17-stable
+      CH_VER: v22.7.1.2484-stable
     steps:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.3
+          go-version: 1.19
 
       - name: Get Go environment
         id: go-env
