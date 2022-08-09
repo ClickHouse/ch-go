@@ -96,7 +96,7 @@ func ElapsedSecondsTimeEncoder(start time.Time) zapcore.TimeEncoder {
 // NewLogger builds a new Logger that logs all messages to the given
 // testing.TB.
 //
-//   logger := ztest.NewLogger(t)
+//	logger := ztest.NewLogger(t)
 //
 // Use this with a *testing.T or *testing.B to get logs which get printed only
 // if a test fails or if you ran go test -v.
@@ -104,11 +104,11 @@ func ElapsedSecondsTimeEncoder(start time.Time) zapcore.TimeEncoder {
 // The returned logger defaults to logging debug level messages and above.
 // This may be changed by passing a ztest.Level during construction.
 //
-//   logger := ztest.NewLogger(t, ztest.Level(zap.WarnLevel))
+//	logger := ztest.NewLogger(t, ztest.Level(zap.WarnLevel))
 //
 // You may also pass zap.Option's to customize test logger.
 //
-//   logger := ztest.NewLogger(t, ztest.WrapOptions(zap.AddCaller()))
+//	logger := ztest.NewLogger(t, ztest.WrapOptions(zap.AddCaller()))
 func NewLogger(t zaptest.TestingT, opts ...LoggerOption) *zap.Logger {
 	encoder := zap.NewDevelopmentEncoderConfig()
 	encoder.EncodeLevel = ShortLevelEncoder

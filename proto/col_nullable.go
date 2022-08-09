@@ -52,8 +52,10 @@ func NewColNullable[T any](v ColumnOf[T]) *ColNullable[T] {
 //
 // Nulls is nullable "mask" on Values column.
 // For example, to encode [null, "", "hello", null, "world"]
+//
 //	Values: ["", "", "hello", "", "world"] (len: 5)
 //	Nulls:  [ 1,  0,       0,  1,       0] (len: 5)
+//
 // Values and Nulls row counts are always equal.
 type ColNullable[T any] struct {
 	Nulls  ColUInt8
