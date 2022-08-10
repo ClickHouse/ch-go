@@ -19,5 +19,3 @@ jobs:
     uses: go-faster/x/.github/workflows/codeql.yml@main
   lint:
     uses: go-faster/x/.github/workflows/lint.yml@main
-    with:
-      go: 1.18.3
