@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.3
-	github.com/dmarkham/enumer v1.5.5
+	github.com/dmarkham/enumer v1.5.6
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-faster/city v1.0.1
 	github.com/go-faster/errors v0.6.1
