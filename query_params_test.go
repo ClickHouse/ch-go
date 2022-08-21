@@ -10,7 +10,7 @@ import (
 )
 
 func TestQueryParameters(t *testing.T) {
-	conn := ConnOpt(t, Options{QuotaKey: ""})
+	conn := Conn(t)
 	if !conn.ServerInfo().Has(proto.FeatureParameters) {
 		t.Skip("Skipping (not supported)")
 	}
