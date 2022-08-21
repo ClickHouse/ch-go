@@ -535,6 +535,11 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	if c.conn == nil {
 		return ErrClosed
 	}
+	if len(q.Parameters) > 0 && !proto.FeatureParameters.In(c.protocolVersion) {
+		return errors.Errorf("query parameters are not supported in protocol version %d, upgrade server %q",
+			c.protocolVersion, c.server,
+		)
+	}
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
 	}
