@@ -15,6 +15,7 @@ import (
 )
 
 func TestServer_Serve(t *testing.T) {
+	t.Skip("Server is not implemented")
 	cht.Skip(t)
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")

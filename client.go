@@ -27,14 +27,15 @@ import (
 // Client implements ClickHouse binary protocol client on top of
 // single TCP connection.
 type Client struct {
-	lg      *zap.Logger
-	conn    net.Conn
-	mux     sync.Mutex
-	buf     *proto.Buffer
-	reader  *proto.Reader
-	info    proto.ClientHello
-	server  proto.ServerHello
-	version clientVersion
+	lg       *zap.Logger
+	conn     net.Conn
+	mux      sync.Mutex
+	buf      *proto.Buffer
+	reader   *proto.Reader
+	info     proto.ClientHello
+	server   proto.ServerHello
+	version  clientVersion
+	quotaKey string
 
 	otel   bool
 	tracer trace.Tracer
@@ -301,12 +302,15 @@ type Options struct {
 	Database    string      // "default"
 	User        string      // "default"
 	Password    string      // blank string by default
+	QuotaKey    string      // blank string by default
 	Compression Compression // disabled by default
 	Settings    []Setting   // none by default
 
 	Dialer      Dialer        // defaults to net.Dialer
 	DialTimeout time.Duration // defaults to 1s
 	TLS         *tls.Config   // no TLS is used by default
+
+	ProtocolVersion int // force protocol version, optional
 
 	// Additional OpenTelemetry instrumentation that will capture query body
 	// and other parameters.
@@ -330,6 +334,9 @@ const (
 )
 
 func (o *Options) setDefaults() {
+	if o.ProtocolVersion == 0 {
+		o.ProtocolVersion = proto.Version
+	}
 	if o.Database == "" {
 		o.Database = DefaultDatabase
 	}
@@ -407,17 +414,18 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		otel:     opt.OpenTelemetryInstrumentation,
 		tracer:   opt.tracer,
 		meter:    opt.meter,
+		quotaKey: opt.QuotaKey,
 
 		compressor: compress.NewWriter(),
 
 		version:         ver,
-		protocolVersion: proto.Version,
+		protocolVersion: opt.ProtocolVersion,
 		info: proto.ClientHello{
 			Name:  ver.Name,
 			Major: ver.Major,
 			Minor: ver.Minor,
 
-			ProtocolVersion: proto.Version,
+			ProtocolVersion: opt.ProtocolVersion,
 
 			Database: opt.Database,
 			User:     opt.User,

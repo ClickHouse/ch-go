@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-const _FeatureName = "TempTablesBlockInfoTimezoneQuotaKeyInClientInfoDisplayNameVersionPatchServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetryXForwardedForInClientInfoRefererInClientInfoDistributedDepthQueryStartTimeProfileEvents"
-const _FeatureLowerName = "temptablesblockinfotimezonequotakeyinclientinfodisplaynameversionpatchserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetryxforwardedforinclientinforefererinclientinfodistributeddepthquerystarttimeprofileevents"
+const _FeatureName = "TempTablesBlockInfoTimezoneQuotaKeyInClientInfoDisplayNameVersionPatchServerLogsColumnDefaultsMetadataClientWriteInfoSettingsSerializedAsStringsInterServerSecretOpenTelemetryXForwardedForInClientInfoRefererInClientInfoDistributedDepthQueryStartTimeProfileEventsParallelReplicasCustomSerializationQuotaKeyParametersServerQueryTimeInProgress"
+const _FeatureLowerName = "temptablesblockinfotimezonequotakeyinclientinfodisplaynameversionpatchserverlogscolumndefaultsmetadataclientwriteinfosettingsserializedasstringsinterserversecretopentelemetryxforwardedforinclientinforefererinclientinfodistributeddepthquerystarttimeprofileeventsparallelreplicascustomserializationquotakeyparametersserverquerytimeinprogress"
 
 var _FeatureMap = map[Feature]string{
 	50264: _FeatureName[0:10],
@@ -28,6 +28,11 @@ var _FeatureMap = map[Feature]string{
 	54448: _FeatureName[218:234],
 	54449: _FeatureName[234:248],
 	54451: _FeatureName[248:261],
+	54453: _FeatureName[261:277],
+	54454: _FeatureName[277:296],
+	54458: _FeatureName[296:304],
+	54459: _FeatureName[304:314],
+	54460: _FeatureName[314:339],
 }
 
 func (i Feature) String() string {
@@ -58,9 +63,14 @@ func _FeatureNoOp() {
 	_ = x[FeatureDistributedDepth-(54448)]
 	_ = x[FeatureQueryStartTime-(54449)]
 	_ = x[FeatureProfileEvents-(54451)]
+	_ = x[FeatureParallelReplicas-(54453)]
+	_ = x[FeatureCustomSerialization-(54454)]
+	_ = x[FeatureQuotaKey-(54458)]
+	_ = x[FeatureParameters-(54459)]
+	_ = x[FeatureServerQueryTimeInProgress-(54460)]
 }
 
-var _FeatureValues = []Feature{FeatureTempTables, FeatureBlockInfo, FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry, FeatureXForwardedForInClientInfo, FeatureRefererInClientInfo, FeatureDistributedDepth, FeatureQueryStartTime, FeatureProfileEvents}
+var _FeatureValues = []Feature{FeatureTempTables, FeatureBlockInfo, FeatureTimezone, FeatureQuotaKeyInClientInfo, FeatureDisplayName, FeatureVersionPatch, FeatureServerLogs, FeatureColumnDefaultsMetadata, FeatureClientWriteInfo, FeatureSettingsSerializedAsStrings, FeatureInterServerSecret, FeatureOpenTelemetry, FeatureXForwardedForInClientInfo, FeatureRefererInClientInfo, FeatureDistributedDepth, FeatureQueryStartTime, FeatureProfileEvents, FeatureParallelReplicas, FeatureCustomSerialization, FeatureQuotaKey, FeatureParameters, FeatureServerQueryTimeInProgress}
 
 var _FeatureNameToValueMap = map[string]Feature{
 	_FeatureName[0:10]:         FeatureTempTables,
@@ -97,6 +107,16 @@ var _FeatureNameToValueMap = map[string]Feature{
 	_FeatureLowerName[234:248]: FeatureQueryStartTime,
 	_FeatureName[248:261]:      FeatureProfileEvents,
 	_FeatureLowerName[248:261]: FeatureProfileEvents,
+	_FeatureName[261:277]:      FeatureParallelReplicas,
+	_FeatureLowerName[261:277]: FeatureParallelReplicas,
+	_FeatureName[277:296]:      FeatureCustomSerialization,
+	_FeatureLowerName[277:296]: FeatureCustomSerialization,
+	_FeatureName[296:304]:      FeatureQuotaKey,
+	_FeatureLowerName[296:304]: FeatureQuotaKey,
+	_FeatureName[304:314]:      FeatureParameters,
+	_FeatureLowerName[304:314]: FeatureParameters,
+	_FeatureName[314:339]:      FeatureServerQueryTimeInProgress,
+	_FeatureLowerName[314:339]: FeatureServerQueryTimeInProgress,
 }
 
 var _FeatureNames = []string{
@@ -117,6 +137,11 @@ var _FeatureNames = []string{
 	_FeatureName[218:234],
 	_FeatureName[234:248],
 	_FeatureName[248:261],
+	_FeatureName[261:277],
+	_FeatureName[277:296],
+	_FeatureName[296:304],
+	_FeatureName[304:314],
+	_FeatureName[314:339],
 }
 
 // FeatureString retrieves an enum value from the enum constants string name.

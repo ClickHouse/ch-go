@@ -28,12 +28,10 @@ func TestDump(t *testing.T) {
 		ids    proto.ColInt8
 		values proto.ColStr
 	)
-	require.NoError(t, dec.DecodeRawBlock(
-		proto.NewReader(bytes.NewReader(data)),
-		proto.Results{
-			{Name: "id", Data: &ids},
-			{Name: "v", Data: &values},
-		}),
+	require.NoError(t, dec.DecodeRawBlock(proto.NewReader(bytes.NewReader(data)), 54451, proto.Results{
+		{Name: "id", Data: &ids},
+		{Name: "v", Data: &values},
+	}),
 	)
 }
 
@@ -42,10 +40,8 @@ func TestDumpLowCardinality(t *testing.T) {
 	require.NoError(t, err)
 	col := new(proto.ColStr).LowCardinality().Array()
 	var dec proto.Block
-	require.NoError(t, dec.DecodeRawBlock(
-		proto.NewReader(bytes.NewReader(data)),
-		proto.Results{
-			{Name: "v", Data: col},
-		}),
+	require.NoError(t, dec.DecodeRawBlock(proto.NewReader(bytes.NewReader(data)), 54451, proto.Results{
+		{Name: "v", Data: col},
+	}),
 	)
 }

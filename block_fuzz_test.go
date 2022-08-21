@@ -36,7 +36,7 @@ func encodeTestStrBlock() []byte {
 
 	block.EncodeAware(b, proto.Version)
 	for _, col := range input {
-		col.EncodeStart(b)
+		col.EncodeStart(b, proto.Version)
 		col.Data.EncodeColumn(b)
 	}
 
@@ -73,7 +73,7 @@ func encodeTestIPv6Block() []byte {
 
 	block.EncodeAware(b, proto.Version)
 	for _, col := range input {
-		col.EncodeStart(b)
+		col.EncodeStart(b, proto.Version)
 		col.Data.EncodeColumn(b)
 	}
 
@@ -285,7 +285,7 @@ func addCorpus(f *testing.F, data []proto.ColInput) {
 		}
 		block.EncodeAware(b, proto.Version)
 		for _, col := range input {
-			col.EncodeStart(b)
+			col.EncodeStart(b, proto.Version)
 			col.Data.EncodeColumn(b)
 		}
 		f.Add(b.Buf)

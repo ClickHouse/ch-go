@@ -42,19 +42,46 @@ func TestDateTimeOverflow(t *testing.T) {
 	require.Equal(t, "2061-02-01 00:00:00", data.Row(0).Format("2006-01-02 15:04:05"))
 }
 
-func TestBackTicks(t *testing.T) {
+func TestProtoVersion(t *testing.T) {
+	t.Skip("Long")
 	t.Parallel()
-	ctx := context.Background()
-	conn := Conn(t)
-	var data proto.ColUInt8
-	query := Query{
-		Body: "SELECT 1",
-		Result: proto.Results{
-			{Name: "1", Data: &data},
-		},
+	for ver := 54451; ver <= proto.Version; ver++ {
+		v := ver
+		t.Run(fmt.Sprintf("%d", v), func(t *testing.T) {
+			t.Parallel()
+			t.Run("Select", func(t *testing.T) {
+				ctx := context.Background()
+				conn := ConnOpt(t, Options{
+					ProtocolVersion: v,
+				})
+				var data proto.ColUInt8
+				query := Query{
+					Body: "SELECT 1",
+					Result: proto.Results{
+						{Name: "1", Data: &data},
+					},
+				}
+				require.NoError(t, conn.Do(ctx, query))
+				require.Equal(t, 1, data.Rows())
+			})
+			t.Run("Insert", func(t *testing.T) {
+				ctx := context.Background()
+				conn := ConnOpt(t, Options{
+					ProtocolVersion: v,
+				})
+				require.NoError(t, conn.Do(ctx, Query{
+					Body: "CREATE TABLE IF NOT EXISTS test_table (id UInt64) ENGINE = Null",
+				}))
+				query := Query{
+					Body: "INSERT INTO test_table VALUES",
+					Input: proto.Input{
+						{Name: "id", Data: proto.ColUInt64{1, 2, 3, 4}},
+					},
+				}
+				require.NoError(t, conn.Do(ctx, query))
+			})
+		})
 	}
-	require.NoError(t, conn.Do(ctx, query))
-	require.Equal(t, 1, data.Rows())
 }
 
 func TestClient_Query(t *testing.T) {
@@ -1182,6 +1209,14 @@ func TestClient_ResultsAuto(t *testing.T) {
 	require.Equal(t, 10, data.Rows())
 }
 
+func TestClient_discardResult(t *testing.T) {
+	t.Parallel()
+	require.NoError(t, Conn(t).Do(context.Background(), Query{
+		Body:   "SELECT 1",
+		Result: discardResult(),
+	}), "select")
+}
+
 func TestClient_ColInfoInput(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -1191,6 +1226,33 @@ func TestClient_ColInfoInput(t *testing.T) {
 		Result: &data,
 	}), "select")
 	require.Len(t, data, 2)
+}
+
+func TestClient_OpenTelemetryInstrumentationV(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	for _, v := range []int{
+		54451,
+		54454,
+	} {
+		t.Run(fmt.Sprintf("%d", v), func(t *testing.T) {
+			conn, err := Dial(ctx, Options{
+				OpenTelemetryInstrumentation: false,
+				ProtocolVersion:              v,
+			})
+			require.NoError(t, err)
+			require.NoError(t, conn.Do(ctx, Query{
+				Body: "SELECT 1 as v",
+				Result: &proto.Results{
+					{
+						Name: "v",
+						Data: new(proto.ColUInt8),
+					},
+				},
+			}), "select")
+		})
+	}
+
 }
 
 func TestClient_OpenTelemetryInstrumentation(t *testing.T) {

@@ -113,9 +113,9 @@ type ResultColumn struct {
 }
 
 // DecodeResult implements Result as "single result" helper.
-func (c ResultColumn) DecodeResult(r *Reader, b Block) error {
+func (c ResultColumn) DecodeResult(r *Reader, version int, b Block) error {
 	v := Results{c}
-	return v.DecodeResult(r, b)
+	return v.DecodeResult(r, version, b)
 }
 
 // AutoResult is ResultColumn with type inference.
@@ -126,9 +126,12 @@ func AutoResult(name string) ResultColumn {
 	}
 }
 
-func (c InputColumn) EncodeStart(buf *Buffer) {
+func (c InputColumn) EncodeStart(buf *Buffer, version int) {
 	buf.PutString(c.Name)
 	buf.PutString(string(c.Data.Type()))
+	if FeatureCustomSerialization.In(version) {
+		buf.PutBool(false) // no custom serialization
+	}
 }
 
 type Block struct {
@@ -150,20 +153,20 @@ func (b Block) EncodeBlock(buf *Buffer, version int, input []InputColumn) error 
 	if FeatureBlockInfo.In(version) {
 		b.Info.Encode(buf)
 	}
-	if err := b.EncodeRawBlock(buf, input); err != nil {
+	if err := b.EncodeRawBlock(buf, version, input); err != nil {
 		return errors.Wrap(err, "raw block")
 	}
 	return nil
 }
 
-func (b Block) EncodeRawBlock(buf *Buffer, input []InputColumn) error {
+func (b Block) EncodeRawBlock(buf *Buffer, version int, input []InputColumn) error {
 	buf.PutInt(b.Columns)
 	buf.PutInt(b.Rows)
 	for _, col := range input {
 		if r := col.Data.Rows(); r != b.Rows {
 			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
 		}
-		col.EncodeStart(buf)
+		col.EncodeStart(buf, version)
 		if v, ok := col.Data.(Preparable); ok {
 			if err := v.Prepare(); err != nil {
 				return errors.Wrap(err, "prepare")
@@ -210,7 +213,7 @@ func (b *Block) End() bool {
 	return b.Columns == 0 && b.Rows == 0
 }
 
-func (b *Block) DecodeRawBlock(r *Reader, target Result) error {
+func (b *Block) DecodeRawBlock(r *Reader, version int, target Result) error {
 	{
 		v, err := r.Int()
 		if err != nil {
@@ -241,16 +244,28 @@ func (b *Block) DecodeRawBlock(r *Reader, target Result) error {
 	if target == nil {
 		// Just skipping rows and types.
 		for i := 0; i < b.Columns; i++ {
+			// Name.
 			if _, err := r.Str(); err != nil {
 				return errors.Wrapf(err, "column [%d] name", i)
 			}
+			// Type.
 			if _, err := r.Str(); err != nil {
 				return errors.Wrapf(err, "column [%d] type", i)
+			}
+			if FeatureCustomSerialization.In(version) {
+				// Custom serialization flag.
+				v, err := r.Bool()
+				if err != nil {
+					return errors.Wrapf(err, "column [%d] custom serialization flag", i)
+				}
+				if v {
+					return errors.Errorf("column [%d] has custom serialization (not supported)", i)
+				}
 			}
 		}
 		return nil
 	}
-	if err := target.DecodeResult(r, *b); err != nil {
+	if err := target.DecodeResult(r, version, *b); err != nil {
 		return errors.Wrap(err, "target")
 	}
 
@@ -263,7 +278,7 @@ func (b *Block) DecodeBlock(r *Reader, version int, target Result) error {
 			return errors.Wrap(err, "info")
 		}
 	}
-	if err := b.DecodeRawBlock(r, target); err != nil {
+	if err := b.DecodeRawBlock(r, version, target); err != nil {
 		return err
 	}
 

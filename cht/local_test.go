@@ -42,7 +42,7 @@ func TestLocalNativeDump(t *testing.T) {
 	// Testing clickhouse-local.
 	buf := new(proto.Buffer)
 	b := proto.Block{Rows: 2, Columns: 2}
-	require.NoError(t, b.EncodeRawBlock(buf, []proto.InputColumn{
+	require.NoError(t, b.EncodeRawBlock(buf, 54451, []proto.InputColumn{
 		{Name: "title", Data: colStr([]string{"Foo", "Bar"})},
 		{Name: "data", Data: proto.ColInt64{1, 2}},
 	}), "encode")

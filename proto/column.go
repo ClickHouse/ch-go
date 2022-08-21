@@ -257,7 +257,7 @@ func (s *ColInfoInput) Reset() {
 	*s = (*s)[:0]
 }
 
-func (s *ColInfoInput) DecodeResult(r *Reader, b Block) error {
+func (s *ColInfoInput) DecodeResult(r *Reader, version int, b Block) error {
 	s.Reset()
 	if b.Rows > 0 {
 		return errors.New("got unexpected rows")
@@ -270,6 +270,15 @@ func (s *ColInfoInput) DecodeResult(r *Reader, b Block) error {
 		columnTypeRaw, err := r.Str()
 		if err != nil {
 			return errors.Wrapf(err, "column [%d] type", i)
+		}
+		if FeatureCustomSerialization.In(version) {
+			customSerialization, err := r.Bool()
+			if err != nil {
+				return errors.Wrapf(err, "column [%d] custom serialization", i)
+			}
+			if customSerialization {
+				return errors.Wrapf(err, "column [%d] has custom serialization (not supported)", i)
+			}
 		}
 		*s = append(*s, ColInfo{
 			Name: columnName,

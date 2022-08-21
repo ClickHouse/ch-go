@@ -52,6 +52,7 @@ func TestClient_Do_tracing(t *testing.T) {
 		),
 	)
 	conn := ConnOpt(t, Options{
+		ProtocolVersion:              54454,
 		OpenTelemetryInstrumentation: true,
 		TracerProvider:               tp,
 		Settings: []Setting{

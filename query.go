@@ -80,6 +80,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 		Stage:       proto.StageComplete,
 		Compression: c.compression,
 		Settings:    c.querySettings(q),
+		Parameters:  q.Parameters,
 		Info: proto.ClientInfo{
 			ProtocolVersion: c.protocolVersion,
 			Major:           c.version.Major,
@@ -158,6 +159,9 @@ type Query struct {
 	// Settings are optional query-scoped settings. Can override client settings.
 	Settings []Setting
 
+	// EXPERIMENTAL: parameters for query.
+	Parameters []proto.Parameter
+
 	// Secret is optional inter-server per-cluster secret for Distributed queries.
 	//
 	// See https://clickhouse.com/docs/en/engines/table-engines/special/distributed/#distributed-clusters
@@ -189,13 +193,17 @@ func (c *CorruptedDataErr) Error() string {
 }
 
 type decodeOptions struct {
-	Handler      func(ctx context.Context, b proto.Block) error
-	Result       proto.Result
-	Compressible bool
+	Handler         func(ctx context.Context, b proto.Block) error
+	Result          proto.Result
+	ProtocolVersion int
+	Compressible    bool
 }
 
 func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
-	if proto.FeatureTempTables.In(c.protocolVersion) {
+	if opt.ProtocolVersion == 0 {
+		opt.ProtocolVersion = c.protocolVersion
+	}
+	if proto.FeatureTempTables.In(opt.ProtocolVersion) {
 		v, err := c.reader.Str()
 		if err != nil {
 			return errors.Wrap(err, "temp table")
@@ -209,7 +217,7 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 		c.reader.EnableCompression()
 		defer c.reader.DisableCompression()
 	}
-	if err := block.DecodeBlock(c.reader, c.protocolVersion, opt.Result); err != nil {
+	if err := block.DecodeBlock(c.reader, opt.ProtocolVersion, opt.Result); err != nil {
 		var badData *compress.CorruptedDataErr
 		if errors.As(err, &badData) {
 			// Returning wrapped exported error to allow user matching.
@@ -481,6 +489,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 			Handler:      onResult,
 			Compressible: p.Compressible(),
 			Result:       data.Result(),
+			// ProtocolVersion: 54451,
 		}); err != nil {
 			return errors.Wrap(err, "decode block")
 		}
