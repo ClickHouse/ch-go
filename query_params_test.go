@@ -10,19 +10,15 @@ import (
 )
 
 func TestQueryParameters(t *testing.T) {
-	conn := ConnOpt(t, Options{QuotaKey: ""})
-	if !conn.ServerInfo().Has(proto.FeatureParameters) {
-		t.Skip("Skipping (not supported)")
-	}
+	conn := Conn(t)
+	SkipNoFeature(t, conn, proto.FeatureParameters)
 	ctx := context.Background()
-	data := new(proto.ColUInt8)
 	require.NoError(t, conn.Do(ctx, Query{
-		Body: "select {num:UInt8} v",
-		Parameters: []proto.Parameter{
-			{Key: "num", Value: `'1'`},
-		},
-		Result: proto.Results{
-			{Name: "v", Data: data},
-		},
+		Body: "select {num:UInt8} v, {str:String} s",
+		Parameters: Parameters(map[string]any{
+			"num": 100,
+			"str": "foo",
+		}),
+		Result: discardResult(),
 	}))
 }
