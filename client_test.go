@@ -46,6 +46,12 @@ func Conn(t testing.TB) *Client {
 	return ConnOpt(t, Options{})
 }
 
+func SkipNoFeature(t *testing.T, client *Client, feature proto.Feature) {
+	if !client.ServerInfo().Has(feature) {
+		t.Skipf("Skipping (feature %q not supported)", feature)
+	}
+}
+
 func TestDial(t *testing.T) {
 	t.Run("Ok", func(t *testing.T) {
 		conn := Conn(t)

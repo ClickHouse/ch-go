@@ -11,9 +11,7 @@ import (
 
 func TestQueryParameters(t *testing.T) {
 	conn := Conn(t)
-	if !conn.ServerInfo().Has(proto.FeatureParameters) {
-		t.Skip("Skipping (not supported)")
-	}
+	SkipNoFeature(t, conn, proto.FeatureParameters)
 	ctx := context.Background()
 	require.NoError(t, conn.Do(ctx, Query{
 		Body: "select {num:UInt8} v, {str:String} s",
