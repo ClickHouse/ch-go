@@ -1228,32 +1228,6 @@ func TestClient_ColInfoInput(t *testing.T) {
 	require.Len(t, data, 2)
 }
 
-func TestClient_OpenTelemetryInstrumentationV(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	for _, v := range []int{
-		54451,
-		54454,
-	} {
-		t.Run(fmt.Sprintf("%d", v), func(t *testing.T) {
-			conn, err := Dial(ctx, Options{
-				OpenTelemetryInstrumentation: false,
-				ProtocolVersion:              v,
-			})
-			require.NoError(t, err)
-			require.NoError(t, conn.Do(ctx, Query{
-				Body: "SELECT 1 as v",
-				Result: &proto.Results{
-					{
-						Name: "v",
-						Data: new(proto.ColUInt8),
-					},
-				},
-			}), "select")
-		})
-	}
-}
-
 func TestClient_OpenTelemetryInstrumentation(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
