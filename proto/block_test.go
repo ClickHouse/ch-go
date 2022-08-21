@@ -62,7 +62,7 @@ func colStr(data ...string) ColStr {
 func TestBlock_EncodeRawBlock(t *testing.T) {
 	b := new(Buffer)
 	v := Block{Rows: 2, Columns: 2}
-	require.NoError(t, v.EncodeRawBlock(b, []InputColumn{
+	require.NoError(t, v.EncodeRawBlock(b, Version, []InputColumn{
 		{Name: "title", Data: colStr("Foo", "Bar")},
 		{Name: "data", Data: ColInt64{1, 2}},
 	}), "encode")
@@ -73,7 +73,7 @@ func TestBlock_EncodeRawBlock(t *testing.T) {
 		title ColStr
 		data  ColInt64
 	)
-	require.NoError(t, v.DecodeRawBlock(b.Reader(), Results{
+	require.NoError(t, v.DecodeRawBlock(b.Reader(), Version, Results{
 		{Name: "title", Data: &title},
 		{Name: "data", Data: &data},
 	}), "decode")

@@ -12,6 +12,7 @@ type Progress struct {
 
 	WroteRows  uint64
 	WroteBytes uint64
+	ElapsedNs  uint64
 }
 
 func (p Progress) EncodeAware(b *Buffer, version int) {
@@ -21,6 +22,9 @@ func (p Progress) EncodeAware(b *Buffer, version int) {
 	if FeatureClientWriteInfo.In(version) {
 		b.PutUVarInt(p.WroteRows)
 		b.PutUVarInt(p.WroteBytes)
+	}
+	if FeatureServerQueryTimeInProgress.In(version) {
+		b.PutUVarInt(p.ElapsedNs)
 	}
 }
 
@@ -61,6 +65,13 @@ func (p *Progress) DecodeAware(r *Reader, version int) error {
 			}
 			p.WroteBytes = v
 		}
+	}
+	if FeatureServerQueryTimeInProgress.In(version) {
+		v, err := r.UVarInt()
+		if err != nil {
+			return errors.Wrap(err, "wrote rows")
+		}
+		p.ElapsedNs = v
 	}
 
 	return nil

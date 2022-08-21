@@ -53,6 +53,12 @@ type ClientInfo struct {
 
 	QuotaKey         string
 	DistributedDepth int
+
+	// For parallel processing on replicas.
+
+	CollaborateWithInitiator   bool
+	CountParticipatingReplicas int
+	NumberOfCurrentReplica     int
 }
 
 // EncodeAware encodes to buffer version-aware.
@@ -106,6 +112,15 @@ func (c ClientInfo) EncodeAware(b *Buffer, version int) {
 			// No OTEL data.
 			b.PutByte(0)
 		}
+	}
+	if FeatureParallelReplicas.In(version) {
+		if c.CollaborateWithInitiator {
+			b.PutInt(1)
+		} else {
+			b.PutInt(0)
+		}
+		b.PutInt(c.CountParticipatingReplicas)
+		b.PutInt(c.NumberOfCurrentReplica)
 	}
 }
 
@@ -274,6 +289,29 @@ func (c *ClientInfo) DecodeAware(r *Reader, version int) error {
 				cfg.TraceFlags = trace.TraceFlags(v)
 			}
 			c.Span = trace.NewSpanContext(cfg)
+		}
+	}
+	if FeatureParallelReplicas.In(version) {
+		{
+			v, err := r.Int()
+			if err != nil {
+				return errors.Wrap(err, "parallel replicas")
+			}
+			c.CollaborateWithInitiator = v == 1
+		}
+		{
+			v, err := r.Int()
+			if err != nil {
+				return errors.Wrap(err, "count participating replicas")
+			}
+			c.CountParticipatingReplicas = v
+		}
+		{
+			v, err := r.Int()
+			if err != nil {
+				return errors.Wrap(err, "number of current replica")
+			}
+			c.NumberOfCurrentReplica = v
 		}
 	}
 

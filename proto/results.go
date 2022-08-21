@@ -4,7 +4,7 @@ import "github.com/go-faster/errors"
 
 // Result of Query.
 type Result interface {
-	DecodeResult(r *Reader, b Block) error
+	DecodeResult(r *Reader, version int, b Block) error
 }
 
 // Results wrap []ResultColumn to implement Result.
@@ -14,8 +14,8 @@ type autoResults struct {
 	results *Results
 }
 
-func (s autoResults) DecodeResult(r *Reader, b Block) error {
-	return s.results.decodeAuto(r, b)
+func (s autoResults) DecodeResult(r *Reader, version int, b Block) error {
+	return s.results.decodeAuto(r, version, b)
 }
 
 func (s Results) Rows() int {
@@ -29,10 +29,10 @@ func (s *Results) Auto() Result {
 	return autoResults{results: s}
 }
 
-func (s *Results) decodeAuto(r *Reader, b Block) error {
+func (s *Results) decodeAuto(r *Reader, version int, b Block) error {
 	if len(*s) > 0 {
 		// Already inferred.
-		return s.DecodeResult(r, b)
+		return s.DecodeResult(r, version, b)
 	}
 	for i := 0; i < b.Columns; i++ {
 		columnName, err := r.Str()
@@ -42,6 +42,16 @@ func (s *Results) decodeAuto(r *Reader, b Block) error {
 		columnTypeRaw, err := r.Str()
 		if err != nil {
 			return errors.Wrapf(err, "column [%d] type", i)
+		}
+		var customSerialization bool
+		if FeatureCustomSerialization.In(version) {
+			if customSerialization, err = r.Bool(); err != nil {
+				return errors.Wrapf(err, "column [%d] custom serialization", i)
+			}
+			if customSerialization {
+				// Not implemented.
+				return errors.Wrapf(err, "column [%d] has custom serialization (not supported)", i)
+			}
 		}
 		var (
 			colType = ColumnType(columnTypeRaw)
@@ -69,7 +79,7 @@ func (s *Results) decodeAuto(r *Reader, b Block) error {
 	return nil
 }
 
-func (s Results) DecodeResult(r *Reader, b Block) error {
+func (s Results) DecodeResult(r *Reader, version int, b Block) error {
 	var (
 		noTarget        = len(s) == 0
 		noRows          = b.Rows == 0
@@ -87,6 +97,16 @@ func (s Results) DecodeResult(r *Reader, b Block) error {
 		columnType, err := r.Str()
 		if err != nil {
 			return errors.Wrapf(err, "column [%d] type", i)
+		}
+		if FeatureCustomSerialization.In(version) {
+			customSerialization, err := r.Bool()
+			if err != nil {
+				return errors.Wrapf(err, "column [%d] custom serialization", i)
+			}
+			if customSerialization {
+				// Not implemented.
+				return errors.Wrapf(err, "column [%d] has custom serialization (not supported)", i)
+			}
 		}
 		if noTarget {
 			// Just reading types and names.

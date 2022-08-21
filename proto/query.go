@@ -12,17 +12,65 @@ type Query struct {
 	Compression Compression
 	Info        ClientInfo
 	Settings    []Setting
+	Parameters  []Parameter
 }
 
+type Parameter struct {
+	Key   string
+	Value string
+}
+
+func (p Parameter) Encode(b *Buffer) {
+	Setting{
+		Key:    p.Key,
+		Value:  p.Value,
+		Custom: true,
+	}.Encode(b)
+}
+
+func (p *Parameter) Decode(r *Reader) error {
+	var s Setting
+	if err := s.Decode(r); err != nil {
+		return errors.Wrap(err, "as setting")
+	}
+
+	p.Key = s.Key
+	p.Value = s.Value
+
+	return nil
+}
+
+// src/Core/BaseSettings.h:191 (BaseSettingsHelpers.Flags)
+const (
+	settingFlagImportant = 0x01
+	settingFlagCustom    = 0x02
+	settingFlagObsolete  = 0x04
+)
+
 type Setting struct {
-	Key       string
-	Value     string
+	Key   string
+	Value string
+
 	Important bool
+	Custom    bool
+	Obsolete  bool
 }
 
 func (s Setting) Encode(b *Buffer) {
 	b.PutString(s.Key)
-	b.PutBool(s.Important)
+	{
+		var flags uint64
+		if s.Important {
+			flags |= settingFlagImportant
+		}
+		if s.Custom {
+			flags |= settingFlagCustom
+		}
+		if s.Obsolete {
+			flags |= settingFlagObsolete
+		}
+		b.PutUVarInt(flags)
+	}
 	b.PutString(s.Value)
 }
 
@@ -37,17 +85,20 @@ func (s *Setting) Decode(r *Reader) error {
 		return nil
 	}
 
-	important, err := r.Bool()
+	flags, err := r.UVarInt()
 	if err != nil {
-		return errors.Wrap(err, "important")
+		return errors.Wrap(err, "flags")
 	}
+
 	v, err := r.Str()
 	if err != nil {
-		return errors.Wrap(err, "value")
+		return errors.Wrapf(err, "value (%s)", key)
 	}
 
 	s.Key = key
-	s.Important = important
+	s.Important = flags&settingFlagImportant != 0
+	s.Custom = flags&settingFlagCustom != 0
+	s.Obsolete = flags&settingFlagObsolete != 0
 	s.Value = v
 
 	return nil
@@ -115,7 +166,18 @@ func (q *Query) DecodeAware(r *Reader, version int) error {
 		}
 		q.Body = v
 	}
-
+	if FeatureParameters.In(version) {
+		for {
+			var p Parameter
+			if err := p.Decode(r); err != nil {
+				return errors.Wrap(err, "parameter")
+			}
+			if p.Key == "" {
+				break
+			}
+			q.Parameters = append(q.Parameters, p)
+		}
+	}
 	return nil
 }
 
@@ -141,4 +203,11 @@ func (q Query) EncodeAware(b *Buffer, version int) {
 	q.Compression.Encode(b)
 
 	b.PutString(q.Body)
+
+	if FeatureParameters.In(version) {
+		for _, p := range q.Parameters {
+			p.Encode(b)
+		}
+		b.PutString("") // end of parameters
+	}
 }

@@ -26,6 +26,12 @@ const (
 	FeatureDistributedDepth            Feature = 54448
 	FeatureQueryStartTime              Feature = 54449
 	FeatureProfileEvents               Feature = 54451
+	FeatureParallelReplicas            Feature = 54453
+	FeatureCustomSerialization         Feature = 54454
+	FeatureQuotaKey                    Feature = 54458
+	FeatureAddendum                    Feature = 54458
+	FeatureParameters                  Feature = 54459
+	FeatureServerQueryTimeInProgress   Feature = 54460
 )
 
 // Version reports protocol version when Feature was introduced.

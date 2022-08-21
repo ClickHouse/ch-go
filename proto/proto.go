@@ -3,6 +3,6 @@ package proto
 
 // Defaults for ClientHello.
 const (
-	Version = 54451
+	Version = 54460
 	Name    = "go-faster/ch"
 )

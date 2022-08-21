@@ -13,6 +13,12 @@ import (
 	"github.com/ClickHouse/ch-go/proto"
 )
 
+func (c *Client) encodeAddendum() {
+	if proto.FeatureQuotaKey.In(c.protocolVersion) {
+		c.buf.PutString(c.quotaKey)
+	}
+}
+
 func (c *Client) handshake(ctx context.Context) error {
 	handshakeCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -90,6 +96,13 @@ func (c *Client) handshake(ctx context.Context) error {
 				otelch.ServerName(c.server.String()),
 				otelch.ProtocolVersion(c.protocolVersion),
 			)
+		}
+		if proto.FeatureAddendum.In(c.protocolVersion) {
+			c.lg.Debug("Writing addendum")
+			c.encodeAddendum()
+			if err := c.flush(wgCtx); err != nil {
+				return errors.Wrap(err, "flush")
+			}
 		}
 
 		return nil
