@@ -1252,7 +1252,6 @@ func TestClient_OpenTelemetryInstrumentationV(t *testing.T) {
 			}), "select")
 		})
 	}
-
 }
 
 func TestClient_OpenTelemetryInstrumentation(t *testing.T) {
