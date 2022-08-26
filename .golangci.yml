@@ -38,7 +38,6 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - deadcode
     - depguard
     - dogsled
     - errcheck
@@ -54,13 +53,10 @@ linters:
     - misspell
     - nakedret
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
-    - unused
-    - varcheck
     - whitespace
 
   # Do not enable:
@@ -125,3 +121,10 @@ issues:
     - source: 'func Fuzz.+\(f \*testing\.F\)'
       linters: [ stylecheck ]
       text: "ST1003" # underscores lol
+
+    - path: (internal|cmd)
+      linters: [ revive ]
+      text: "package-comments"
+
+    - linters: [ revive ]
+      text: "comment on exported const .+ should be of the form"
