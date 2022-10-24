@@ -301,6 +301,7 @@ func (c *ColLowCardinality[T]) Prepare() error {
 	c.keys = append(c.keys[:0], make([]int, len(c.Values))...)
 	if c.kv == nil {
 		c.kv = map[T]int{}
+		c.index.Reset()
 	}
 
 	// Fill keys with value indexes.
