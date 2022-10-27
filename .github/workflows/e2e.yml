@@ -18,15 +18,13 @@ jobs:
           - 1.19
         clickhouse:
           - v21.8.14.5-lts
-          - v21.12.4.1-stable
-          - v22.2.3.5-stable
           - v22.3.11.12-lts
-          - v22.4.5.9-stable
           - v22.5.4.19-stable
           - v22.6.6.16-stable
           - v22.7.3.5-stable
           - v22.8.5.29-lts
           - v22.9.1.2603-stable
+          - v22.10.1.1877-stable
     steps:
       - uses: actions/checkout@v3
 
