@@ -8,7 +8,7 @@ import (
 
 	"github.com/ClickHouse/ch-go"
 
-	puddle "github.com/jackc/puddle/puddleg"
+	"github.com/jackc/puddle/v2"
 )
 
 // Pool of connections to ClickHouse.
@@ -60,9 +60,8 @@ func Dial(ctx context.Context, opt Options) (*Pool, error) {
 		options:   opt,
 		closeChan: make(chan struct{}),
 	}
-
-	p.pool = puddle.NewPool(
-		func(ctx context.Context) (*connResource, error) {
+	puddleConfig := &puddle.Config[*connResource]{
+		Constructor: func(ctx context.Context) (*connResource, error) {
 			c, err := ch.Dial(ctx, p.options.ClientOptions)
 			if err != nil {
 				return nil, err
@@ -73,9 +72,17 @@ func Dial(ctx context.Context, opt Options) (*Pool, error) {
 				clients: make([]Client, 64),
 			}, nil
 		},
-		func(c *connResource) {
+		Destructor: func(c *connResource) {
 			_ = c.client.Close()
-		}, opt.MaxConns)
+		},
+		MaxSize: opt.MaxConns,
+	}
+
+	pool, err := puddle.NewPool[*connResource](puddleConfig)
+	if err != nil {
+		return nil, err
+	}
+	p.pool = pool
 
 	if err := p.createIdleResources(ctx, int(p.options.MinConns)); err != nil {
 		p.Close()

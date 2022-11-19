@@ -10,7 +10,7 @@ require (
 	github.com/go-faster/errors v0.6.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-version v1.6.0
-	github.com/jackc/puddle v1.2.2-0.20220404125616-4e959849469a
+	github.com/jackc/puddle/v2 v2.1.2
 	github.com/klauspost/compress v1.15.12
 	github.com/pierrec/lz4/v4 v4.1.17
 	github.com/segmentio/asm v1.2.0
@@ -22,7 +22,7 @@ require (
 	go.uber.org/atomic v1.10.0
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.23.0
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+	golang.org/x/sync v0.0.0-20220923202941-7f9b1623fab7
 )
 
 require (
