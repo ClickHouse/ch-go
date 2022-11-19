@@ -1,7 +1,7 @@
 package chpool
 
 import (
-	puddle "github.com/jackc/puddle/puddleg"
+	"github.com/jackc/puddle/v2"
 
 	"github.com/ClickHouse/ch-go"
 )
