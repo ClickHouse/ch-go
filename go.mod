@@ -3,7 +3,7 @@ module github.com/ClickHouse/ch-go
 go 1.18
 
 require (
-	github.com/cenkalti/backoff/v4 v4.1.3
+	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/dmarkham/enumer v1.5.7
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-faster/city v1.0.1
