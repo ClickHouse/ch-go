@@ -79,3 +79,10 @@ func (c *ColFixedStr) DecodeColumn(r *Reader, rows int) error {
 	}
 	return nil
 }
+
+// Array returns new Array(FixedString).
+func (c *ColFixedStr) Array() *ColArr[[]byte] {
+	return &ColArr[[]byte]{
+		Data: c,
+	}
+}
