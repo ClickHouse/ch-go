@@ -554,6 +554,33 @@ func TestClient_Query(t *testing.T) {
 			require.Equal(t, data, gotData)
 		})
 	})
+	t.Run("ArrayFixedStr", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "CREATE TABLE test_table (v Array(FixedString(10))) ENGINE = Memory",
+		}), "create table")
+
+		v := (&proto.ColFixedStr{Size: 10}).Array()
+
+		v.Append([][]byte{
+			bytes.Repeat([]byte("a"), 10),
+			bytes.Repeat([]byte("b"), 10),
+			bytes.Repeat([]byte("c"), 10),
+		})
+		v.Append([][]byte{
+			bytes.Repeat([]byte("d"), 10),
+			bytes.Repeat([]byte("e"), 10),
+			bytes.Repeat([]byte("f"), 10),
+		})
+
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: v},
+			},
+		}), "insert")
+	})
 	t.Run("ArrayLowCardinality", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)

@@ -116,6 +116,10 @@ func (c ColDateTime64) Raw() *ColDateTime64Raw {
 	return &ColDateTime64Raw{ColDateTime64: c}
 }
 
+func (c *ColDateTime64) Array() *ColArr[time.Time] {
+	return &ColArr[time.Time]{Data: c}
+}
+
 var (
 	_ ColumnOf[DateTime64] = (*ColDateTime64Raw)(nil)
 	_ Inferable            = (*ColDateTime64Raw)(nil)
