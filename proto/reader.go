@@ -59,7 +59,7 @@ func (r *Reader) Decode(v Decoder) error {
 }
 
 func (r *Reader) ReadFull(buf []byte) error {
-	if _, err := io.ReadFull(r, buf); err != nil {
+	if _, err := io.ReadFull(r, buf); err != nil && err != io.ErrUnexpectedEOF {
 		return errors.Wrap(err, "read")
 	}
 	return nil
