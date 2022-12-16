@@ -310,7 +310,8 @@ type Options struct {
 	DialTimeout time.Duration // defaults to 1s
 	TLS         *tls.Config   // no TLS is used by default
 
-	ProtocolVersion int // force protocol version, optional
+	ProtocolVersion  int           // force protocol version, optional
+	HandshakeTimeout time.Duration // longer lasting handshake is a case for ClickHouse cloud idle instances, defaults to 5m
 
 	// Additional OpenTelemetry instrumentation that will capture query body
 	// and other parameters.
@@ -326,16 +327,20 @@ type Options struct {
 
 // Defaults for connection.
 const (
-	DefaultDatabase    = "default"
-	DefaultUser        = "default"
-	DefaultHost        = "127.0.0.1"
-	DefaultPort        = 9000
-	DefaultDialTimeout = 1 * time.Second
+	DefaultDatabase         = "default"
+	DefaultUser             = "default"
+	DefaultHost             = "127.0.0.1"
+	DefaultPort             = 9000
+	DefaultDialTimeout      = 1 * time.Second
+	DefaultHandshakeTimeout = 300 * time.Second
 )
 
 func (o *Options) setDefaults() {
 	if o.ProtocolVersion == 0 {
 		o.ProtocolVersion = proto.Version
+	}
+	if o.HandshakeTimeout == 0 {
+		o.HandshakeTimeout = DefaultHandshakeTimeout
 	}
 	if o.Database == "" {
 		o.Database = DefaultDatabase
@@ -445,7 +450,10 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	default:
 		c.compression = proto.CompressionDisabled
 	}
-	if err := c.handshake(ctx); err != nil {
+
+	handshakeCtx, cancel := context.WithTimeout(ctx, opt.HandshakeTimeout)
+	defer cancel()
+	if err := c.handshake(handshakeCtx); err != nil {
 		return nil, errors.Wrap(err, "handshake")
 	}
 
