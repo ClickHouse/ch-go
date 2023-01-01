@@ -57,9 +57,9 @@ func main() {
 	input := proto.Input{
 		{Name: "ts", Data: ts},
 		{Name: "severity_text", Data: &sevText},
-		{Name: "severity_number", Data: sevNumber},
-		{Name: "body", Data: body},
-		{Name: "name", Data: name},
+		{Name: "severity_number", Data: &sevNumber},
+		{Name: "body", Data: &body},
+		{Name: "name", Data: &name},
 		{Name: "arr", Data: arr},
 	}
 	if err := conn.Do(ctx, ch.Query{
