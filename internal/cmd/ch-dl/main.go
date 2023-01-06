@@ -14,11 +14,25 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/google/go-github/v43/github"
 	"github.com/klauspost/compress/gzip"
+	"golang.org/x/oauth2"
 )
 
 func run(ctx context.Context, tag string) error {
 	fmt.Println("Searching for", tag, "release")
-	gh := github.NewClient(nil)
+
+	// Using GitHub token if available.
+	hClient := http.DefaultClient
+	if tok := os.Getenv("GITHUB_TOKEN"); tok != "" {
+		fmt.Println("Using GitHub token")
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: tok},
+		)
+		hClient = oauth2.NewClient(ctx, ts)
+	} else {
+		fmt.Println("No GitHub token found")
+	}
+
+	gh := github.NewClient(hClient)
 	release, _, err := gh.Repositories.GetReleaseByTag(ctx, "ClickHouse", "ClickHouse", tag)
 	if err != nil {
 		return errors.Wrapf(err, "get release by tag %s", tag)
@@ -44,7 +58,7 @@ func run(ctx context.Context, tag string) error {
 		return errors.Wrap(err, "new request")
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := hClient.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "do http")
 	}
