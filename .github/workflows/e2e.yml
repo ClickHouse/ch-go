@@ -64,6 +64,8 @@ jobs:
 
       - name: Download ClickHouse
         if: steps.ch_exists.outputs.files_exists != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: cd internal/cmd/ch-dl && go run . ${{ matrix.clickhouse }}
 
       - name: Run tests
