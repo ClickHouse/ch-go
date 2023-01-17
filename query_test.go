@@ -1384,7 +1384,7 @@ func TestClientQueryCancellation(t *testing.T) {
 		OnResult: func(_ context.Context, block proto.Block) error {
 			rows += block.Rows
 			if rows >= 500_000 {
-				t.Log("Cancelling query")
+				t.Log("Canceling query")
 				cancel()
 			}
 			return nil
