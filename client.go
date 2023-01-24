@@ -254,6 +254,8 @@ func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
 		if err := c.conn.SetWriteDeadline(deadline); err != nil {
 			return errors.Wrap(err, "set write deadline")
 		}
+		// Reset deadline.
+		defer func() { _ = c.conn.SetWriteDeadline(time.Time{}) }()
 	}
 	n, err := c.conn.Write(b.Buf)
 	if err != nil {
