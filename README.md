@@ -204,7 +204,7 @@ if err := conn.Do(ctx, ch.Query{
 * Generics (go1.18) for `Array[T]`, `LowCardinaliy[T]`, `Map[K, V]`, `Nullable[T]`
 * [Reading or writing](#dumps) ClickHouse dumps in `Native` format
 * **Column**-oriented design that operates directly with **blocks** of data
-  * [Dramatically more efficient](https://github.com/ClickHouse/ch-go-bench)
+  * [Dramatically more efficient](https://github.com/ClickHouse/ch-bench)
   * Up to 100x faster than row-first design around `sql`
   * Up to 700x faster than HTTP API
   * Low memory overhead (data blocks are slices, i.e. continuous memory)
