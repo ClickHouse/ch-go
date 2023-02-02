@@ -53,9 +53,18 @@ func (o *Options) setDefaults() {
 }
 
 // Dial returns a pool of connections to ClickHouse.
+// Checks if ClickHouse is available, fails if not.
 func Dial(ctx context.Context, opt Options) (*Pool, error) {
-	opt.setDefaults()
+	return new(ctx, opt, true)
+}
 
+// New returns a pool of connections to ClickHouse.
+func New(ctx context.Context, opt Options) (*Pool, error) {
+	return new(ctx, opt, false)
+}
+
+func new(ctx context.Context, opt Options, dial bool) (*Pool, error) {
+	opt.setDefaults()
 	p := &Pool{
 		options:   opt,
 		closeChan: make(chan struct{}),
@@ -89,12 +98,14 @@ func Dial(ctx context.Context, opt Options) (*Pool, error) {
 		return nil, err
 	}
 
-	res, err := p.pool.Acquire(ctx)
-	if err != nil {
-		p.Close()
-		return nil, err
+	if dial {
+		res, err := p.pool.Acquire(ctx)
+		if err != nil {
+			p.Close()
+			return nil, err
+		}
+		res.Release()
 	}
-	res.Release()
 
 	go p.backgroundHealthCheck()
 
