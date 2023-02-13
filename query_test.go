@@ -914,6 +914,28 @@ func TestClient_Query(t *testing.T) {
 		}), "select table")
 		require.False(t, data.Row(0).Set)
 	})
+	t.Run("NotUTF8", func(t *testing.T) {
+		// https://github.com/ClickHouse/ch-go/issues/226
+		t.Parallel()
+		conn := Conn(t)
+		data := &proto.ColUInt8{}
+
+		err := conn.Do(ctx, Query{
+			Body: "SELECT 错误 as w",
+			Result: proto.Results{
+				{Name: "w", Data: data},
+			},
+		})
+		require.True(t, IsErr(err, proto.ErrSyntaxError), "%v", err)
+		require.Equal(t, 0, data.Rows())
+
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT 1 as w",
+			Result: proto.Results{
+				{Name: "w", Data: data},
+			},
+		}), "select table")
+	})
 }
 
 func TestClientCompression(t *testing.T) {

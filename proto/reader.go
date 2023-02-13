@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"io"
 	"math"
-	"unicode/utf8"
 
 	"github.com/go-faster/errors"
 
@@ -145,9 +144,6 @@ func (r *Reader) Str() (string, error) {
 	s, err := r.StrBytes()
 	if err != nil {
 		return "", errors.Wrap(err, "bytes")
-	}
-	if !utf8.Valid(s) {
-		return "", errors.New("invalid utf8")
 	}
 
 	return string(s), err
