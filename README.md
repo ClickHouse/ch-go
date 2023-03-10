@@ -251,9 +251,6 @@ colV.Reset()
 colV.Reset()
 ```
 
-```go
-
-
 ## Features
 * OpenTelemetry support
 * No reflection or `interface{}`
