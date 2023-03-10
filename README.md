@@ -198,6 +198,62 @@ if err := conn.Do(ctx, ch.Query{
 }
 ```
 
+#### Writing dumps in Native format
+
+You can use `ch-go` to write ClickHouse dumps in [Native][native] format:
+
+> The most efficient format. Data is written and read by blocks in binary format. For each block, the number of rows,
+> number of columns, column names and types, and parts of columns in this block are recorded one after another.
+> In other words, this format is “columnar” – it does not convert columns to rows.
+> This is the format used in the native interface for interaction between servers,
+> for using the command-line client, and for C++ clients.
+
+[native]: https://clickhouse.com/docs/en/interfaces/formats/#native
+
+See [./internal/cmd/ch-native-dump](./internal/cmd/ch-native-dump/main.go) for more sophisticated example.
+
+Example:
+```go
+var (
+    colK proto.ColInt64
+    colV proto.ColInt64
+)
+// Generate some data.
+for i := 0; i < 100; i++ {
+    colK.Append(int64(i))
+    colV.Append(int64(i) + 1000)
+}
+// Write data to buffer.
+var buf proto.Buffer
+input := proto.Input{
+    {"k", colK},
+    {"v", colV},
+}
+b := proto.Block{
+    Rows:    colK.Rows(),
+    Columns: len(input),
+}
+// Note that we are using version 54451, proto.Version will fail.
+if err := b.EncodeRawBlock(&buf, 54451, input); err != nil {
+    panic(err)
+}
+
+// You can write buf.Buf to io.Writer, e.g. os.Stdout or file.
+var out bytes.Buffer
+_, _ = out.Write(buf.Buf)
+
+// You can encode multiple buffers in sequence.
+//
+// To do this, reset buf and all columns, append new values
+// to columns and call EncodeRawBlock again.
+buf.Reset()
+colV.Reset()
+colV.Reset()
+```
+
+```go
+
+
 ## Features
 * OpenTelemetry support
 * No reflection or `interface{}`
