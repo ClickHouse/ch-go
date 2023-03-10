@@ -32,6 +32,8 @@ func run() error {
 	// Also, to load data from a file, you can use clickhouse-client:
 	//
 	// clickhouse-client --query "INSERT INTO estimator.events FORMAT Native" < events.native
+	//
+	// See test.sh.
 	var (
 		colEv      proto.ColEnum8 // raw Enum8 column without value inference
 		colRepoID  proto.ColInt64
