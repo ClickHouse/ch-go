@@ -365,7 +365,7 @@ func TestDump(t *testing.T) {
 
 ### Writing
 
-Use `proto.Block.EncodeRawBlock` on `proto.Buffer` with `Rows` and `Columns` set:
+Use `proto.Block.EncodeRawBlock` with version `54451` on `proto.Buffer` with `Rows` and `Columns` set:
 
 ```go
 func TestLocalNativeDump(t *testing.T) {
@@ -377,7 +377,7 @@ func TestLocalNativeDump(t *testing.T) {
 	}
 	buf := new(proto.Buffer)
 	b := proto.Block{Rows: 2, Columns: 2}
-	require.NoError(t, b.EncodeRawBlock(buf, []proto.InputColumn{
+	require.NoError(t, b.EncodeRawBlock(buf, 54451, []proto.InputColumn{
 		{Name: "title", Data: v},
 		{Name: "data", Data: proto.ColInt64{1, 2}},
 	}), "encode")
