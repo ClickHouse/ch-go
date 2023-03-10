@@ -7,7 +7,7 @@ import (
 	"github.com/ClickHouse/ch-go/proto"
 )
 
-func ExampleBlock_EncodeBlock_NativeDump() {
+func ExampleBlock_EncodeBlock() {
 	// See ./internal/cmd/ch-native-dump for more sophisticated example.
 	var (
 		colK proto.ColInt64

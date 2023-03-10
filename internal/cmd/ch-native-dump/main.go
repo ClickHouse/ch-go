@@ -42,7 +42,7 @@ func run() error {
 	)
 
 	// Generate some random data and append to columns.
-	r := rand.New(rand.NewSource(42))
+	r := rand.New(rand.NewSource(42)) // #nosec: G404
 	t := time.Date(2016, 10, 10, 23, 52, 44, 10541234, time.UTC)
 	appendValues := func(n int) {
 		for i := 0; i < n; i++ {
