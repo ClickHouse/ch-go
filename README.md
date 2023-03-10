@@ -198,7 +198,7 @@ if err := conn.Do(ctx, ch.Query{
 }
 ```
 
-#### Writing dumps in Native format
+### Writing dumps in Native format
 
 You can use `ch-go` to write ClickHouse dumps in [Native][native] format:
 
