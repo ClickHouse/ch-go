@@ -37,6 +37,9 @@ type Client struct {
 	version  clientVersion
 	quotaKey string
 
+	// Single packet read timeout.
+	readTimeout time.Duration
+
 	otel   bool
 	tracer trace.Tracer
 	meter  metric.Meter
@@ -205,11 +208,14 @@ func (c *Client) profile() (proto.Profile, error) {
 
 // packet reads server code.
 func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
-	const defaultTimeout = time.Second * 3
-
-	deadline := time.Now().Add(defaultTimeout)
-	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
-		// Use context deadline if it is earlier than default timeout.
+	timeout := c.readTimeout
+	var deadline time.Time
+	if timeout > 0 {
+		deadline = time.Now().Add(timeout)
+	}
+	if d, ok := ctx.Deadline(); ok && (d.Before(deadline) || deadline.IsZero()) {
+		// Use context deadline if it is earlier than default timeout or
+		// no timeout is set.
 		//
 		// Otherwise, we can get stuck for a long time in case of network issues.
 		// Ref: https://github.com/ClickHouse/ch-go/issues/274
@@ -312,6 +318,11 @@ type Options struct {
 	Compression Compression // disabled by default
 	Settings    []Setting   // none by default
 
+	// ReadTimeout is a timeout for reading a single packet from the server.
+	//
+	// Defaults to 3s. No timeout if negative (you can use NoTimeout const).
+	ReadTimeout time.Duration
+
 	Dialer      Dialer        // defaults to net.Dialer
 	DialTimeout time.Duration // defaults to 1s
 	TLS         *tls.Config   // no TLS is used by default
@@ -339,7 +350,11 @@ const (
 	DefaultPort             = 9000
 	DefaultDialTimeout      = 1 * time.Second
 	DefaultHandshakeTimeout = 300 * time.Second
+	DefaultReadTimeout      = 3 * time.Second
 )
+
+// NoTimeout is a value for Options.ReadTimeout that disables timeout.
+const NoTimeout = time.Duration(-1)
 
 func (o *Options) setDefaults() {
 	if o.ProtocolVersion == 0 {
@@ -381,6 +396,12 @@ func (o *Options) setDefaults() {
 		o.tracer = o.TracerProvider.Tracer(otelch.Name,
 			trace.WithInstrumentationVersion(otelch.SemVersion()),
 		)
+	}
+	if o.ReadTimeout == 0 {
+		o.ReadTimeout = DefaultReadTimeout
+	}
+	if o.ReadTimeout < 0 || o.ReadTimeout == NoTimeout {
+		o.ReadTimeout = 0
 	}
 }
 
@@ -426,6 +447,8 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		tracer:   opt.tracer,
 		meter:    opt.meter,
 		quotaKey: opt.QuotaKey,
+
+		readTimeout: opt.ReadTimeout,
 
 		compressor: compress.NewWriter(),
 
