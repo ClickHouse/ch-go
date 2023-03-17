@@ -208,7 +208,11 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 	const defaultTimeout = time.Second * 3
 
 	deadline := time.Now().Add(defaultTimeout)
-	if d, ok := ctx.Deadline(); ok {
+	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
+		// Use context deadline if it is earlier than default timeout.
+		//
+		// Otherwise, we can get stuck for a long time in case of network issues.
+		// Ref: https://github.com/ClickHouse/ch-go/issues/274
 		deadline = d
 	}
 	if !deadline.IsZero() {
