@@ -21,7 +21,7 @@ type randomIDGenerator struct {
 }
 
 // NewSpanID returns a non-zero span ID from a randomly-chosen sequence.
-func (gen *randomIDGenerator) NewSpanID(ctx context.Context, traceID trace.TraceID) (sid trace.SpanID) {
+func (gen *randomIDGenerator) NewSpanID(_ context.Context, _ trace.TraceID) (sid trace.SpanID) {
 	gen.Lock()
 	defer gen.Unlock()
 	gen.rand.Read(sid[:])
@@ -30,7 +30,7 @@ func (gen *randomIDGenerator) NewSpanID(ctx context.Context, traceID trace.Trace
 
 // NewIDs returns a non-zero trace ID and a non-zero span ID from a
 // randomly-chosen sequence.
-func (gen *randomIDGenerator) NewIDs(ctx context.Context) (tid trace.TraceID, sid trace.SpanID) {
+func (gen *randomIDGenerator) NewIDs(_ context.Context) (tid trace.TraceID, sid trace.SpanID) {
 	gen.Lock()
 	defer gen.Unlock()
 	gen.rand.Read(tid[:])
