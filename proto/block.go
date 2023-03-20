@@ -279,7 +279,7 @@ func (b *Block) DecodeBlock(r *Reader, version int, target Result) error {
 		}
 	}
 	if err := b.DecodeRawBlock(r, version, target); err != nil {
-		return err
+		return errors.Wrap(err, "raw block")
 	}
 
 	return nil

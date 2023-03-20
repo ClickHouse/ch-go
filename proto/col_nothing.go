@@ -15,7 +15,7 @@ type Nothing struct{}
 // https://clickhouse.com/docs/ru/sql-reference/data-types/special-data-types/nothing
 type ColNothing int
 
-func (c *ColNothing) Append(v Nothing) {
+func (c *ColNothing) Append(_ Nothing) {
 	*c++
 }
 
