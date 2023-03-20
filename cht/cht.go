@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -347,12 +348,18 @@ func New(t testing.TB, opts ...Option) Server {
 		wait <- cmd.Wait()
 	}()
 
+	startTimeout := time.Second * 10
+	if runtime.GOARCH == "riscv64" {
+		// RISC-V devboards are slow.
+		startTimeout = time.Minute
+	}
+
 	select {
 	case <-started:
 		t.Log("Started", time.Since(start).Round(time.Millisecond), tcpAddr, httpAddr)
 	case err := <-wait:
 		t.Fatal(err)
-	case <-time.After(time.Second * 10):
+	case <-time.After(startTimeout):
 		t.Fatal("Clickhouse timed out to start")
 	}
 
