@@ -19,6 +19,10 @@ func (c *ColNothing) Append(_ Nothing) {
 	*c++
 }
 
+func (c *ColNothing) AppendArr(vs []Nothing) {
+	*c = ColNothing(int(*c) + len(vs))
+}
+
 func (c ColNothing) Row(i int) Nothing {
 	if i >= int(c) {
 		panic(fmt.Sprintf("[%d] of [%d]Nothing", i, c))
