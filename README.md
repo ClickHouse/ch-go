@@ -320,6 +320,7 @@ Most columns implement [proto.ColumnOf\[T\]](https://pkg.go.dev/github.com/Click
 type ColumnOf[T any] interface {
 	Column
 	Append(v T)
+	AppendArr(vs []T)
 	Row(i int) T
 }
 ```
