@@ -298,6 +298,21 @@ colV.Reset()
 * Point
 * Nothing, Interval
 
+## Enums
+
+You can use automatic enum inference in `proto.ColEnum`, this will come with some performance penalty.
+
+To use `proto.ColEnum8` and `proto.ColEnum16`, you need to explicitly provide DDL for them via `proto.Wrap`:
+
+```go
+var v proto.ColEnum8
+
+const ddl = `'Foo'=1, 'Bar'=2, 'Baz'=3`
+input := []proto.InputColumn{
+  {Name: "v", Data: proto.Wrap(&v, ddl)},
+}
+```
+
 ## Generics
 
 Most columns implement [proto.ColumnOf\[T\]](https://pkg.go.dev/github.com/ClickHouse/ch-go/proto#ColumnOf) generic constraint:
