@@ -14,7 +14,6 @@ import (
 	"github.com/go-faster/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/global"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -385,7 +384,7 @@ func (o *Options) setDefaults() {
 		}
 	}
 	if o.MeterProvider == nil {
-		o.MeterProvider = global.MeterProvider()
+		o.MeterProvider = otel.GetMeterProvider()
 	}
 	if o.TracerProvider == nil {
 		o.TracerProvider = otel.GetTracerProvider()
