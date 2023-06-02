@@ -75,7 +75,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 			zap.String("query_id", q.QueryID),
 		)
 	}
-	if c.conn == nil {
+	if c.IsClosed() {
 		return ErrClosed
 	}
 	c.encode(proto.Query{
@@ -537,7 +537,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 
 // Do performs Query on ClickHouse server.
 func (c *Client) Do(ctx context.Context, q Query) (err error) {
-	if c.conn == nil {
+	if c.IsClosed() {
 		return ErrClosed
 	}
 	if len(q.Parameters) > 0 && !proto.FeatureParameters.In(c.protocolVersion) {

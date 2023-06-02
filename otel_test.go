@@ -13,7 +13,7 @@ type MapPair[V comparable] struct {
 	Values *proto.ColArr[V]
 }
 
-func (m MapPair[V]) Row(i int) ([]string, []V) {
+func (m MapPair[V]) Row(i int) (keys []string, values []V) {
 	return m.Keys.Row(i), m.Values.Row(i)
 }
 

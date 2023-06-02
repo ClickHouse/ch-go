@@ -34,15 +34,15 @@ linters-settings:
       - unnecessaryBlock
       - redundantSprint
       - octalLiteral
+      - ifElseChain
 
 linters:
   disable-all: true
   enable:
-    - depguard
     - dogsled
     - errcheck
     - goconst
-#    - gocritic # go1.18
+    - gocritic
     - gofmt
     - goimports
     - revive
@@ -67,6 +67,7 @@ linters:
   # - maligned  (same as prealloc)
   # - funlen    (gocyclo is enough)
   # - gochecknoglobals (we know when it is ok to use globals)
+  # - depguard  (broken)
 
 issues:
   exclude-use-default: false

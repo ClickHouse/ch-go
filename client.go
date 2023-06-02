@@ -29,13 +29,15 @@ import (
 type Client struct {
 	lg       *zap.Logger
 	conn     net.Conn
-	mux      sync.Mutex
 	buf      *proto.Buffer
 	reader   *proto.Reader
 	info     proto.ClientHello
 	server   proto.ServerHello
 	version  clientVersion
 	quotaKey string
+
+	mux    sync.Mutex
+	closed bool
 
 	// Single packet read timeout.
 	readTimeout time.Duration
@@ -80,14 +82,14 @@ var ErrClosed = errors.New("client is closed")
 // Close closes underlying connection and frees all resources,
 // rendering Client to unusable state.
 func (c *Client) Close() error {
-	if c.conn == nil {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	if c.closed {
 		return ErrClosed
 	}
-	defer func() {
-		c.buf = nil
-		c.reader = nil
-		c.conn = nil
-	}()
+
+	c.closed = true
 	if err := c.conn.Close(); err != nil {
 		return errors.Wrap(err, "conn")
 	}
@@ -97,7 +99,9 @@ func (c *Client) Close() error {
 
 // IsClosed indicates that connection is closed.
 func (c *Client) IsClosed() bool {
-	return c.conn == nil
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	return c.closed
 }
 
 // Exception is server-side error.
@@ -251,8 +255,6 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 }
 
 func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
-	c.mux.Lock()
-	defer c.mux.Unlock()
 	if err := ctx.Err(); err != nil {
 		return errors.Wrap(err, "context")
 	}
