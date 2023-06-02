@@ -15,7 +15,7 @@ import (
 //
 // Do not call concurrently with Do.
 func (c *Client) Ping(ctx context.Context) (err error) {
-	if c.conn == nil {
+	if c.IsClosed() {
 		return ErrClosed
 	}
 	if c.otel {
