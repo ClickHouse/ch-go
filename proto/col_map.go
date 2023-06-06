@@ -1,6 +1,8 @@
 package proto
 
 import (
+	"strings"
+
 	"github.com/go-faster/errors"
 )
 
@@ -128,4 +130,40 @@ func (c ColMap[K, V]) EncodeColumn(b *Buffer) {
 	c.Offsets.EncodeColumn(b)
 	c.Keys.EncodeColumn(b)
 	c.Values.EncodeColumn(b)
+}
+
+// Prepare ensures Preparable column propagation.
+func (c ColMap[K, V]) Prepare() error {
+	if v, ok := c.Keys.(Preparable); ok {
+		if err := v.Prepare(); err != nil {
+			return errors.Wrap(err, "prepare data")
+		}
+	}
+	if v, ok := c.Values.(Preparable); ok {
+		if err := v.Prepare(); err != nil {
+			return errors.Wrap(err, "prepare data")
+		}
+	}
+	return nil
+}
+
+// Infer ensures Inferable column propagation.
+func (c *ColMap[K, V]) Infer(t ColumnType) error {
+	elems := strings.Split(string(t.Elem()), ",")
+	if len(elems) != 2 {
+		return errors.New("invalid map type")
+	}
+	if v, ok := c.Keys.(Inferable); ok {
+		ct := ColumnType(strings.TrimSpace(elems[0]))
+		if err := v.Infer(ct); err != nil {
+			return errors.Wrap(err, "infer data")
+		}
+	}
+	if v, ok := c.Values.(Inferable); ok {
+		ct := ColumnType(strings.TrimSpace(elems[1]))
+		if err := v.Infer(ct); err != nil {
+			return errors.Wrap(err, "infer data")
+		}
+	}
+	return nil
 }
