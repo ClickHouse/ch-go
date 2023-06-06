@@ -80,6 +80,21 @@ func (c ColMap[K, V]) Row(i int) map[K]V {
 	return m
 }
 
+// KV is a key-value pair.
+type KV[K comparable, V any] struct {
+	Key   K
+	Value V
+}
+
+// AppendKV is a convenience method for appending a slice of KV[K, V].
+func (c *ColMap[K, V]) AppendKV(kv []KV[K, V]) {
+	for _, v := range kv {
+		c.Keys.Append(v.Key)
+		c.Values.Append(v.Value)
+	}
+	c.Offsets.Append(uint64(c.Keys.Rows()))
+}
+
 func (c *ColMap[K, V]) Append(m map[K]V) {
 	for k, v := range m {
 		c.Keys.Append(k)

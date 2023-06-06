@@ -34,15 +34,15 @@ func TestColMap_Prepare(t *testing.T) {
 		new(ColStr).LowCardinality(),
 	)
 	require.Equal(t, ColumnType("Map(LowCardinality(String), LowCardinality(String))"), v.Type())
-	v.Append(map[string]string{
-		"foo": "bar",
-		"baz": "hello",
-		"bar": "bar",
+	v.AppendKV([]KV[string, string]{
+		{"foo", "bar"},
+		{"baz", "hello"},
+		{"bar", "bar"},
 	})
-	v.Append(map[string]string{
-		"like":    "100",
-		"dislike": "200",
-		"result":  "1000 - 7",
+	v.AppendKV([]KV[string, string]{
+		{"like", "100"},
+		{"dislike", "200"},
+		{"result", "1000 - 7"},
 	})
 	require.NoError(t, v.Prepare())
 	const rows = 2
