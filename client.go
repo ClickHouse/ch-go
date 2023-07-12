@@ -420,20 +420,22 @@ type clientVersion struct {
 func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	opt.setDefaults()
 
+	clientName := proto.Name
 	pkg := pkgVersion.Get()
+	if opt.ClientName == "" {
+		if pkg.Name != "" {
+			clientName = fmt.Sprintf("%s (%s)", clientName, pkg.Name)
+		}
+	} else {
+		clientName = fmt.Sprintf("%s %s", clientName, opt.ClientName)
+	}
 	ver := clientVersion{
-		Name:  proto.Name,
+		Name:  clientName,
 		Major: pkg.Major,
 		Minor: pkg.Minor,
 		Patch: pkg.Patch,
 	}
-	if pkg.Name != "" {
-		ver.Name = fmt.Sprintf("%s (%s)", proto.Name, pkg.Name)
-	}
-	clientName := ver.Name
-	if opt.ClientName != "" {
-		clientName = fmt.Sprintf("%s %s", clientName, opt.ClientName)
-	}
+
 	if opt.OpenTelemetryInstrumentation {
 		newCtx, span := opt.tracer.Start(ctx, "Connect",
 			trace.WithSpanKind(trace.SpanKindClient),
