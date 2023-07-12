@@ -318,6 +318,7 @@ type Options struct {
 	Password    string      // blank string by default
 	QuotaKey    string      // blank string by default
 	Compression Compression // disabled by default
+	ClientName  string      // blank string by default
 	Settings    []Setting   // none by default
 
 	// ReadTimeout is a timeout for reading a single packet from the server.
@@ -429,6 +430,10 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	if pkg.Name != "" {
 		ver.Name = fmt.Sprintf("%s (%s)", proto.Name, pkg.Name)
 	}
+	clientName := ver.Name
+	if opt.ClientName != "" {
+		clientName = fmt.Sprintf("%s %s", clientName, opt.ClientName)
+	}
 	if opt.OpenTelemetryInstrumentation {
 		newCtx, span := opt.tracer.Start(ctx, "Connect",
 			trace.WithSpanKind(trace.SpanKindClient),
@@ -457,7 +462,7 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		version:         ver,
 		protocolVersion: opt.ProtocolVersion,
 		info: proto.ClientHello{
-			Name:  ver.Name,
+			Name:  clientName,
 			Major: ver.Major,
 			Minor: ver.Minor,
 
