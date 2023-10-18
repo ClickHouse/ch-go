@@ -1,6 +1,8 @@
 module github.com/ClickHouse/ch-go
 
-go 1.18
+go 1.21
+
+toolchain go1.21.0
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
