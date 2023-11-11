@@ -15,10 +15,10 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.18
 	github.com/segmentio/asm v1.2.0
 	github.com/stretchr/testify v1.8.4
-	go.opentelemetry.io/otel v1.19.0
-	go.opentelemetry.io/otel/metric v1.19.0
+	go.opentelemetry.io/otel v1.20.0
+	go.opentelemetry.io/otel/metric v1.20.0
 	go.opentelemetry.io/otel/sdk v1.19.0
-	go.opentelemetry.io/otel/trace v1.19.0
+	go.opentelemetry.io/otel/trace v1.20.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.26.0
@@ -27,7 +27,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-logr/logr v1.2.4 // indirect
+	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/pascaldekloe/name v1.0.1 // indirect
