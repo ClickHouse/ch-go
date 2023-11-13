@@ -1,7 +1,6 @@
 name: pr
 
 on:
-  push:
   pull_request:
 
 # Common Go workflows from go faster
