@@ -1061,9 +1061,15 @@ func TestClient_ServerLog(t *testing.T) {
 			Body:    "SELECT 'foo' as s",
 			QueryID: qID,
 			OnLog: func(ctx context.Context, l Log) error {
-				t.Logf("Log: %s", l.Text)
-				logs++
 				assert.Equal(t, qID, l.QueryID)
+				return nil
+			},
+			OnLogs: func(ctx context.Context, events []Log) error {
+				logs += len(events)
+				for _, l := range events {
+					t.Logf("Log: %s", l.Text)
+					assert.Equal(t, qID, l.QueryID)
+				}
 				return nil
 			},
 			Result: proto.Results{
@@ -1147,11 +1153,20 @@ func TestClient_ServerProfileEvents(t *testing.T) {
 	if !conn.ServerInfo().Has(proto.FeatureProfileEvents) {
 		t.Skip("Profile events not supported")
 	}
-	var events int
+	var (
+		events      int
+		eventsBatch int
+	)
 	selectStr := Query{
 		Body: "SELECT 1",
+		OnProfileEvent: func(ctx context.Context, p ProfileEvent) error {
+			// Deprecated.
+			// TODO: remove
+			events++
+			return nil
+		},
 		OnProfileEvents: func(ctx context.Context, e []ProfileEvent) error {
-			events += len(e)
+			eventsBatch += len(e)
 			return nil
 		},
 		Result: proto.Results{
@@ -1163,6 +1178,7 @@ func TestClient_ServerProfileEvents(t *testing.T) {
 	if events == 0 {
 		t.Fatal("No profile events")
 	}
+	require.Equal(t, events, eventsBatch)
 }
 
 func TestClient_Query_Bool(t *testing.T) {

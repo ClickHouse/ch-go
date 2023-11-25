@@ -73,10 +73,12 @@ func TestClient_Do_tracing(t *testing.T) {
 	require.NoError(t, conn.Do(ctx, Query{
 		Body:   "SELECT 1",
 		Result: discardResult(),
-		OnLog: func(ctx context.Context, l Log) error {
+		OnLogs: func(ctx context.Context, logs []Log) error {
 			sc := trace.SpanContextFromContext(ctx)
 			traceID = sc.TraceID()
-			t.Log(l.Text, sc.TraceID(), sc.SpanID())
+			for _, l := range logs {
+				t.Log(l.Text, sc.TraceID(), sc.SpanID())
+			}
 			return nil
 		},
 	}))
