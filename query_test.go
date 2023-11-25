@@ -1150,8 +1150,8 @@ func TestClient_ServerProfileEvents(t *testing.T) {
 	var events int
 	selectStr := Query{
 		Body: "SELECT 1",
-		OnProfileEvent: func(ctx context.Context, p ProfileEvent) error {
-			events++
+		OnProfileEvents: func(ctx context.Context, e []ProfileEvent) error {
+			events += len(e)
 			return nil
 		},
 		Result: proto.Results{

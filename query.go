@@ -157,9 +157,19 @@ type Query struct {
 	// OnProfile is optional handler for profiling data.
 	OnProfile func(ctx context.Context, p proto.Profile) error
 	// OnProfileEvent is optional handler for profiling event stream data.
+	//
+	// Deprecated: use OnProfileEvents instead. This option will be removed in
+	// next major release.
 	OnProfileEvent func(ctx context.Context, e ProfileEvent) error
+	// OnProfileEvents is same as OnProfileEvent but is called on each event batch.
+	OnProfileEvents func(ctx context.Context, e []ProfileEvent) error
 	// OnLog is optional handler for server log entry.
+	//
+	// Deprecated: use OnLogs instead. This option will be removed in
+	// next major release.
 	OnLog func(ctx context.Context, l Log) error
+	// OnLogs is optional handler for server log events.
+	OnLogs func(ctx context.Context, l []Log) error
 
 	// Settings are optional query-scoped settings. Can override client settings.
 	Settings []Setting
@@ -306,21 +316,31 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 	if len(q.Input) == 0 {
 		return nil
 	}
-	// Handling input columns that require inference, e.g. enums.
+
+	// Handling input columns that require inference, e.g. enums, dates with precision, etc.
+	//
+	// Some debug structures and initializations if on debug logging level.
+	var inferenceColumns map[string]proto.ColumnType
+	inferenceDebug := c.lg.Check(zap.DebugLevel, "Inferring columns")
+	if inferenceDebug != nil {
+		inferenceColumns = make(map[string]proto.ColumnType, len(info))
+	}
 	for _, v := range info {
 		for _, inCol := range q.Input {
 			infer, ok := inCol.Data.(proto.Inferable)
 			if !ok || inCol.Name != v.Name {
 				continue
 			}
-			c.lg.Debug("Inferring column",
-				zap.String("column.name", v.Name),
-				zap.Stringer("column.type", v.Type),
-			)
+			if inferenceDebug != nil {
+				inferenceColumns[inCol.Name] = v.Type
+			}
 			if err := infer.Infer(v.Type); err != nil {
-				return errors.Wrapf(err, "infer %q", inCol.Name)
+				return errors.Wrapf(err, "infer %q %q", inCol.Name, v.Type)
 			}
 		}
+	}
+	if inferenceDebug != nil && len(inferenceColumns) > 0 {
+		inferenceDebug.Write(zap.Any("columns", inferenceColumns))
 	}
 	var (
 		rows = q.Input[0].Data.Rows()
@@ -467,26 +487,31 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 	case proto.ServerProfileEvents:
 		var data proto.ProfileEvents
 		onResult := func(ctx context.Context, b proto.Block) error {
+			ce := c.lg.Check(zap.DebugLevel, "ProfileEvents")
+			if ce == nil && q.OnProfileEvents == nil && q.OnProfileEvent == nil {
+				// No handlers, skipping.
+				return nil
+			}
 			events, err := data.All()
 			if err != nil {
 				return errors.Wrap(err, "events")
 			}
-			for _, e := range events {
-				if ce := c.lg.Check(zap.DebugLevel, "ProfileEvent"); ce != nil {
-					ce.Write(
-						zap.Time("event.time", e.Time),
-						zap.String("event.host_name", e.Host),
-						zap.Uint64("event.thread_id", e.ThreadID),
-						zap.Stringer("event.type", e.Type),
-						zap.String("event.name", e.Name),
-						zap.Int64("event.value", e.Value),
-					)
+			if f := q.OnProfileEvents; f != nil {
+				if err := f(ctx, events); err != nil {
+					return errors.Wrap(err, "profile events")
 				}
-				if f := q.OnProfileEvent; f != nil {
+			}
+			if f := q.OnProfileEvent; f != nil {
+				// Deprecated.
+				// TODO: Remove in next major release.
+				for _, e := range events {
 					if err := f(ctx, e); err != nil {
 						return errors.Wrap(err, "profile event")
 					}
 				}
+			}
+			if ce != nil {
+				ce.Write(zap.Any("events", events))
 			}
 			return nil
 		}
@@ -502,19 +527,24 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 	case proto.ServerCodeLog:
 		var data proto.Logs
 		onResult := func(ctx context.Context, b proto.Block) error {
-			for _, l := range data.All() {
-				if ce := c.lg.Check(zap.DebugLevel, "Profile"); ce != nil {
-					ce.Write(
-						zap.Time("event_time", l.Time),
-						zap.String("host", l.Host),
-						zap.String("query_id", l.QueryID),
-						zap.Uint64("thread_id", l.ThreadID),
-						zap.Int8("priority", l.Priority),
-						zap.String("source", l.Source),
-						zap.String("text", l.Text),
-					)
+			ce := c.lg.Check(zap.DebugLevel, "Logs")
+			if ce == nil && q.OnLogs == nil && q.OnLog == nil {
+				// No handlers, skipping.
+				return nil
+			}
+			logs := data.All()
+			if ce != nil {
+				ce.Write(zap.Any("logs", logs))
+			}
+			if f := q.OnLogs; f != nil {
+				if err := f(ctx, logs); err != nil {
+					return errors.Wrap(err, "logs")
 				}
-				if f := q.OnLog; f != nil {
+			}
+			if f := q.OnLog; f != nil {
+				// Deprecated.
+				// TODO: Remove in next major release.
+				for _, l := range logs {
 					if err := f(ctx, l); err != nil {
 						return errors.Wrap(err, "log")
 					}
@@ -602,12 +632,12 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		q.Result = &result
 		colInfo = make(chan proto.ColInfoInput, 1)
 		q.OnResult = func(ctx context.Context, block proto.Block) error {
-			c.lg.Debug("Received column info")
-			for _, v := range result {
-				c.lg.Debug("Column",
-					zap.String("column.name", v.Name),
-					zap.Stringer("column.type", v.Type),
-				)
+			if ce := c.lg.Check(zap.DebugLevel, "Received column info"); ce != nil {
+				info := make(map[string]proto.ColumnType, len(result))
+				for _, v := range result {
+					info[v.Name] = v.Type
+				}
+				ce.Write(zap.Any("columns", info))
 			}
 			select {
 			case <-ctx.Done():
