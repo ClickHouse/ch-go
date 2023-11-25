@@ -191,6 +191,9 @@ type Query struct {
 	ExternalData []proto.InputColumn
 	// ExternalTable name. Defaults to _data.
 	ExternalTable string
+
+	// Logger for query, optional, defaults to client logger with `query_id` field.
+	Logger *zap.Logger
 }
 
 // CorruptedDataErr means that provided hash mismatch with calculated.
@@ -577,6 +580,30 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	}
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
+	}
+	{
+		// Setup query logger.
+		//
+		// Since Do is not goroutine-safe, we can safely reuse client logger,
+		// so next calls will utilize changed c.lg.
+		lg := c.lg
+		defer func(v *zap.Logger) {
+			// Set logger back after query is done.
+			c.lg = v
+		}(lg)
+		if q.Logger != nil {
+			// Using provided query logger.
+			lg = q.Logger
+		} else {
+			// Using client logger.
+			// Allow correlation of queries by query_id.
+			lg = lg.With(
+				zap.String("query_id", q.QueryID),
+			)
+		}
+		// Set current logger to query-scoped.
+		// This will be used by all function calls until query is done.
+		c.lg = lg
 	}
 	if c.otel {
 		newCtx, span := c.tracer.Start(ctx, "Do",
