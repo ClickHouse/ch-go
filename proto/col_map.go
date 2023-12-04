@@ -80,6 +80,23 @@ func (c ColMap[K, V]) Row(i int) map[K]V {
 	return m
 }
 
+// RowKV returns a slice of KV[K, V] for a given row.
+func (c ColMap[K, V]) RowKV(i int) []KV[K, V] {
+	var start int
+	end := int(c.Offsets[i])
+	if i > 0 {
+		start = int(c.Offsets[i-1])
+	}
+	v := make([]KV[K, V], 0, end-start)
+	for idx := start; idx < end; idx++ {
+		v = append(v, KV[K, V]{
+			Key:   c.Keys.Row(idx),
+			Value: c.Values.Row(idx),
+		})
+	}
+	return v
+}
+
 // KV is a key-value pair.
 type KV[K comparable, V any] struct {
 	Key   K
