@@ -64,7 +64,7 @@ jobs:
           CH_E2E: "TRUE"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: profile.out
