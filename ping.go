@@ -47,6 +47,12 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 	switch p {
 	case proto.ServerCodePong:
 		return nil
+	case proto.ServerCodeException:
+		e, err := c.exception()
+		if err != nil {
+			return errors.Wrap(err, "decode exception")
+		}
+		return errors.Wrap(e, "exception")
 	default:
 		return errors.Errorf("unexpected packet %s", p)
 	}
