@@ -39,7 +39,7 @@ jobs:
           echo "::set-output name=modcache::$(go env GOMODCACHE)"
 
       - name: Set up cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ${{ steps.go-env.outputs.cache }}
@@ -49,7 +49,7 @@ jobs:
             e2e-${{ runner.os }}-go${{ matrix.go }}-
 
       - name: Set up ClickHouse cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /opt/ch/clickhouse
           key: ClickHouse-${{ matrix.clickhouse }}
