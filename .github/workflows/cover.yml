@@ -47,7 +47,7 @@ jobs:
 
       - name: Check ClickHouse
         id: "ch_exists"
-        uses: andstor/file-existence-action@v2
+        uses: andstor/file-existence-action@v3
         with:
           files: /opt/ch/clickhouse
 
