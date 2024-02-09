@@ -35,6 +35,10 @@ linters-settings:
       - redundantSprint
       - octalLiteral
       - ifElseChain
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
 
 linters:
   disable-all: true
