@@ -720,7 +720,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 				return errors.Wrap(err, "packet")
 			}
 			switch code {
-			case proto.ServerCodeData:
+			case proto.ServerCodeData, proto.ServerCodeTotals:
 				if err := c.decodeBlock(ctx, decodeOptions{
 					Handler:      onResult,
 					Result:       q.Result,
