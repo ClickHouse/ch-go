@@ -27,6 +27,37 @@ func requireEqual[T any](t *testing.T, a, b proto.ColumnOf[T]) {
 	}
 }
 
+func TestWithTotals(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := Conn(t)
+	var n proto.ColUInt64
+	var c proto.ColUInt64
+
+	var data []uint64
+	query := Query{
+		Body: `
+			SELECT
+				number AS n,
+				COUNT() AS c
+			FROM (
+				SELECT number FROM system.numbers LIMIT 100
+			) GROUP BY n WITH TOTALS
+		`,
+		Result: proto.Results{
+			{Name: "n", Data: &n},
+			{Name: "c", Data: &c},
+		},
+		OnResult: func(ctx context.Context, b proto.Block) error {
+			data = append(data, c...)
+			return nil
+		},
+	}
+	require.NoError(t, conn.Do(ctx, query))
+	require.Equal(t, 101, len(data))
+	require.Equal(t, uint64(100), data[100])
+}
+
 func TestDateTimeOverflow(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
