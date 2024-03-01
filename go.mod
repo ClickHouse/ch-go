@@ -14,7 +14,7 @@ require (
 	github.com/klauspost/compress v1.17.7
 	github.com/pierrec/lz4/v4 v4.1.21
 	github.com/segmentio/asm v1.2.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/otel v1.24.0
 	go.opentelemetry.io/otel/metric v1.24.0
 	go.opentelemetry.io/otel/sdk v1.24.0
