@@ -31,8 +31,25 @@ func TestNamedTuples(t *testing.T) {
 	}
 	ctx := context.Background()
 	require.NoError(t, conn.Do(ctx, Query{
-		Body: "CREATE TABLE named_tuples (`1` Tuple(`s` String, `i` Int64)) ENGINE = Memory",
+		Body: "CREATE TABLE named_tuples (`1` Tuple(`s` String, `i` Int64, `m` Map(String, Float32))) ENGINE = Memory",
 	}))
+	const numRows = 3
+	testStrs := []string{"foo", "bar", "baz"}
+	testInts := []int64{1, 2, 3}
+	testMaps := []map[string]float32{
+		{
+			"key": 42,
+			"0":   100.1,
+			"3":   0.0,
+			"":    -34.90,
+		},
+		{
+			// empty map
+		},
+		{
+			"": 43,
+		},
+	}
 	require.NoError(t, conn.Do(ctx, Query{
 		Body: "INSERT INTO named_tuples VALUES",
 		Input: proto.Input{
@@ -40,12 +57,19 @@ func TestNamedTuples(t *testing.T) {
 				Name: "1",
 				Data: proto.ColTuple{
 					proto.ColNamed[string]{
-						ColumnOf: newCol[string](new(proto.ColStr), "foo", "bar", "baz"),
+						ColumnOf: newCol[string](new(proto.ColStr), testStrs...),
 						Name:     "s",
 					},
 					proto.ColNamed[int64]{
-						ColumnOf: newCol[int64](new(proto.ColInt64), 1, 2, 3),
+						ColumnOf: newCol[int64](new(proto.ColInt64), testInts...),
 						Name:     "i",
+					},
+					proto.ColNamed[map[string]float32]{
+						ColumnOf: newCol[map[string]float32](
+							proto.NewMap[string, float32](new(proto.ColStr), new(proto.ColFloat32)),
+							testMaps...,
+						),
+						Name: "m",
 					},
 				},
 			},
@@ -60,11 +84,33 @@ func TestNamedTuples(t *testing.T) {
 			ColumnOf: new(proto.ColInt64),
 			Name:     "i",
 		}
+		mapData = proto.Named[map[string]float32](
+			proto.NewMap[string, float32](new(proto.ColStr), new(proto.ColFloat32)),
+			"m",
+		)
 	)
+	results := proto.Results{
+		{Name: "1", Data: proto.ColTuple{strData, intData, mapData}},
+	}
 	require.NoError(t, conn.Do(ctx, Query{
-		Body: "SELECT * FROM named_tuples",
-		Result: proto.Results{
-			{Name: "1", Data: proto.ColTuple{strData, intData}},
-		},
+		Body:   "SELECT * FROM named_tuples",
+		Result: results,
 	}))
+
+	actualStrs := getRows[string](strData, numRows)
+	require.EqualValues(t, testStrs, actualStrs)
+
+	actualInts := getRows[int64](intData, numRows)
+	require.EqualValues(t, testInts, actualInts)
+
+	actualMaps := getRows[map[string]float32](mapData, numRows)
+	require.EqualValues(t, testMaps, actualMaps)
+}
+
+func getRows[T any](col proto.ColumnOf[T], numRows int) []T {
+	ret := make([]T, 0, numRows)
+	for i := 0; i < numRows; i++ {
+		ret = append(ret, col.Row(i))
+	}
+	return ret
 }

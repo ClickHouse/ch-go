@@ -26,6 +26,10 @@ func TestColumnType_Elem(t *testing.T) {
 		assert.Equal(t, ColumnTypeNone, ColumnTypeFloat32.Elem())
 		assert.False(t, ColumnTypeInt32.IsArray())
 	})
+	t.Run("Tuple", func(t *testing.T) {
+		v := ColumnType("Tuple(s String, i Int64, m Map(String, Float32))")
+		assert.Equal(t, "", v.Elem())
+	})
 	t.Run("Conflict", func(t *testing.T) {
 		t.Run("Compatible", func(t *testing.T) {
 			for _, tt := range []struct {
