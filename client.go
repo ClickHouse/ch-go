@@ -291,7 +291,7 @@ func (c *Client) encode(v proto.AwareEncoder) {
 	v.EncodeAware(c.buf, c.protocolVersion)
 }
 
-//go:generate go run github.com/dmarkham/enumer -transform snake_upper -type Compression -trimprefix Compression -output compression_enum.go
+//go:generate go run github.com/dmarkham/enumer -transform upper -type Compression -trimprefix Compression -output compression_enum.go
 
 // Compression setting.
 //
@@ -307,19 +307,27 @@ const (
 	CompressionZSTD
 	// CompressionNone uses no compression but data has checksums.
 	CompressionNone
+	// CompressionLZ4HC enables LZ4HC compression for data. High CPU overhead.
+	CompressionLZ4HC
 )
+
+// CompressionLevel setting. A level == 0 is invalid and resolves to the default.
+//
+// Supported by: LZ4HC.
+type CompressionLevel uint32
 
 // Options for Client. Zero value is valid.
 type Options struct {
-	Logger      *zap.Logger // defaults to Nop.
-	Address     string      // 127.0.0.1:9000
-	Database    string      // "default"
-	User        string      // "default"
-	Password    string      // blank string by default
-	QuotaKey    string      // blank string by default
-	Compression Compression // disabled by default
-	ClientName  string      // blank string by default
-	Settings    []Setting   // none by default
+	Logger           *zap.Logger      // defaults to Nop.
+	Address          string           // 127.0.0.1:9000
+	Database         string           // "default"
+	User             string           // "default"
+	Password         string           // blank string by default
+	QuotaKey         string           // blank string by default
+	Compression      Compression      // disabled by default
+	CompressionLevel CompressionLevel // compression algorithm specific default
+	ClientName       string           // blank string by default
+	Settings         []Setting        // none by default
 
 	// ReadTimeout is a timeout for reading a single packet from the server.
 	//
@@ -459,7 +467,7 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 
 		readTimeout: opt.ReadTimeout,
 
-		compressor: compress.NewWriter(),
+		compressor: compress.NewWriterWithLevel(compress.Level(opt.CompressionLevel)),
 
 		version:         ver,
 		protocolVersion: opt.ProtocolVersion,
@@ -479,6 +487,9 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 	case CompressionLZ4:
 		c.compression = proto.CompressionEnabled
 		c.compressionMethod = compress.LZ4
+	case CompressionLZ4HC:
+		c.compression = proto.CompressionEnabled
+		c.compressionMethod = compress.LZ4HC
 	case CompressionZSTD:
 		c.compression = proto.CompressionEnabled
 		c.compressionMethod = compress.ZSTD
