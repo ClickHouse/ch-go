@@ -36,16 +36,18 @@ func (c *Client) cancelQuery() error {
 		Buf: make([]byte, 1),
 	}
 	proto.ClientCodeCancel.Encode(&b)
+
+	var retErr error
 	if err := c.flushBuf(ctx, &b); err != nil {
-		return errors.Wrap(err, "flush")
+		retErr = errors.Join(retErr, errors.Wrap(err, "flush"))
 	}
 
-	// Closing connection to prevent further queries.
+	// Always close connection to prevent further queries.
 	if err := c.Close(); err != nil {
-		return errors.Wrap(err, "close")
+		retErr = errors.Join(retErr, errors.Wrap(err, "close"))
 	}
 
-	return nil
+	return retErr
 }
 
 func (c *Client) querySettings(q Query) []proto.Setting {
