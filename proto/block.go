@@ -192,6 +192,12 @@ type BlockWriter struct {
 	Vec net.Buffers
 }
 
+// byteRange represents columns that stored in the memory as-is.
+type byteRange interface {
+	isByteRange() bool
+	appendSlice(net.Buffers) net.Buffers
+}
+
 func (b Block) WriteBlock(w *BlockWriter, version int, input []InputColumn) error {
 	prevLen := len(w.Buf.Buf)
 	cutBuffer := func() {
