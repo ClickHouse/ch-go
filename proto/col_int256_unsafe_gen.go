@@ -5,6 +5,7 @@
 package proto
 
 import (
+	"net"
 	"unsafe"
 
 	"github.com/go-faster/errors"
@@ -42,4 +43,21 @@ func (c ColInt256) EncodeColumn(b *Buffer) {
 	src := *(*[]byte)(unsafe.Pointer(&s))
 	dst := b.Buf[offset:]
 	copy(dst, src)
+}
+
+func (ColInt256) isByteRange() bool { return true }
+
+func (c ColInt256) appendSlice(buf net.Buffers) net.Buffers {
+	v := c
+	if len(v) == 0 {
+		return buf
+	}
+	const size = 256 / 8
+
+	s := *(*slice)(unsafe.Pointer(&v))
+	s.Len *= size
+	s.Cap *= size
+
+	src := *(*[]byte)(unsafe.Pointer(&s))
+	return append(buf, src)
 }
