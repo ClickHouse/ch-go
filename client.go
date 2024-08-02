@@ -27,14 +27,16 @@ import (
 // Client implements ClickHouse binary protocol client on top of
 // single TCP connection.
 type Client struct {
-	lg       *zap.Logger
-	conn     net.Conn
-	buf      *proto.Buffer
-	reader   *proto.Reader
-	info     proto.ClientHello
-	server   proto.ServerHello
-	version  clientVersion
-	quotaKey string
+	lg        *zap.Logger
+	conn      net.Conn
+	buf       *proto.Buffer
+	vec       net.Buffers
+	useWritev bool
+	reader    *proto.Reader
+	info      proto.ClientHello
+	server    proto.ServerHello
+	version   clientVersion
+	quotaKey  string
 
 	mux    sync.Mutex
 	closed bool
@@ -341,6 +343,11 @@ type Options struct {
 	ProtocolVersion  int           // force protocol version, optional
 	HandshakeTimeout time.Duration // longer lasting handshake is a case for ClickHouse cloud idle instances, defaults to 5m
 
+	// UseWritev whether to use `writev` syscall to write data.
+	//
+	// May significantly reduce memory footprint for bulk inserts of uncompressed data.
+	UseWritev bool
+
 	// Additional OpenTelemetry instrumentation that will capture query body
 	// and other parameters.
 	//
@@ -498,6 +505,12 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		c.compressionMethod = compress.None
 	default:
 		c.compression = proto.CompressionDisabled
+	}
+	if _, ok := conn.(*net.TCPConn); writevAvailable && // writev available only on Unix platforms.
+		ok && c.compression == proto.CompressionDisabled && // Could not be used with TLS and compression.
+		opt.UseWritev { // Requires explicit user option.
+		c.useWritev = true
+		c.vec = make(net.Buffers, 0, 16)
 	}
 
 	handshakeCtx, cancel := context.WithTimeout(ctx, opt.HandshakeTimeout)

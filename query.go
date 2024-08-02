@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"time"
 
 	"github.com/go-faster/city"
@@ -266,6 +267,8 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 	return nil
 }
 
+var EnableWritev = os.Getenv("CH_ENABLE_WRITEV")
+
 // encodeBlock encodes data block into buf, performing compression if needed.
 //
 // If input length is zero, blank block will be encoded, which is special case
@@ -292,8 +295,22 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 			BucketNum: -1,
 		}
 	}
-	if err := b.EncodeBlock(c.buf, c.protocolVersion, input); err != nil {
-		return errors.Wrap(err, "encode")
+	if c.useWritev {
+		bw := &proto.BlockWriter{
+			Buf: c.buf,
+			Vec: append(c.vec[:0], c.buf.Buf),
+		}
+		if err := b.WriteBlock(bw, c.protocolVersion, input); err != nil {
+			return errors.Wrap(err, "build writev block")
+		}
+		if err := c.flushWritev(ctx, bw.Vec); err != nil {
+			return errors.Wrap(err, "write buffers")
+		}
+		c.buf.Reset()
+	} else {
+		if err := b.EncodeBlock(c.buf, c.protocolVersion, input); err != nil {
+			return errors.Wrap(err, "encode")
+		}
 	}
 
 	// Performing compression.
@@ -308,6 +325,23 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 		c.buf.Buf = append(c.buf.Buf[:start], c.compressor.Data...)
 	}
 
+	return nil
+}
+
+func (c *Client) flushWritev(ctx context.Context, vec net.Buffers) error {
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context")
+	}
+	if deadline, ok := ctx.Deadline(); ok {
+		if err := c.conn.SetWriteDeadline(deadline); err != nil {
+			return errors.Wrap(err, "set write deadline")
+		}
+		// Reset deadline.
+		defer func() { _ = c.conn.SetWriteDeadline(time.Time{}) }()
+	}
+	if _, err := vec.WriteTo(c.conn); err != nil {
+		return err
+	}
 	return nil
 }
 
