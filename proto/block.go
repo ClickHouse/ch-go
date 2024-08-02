@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
@@ -179,6 +180,67 @@ func (b Block) EncodeRawBlock(buf *Buffer, version int, input []InputColumn) err
 			v.EncodeState(buf)
 		}
 		col.Data.EncodeColumn(buf)
+	}
+	return nil
+}
+
+// BlockWriter is a [Block] writer.
+type BlockWriter struct {
+	// Buf stores temporary buffers.
+	Buf *Buffer
+	// Vec to use, passed to re-use.
+	Vec net.Buffers
+}
+
+// byteRange represents columns that stored in the memory as-is.
+type byteRange interface {
+	isByteRange() bool
+	appendSlice(net.Buffers) net.Buffers
+}
+
+func (b Block) WriteBlock(w *BlockWriter, version int, input []InputColumn) error {
+	prevLen := len(w.Buf.Buf)
+	cutBuffer := func() {
+		newLen := len(w.Buf.Buf)
+		vec := w.Buf.Buf[prevLen:newLen:newLen]
+		prevLen = newLen
+		w.Vec = append(w.Vec, vec)
+	}
+
+	if FeatureBlockInfo.In(version) {
+		b.Info.Encode(w.Buf)
+	}
+	w.Buf.PutInt(b.Columns)
+	w.Buf.PutInt(b.Rows)
+
+	if len(input) == 0 {
+		cutBuffer()
+	}
+
+	for _, col := range input {
+		if r := col.Data.Rows(); r != b.Rows {
+			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
+		}
+		col.EncodeStart(w.Buf, version)
+		if v, ok := col.Data.(Preparable); ok {
+			if err := v.Prepare(); err != nil {
+				return errors.Wrapf(err, "prepare %q", col.Name)
+			}
+		}
+		if col.Data.Rows() == 0 {
+			cutBuffer()
+			continue
+		}
+
+		if v, ok := col.Data.(StateEncoder); ok {
+			v.EncodeState(w.Buf)
+		}
+		if br, ok := col.Data.(byteRange); ok && br.isByteRange() {
+			cutBuffer()
+			w.Vec = br.appendSlice(w.Vec)
+		} else {
+			col.Data.EncodeColumn(w.Buf)
+		}
 	}
 	return nil
 }

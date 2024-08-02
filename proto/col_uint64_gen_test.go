@@ -63,6 +63,33 @@ func TestColUInt64_DecodeColumn(t *testing.T) {
 		v.EncodeColumn(nil) // should be no-op
 	})
 }
+
+func TestColUInt64_byteRange(t *testing.T) {
+	t.Parallel()
+
+	const rows = 50
+	var data ColUInt64
+	br, ok := any(data).(byteRange)
+	if !ok || !br.isByteRange() {
+		t.Skipf("%T could not be written as-is", data)
+		return
+	}
+
+	for i := 0; i < rows; i++ {
+		v := uint64(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
+	}
+
+	var expect Buffer
+	data.EncodeColumn(&expect)
+
+	var got Buffer
+	for _, part := range any(data).(byteRange).appendSlice(nil) {
+		got.Buf = append(got.Buf, part...)
+	}
+	require.Equal(t, expect.Buf, got.Buf)
+}
 func TestColUInt64Array(t *testing.T) {
 	const rows = 50
 	data := NewArrUInt64()

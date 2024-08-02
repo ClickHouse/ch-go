@@ -77,6 +77,40 @@ func Test{{ .Type }}_DecodeColumn(t *testing.T) {
 	})
 }
 
+
+func Test{{ .Type }}_byteRange(t *testing.T) {
+	t.Parallel()
+
+	const rows = 50
+	var data {{ .Type }}
+	br, ok := any(data).(byteRange)
+	if !ok || !br.isByteRange() {
+		t.Skipf("%T could not be written as-is", data)
+		return
+	}
+
+	for i := 0; i < rows; i++ {
+		{{- if .DateTime }}
+		data.Data = append(data.Data, {{ .New }}(i))
+		{{- else if .Date }}
+		data = append(data, {{ .New }}(i))
+		{{- else }}
+		v := {{ .New }}(i)
+		data.Append(v)
+		require.Equal(t, v, data.Row(i))
+		{{- end }}
+	}
+
+	var expect Buffer
+	data.EncodeColumn(&expect)
+
+	var got Buffer
+	for _, part := range any(data).(byteRange).appendSlice(nil) {
+		got.Buf = append(got.Buf, part...)
+	}
+	require.Equal(t, expect.Buf, got.Buf)
+}
+
 {{- if not .Time }}
 func Test{{ .Type }}Array(t *testing.T) {
 	const rows = 50

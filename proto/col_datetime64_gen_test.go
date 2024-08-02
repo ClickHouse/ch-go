@@ -60,6 +60,31 @@ func TestColDateTime64_DecodeColumn(t *testing.T) {
 	})
 }
 
+func TestColDateTime64_byteRange(t *testing.T) {
+	t.Parallel()
+
+	const rows = 50
+	var data ColDateTime64
+	br, ok := any(data).(byteRange)
+	if !ok || !br.isByteRange() {
+		t.Skipf("%T could not be written as-is", data)
+		return
+	}
+
+	for i := 0; i < rows; i++ {
+		data.Data = append(data.Data, DateTime64(i))
+	}
+
+	var expect Buffer
+	data.EncodeColumn(&expect)
+
+	var got Buffer
+	for _, part := range any(data).(byteRange).appendSlice(nil) {
+		got.Buf = append(got.Buf, part...)
+	}
+	require.Equal(t, expect.Buf, got.Buf)
+}
+
 func BenchmarkColDateTime64_DecodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColDateTime64
