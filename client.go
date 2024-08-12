@@ -411,9 +411,6 @@ func (o *Options) setDefaults() {
 	if o.ReadTimeout == 0 {
 		o.ReadTimeout = DefaultReadTimeout
 	}
-	if o.ReadTimeout < 0 || o.ReadTimeout == NoTimeout {
-		o.ReadTimeout = 0
-	}
 }
 
 type clientVersion struct {
