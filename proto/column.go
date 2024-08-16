@@ -12,6 +12,7 @@ type ColInput interface {
 	Type() ColumnType
 	Rows() int
 	EncodeColumn(b *Buffer)
+	WriteColumn(w *Writer)
 }
 
 // ColResult column.
