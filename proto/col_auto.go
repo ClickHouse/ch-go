@@ -122,3 +122,7 @@ func (c ColAuto) Reset() {
 func (c ColAuto) EncodeColumn(b *Buffer) {
 	c.Data.EncodeColumn(b)
 }
+
+func (c ColAuto) WriteColumn(w *Writer) {
+	c.Data.WriteColumn(w)
+}

@@ -164,6 +164,16 @@ func (c ColMap[K, V]) EncodeColumn(b *Buffer) {
 	c.Values.EncodeColumn(b)
 }
 
+func (c ColMap[K, V]) WriteColumn(w *Writer) {
+	if c.Rows() == 0 {
+		return
+	}
+
+	c.Offsets.WriteColumn(w)
+	c.Keys.WriteColumn(w)
+	c.Values.WriteColumn(w)
+}
+
 // Prepare ensures Preparable column propagation.
 func (c ColMap[K, V]) Prepare() error {
 	if v, ok := c.Keys.(Preparable); ok {

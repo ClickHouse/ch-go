@@ -169,4 +169,8 @@ func (e *ColEnum) EncodeColumn(b *Buffer) {
 	e.raw().EncodeColumn(b)
 }
 
+func (e *ColEnum) WriteColumn(w *Writer) {
+	e.raw().WriteColumn(w)
+}
+
 func (e *ColEnum) Type() ColumnType { return e.t }
