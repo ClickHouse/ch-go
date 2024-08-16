@@ -292,8 +292,18 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 			BucketNum: -1,
 		}
 	}
-	if err := b.EncodeBlock(c.buf, c.protocolVersion, input); err != nil {
-		return errors.Wrap(err, "encode")
+
+	if w := c.writer; w != nil {
+		if err := b.WriteBlock(w, c.protocolVersion, input); err != nil {
+			return err
+		}
+		if err := c.flushWritev(ctx); err != nil {
+			return errors.Wrap(err, "write buffers")
+		}
+	} else {
+		if err := b.EncodeBlock(c.buf, c.protocolVersion, input); err != nil {
+			return errors.Wrap(err, "encode")
+		}
 	}
 
 	// Performing compression.
@@ -309,6 +319,20 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 	}
 
 	return nil
+}
+
+func (c *Client) flushWritev(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context")
+	}
+	if deadline, ok := ctx.Deadline(); ok {
+		if err := c.conn.SetWriteDeadline(deadline); err != nil {
+			return errors.Wrap(err, "set write deadline")
+		}
+		// Reset deadline.
+		defer func() { _ = c.conn.SetWriteDeadline(time.Time{}) }()
+	}
+	return c.writer.Flush()
 }
 
 // encodeBlankBlock encodes block with zero columns and rows which is special

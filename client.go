@@ -30,6 +30,7 @@ type Client struct {
 	lg       *zap.Logger
 	conn     net.Conn
 	buf      *proto.Buffer
+	writer   *proto.Writer
 	reader   *proto.Reader
 	info     proto.ClientHello
 	server   proto.ServerHello
@@ -495,6 +496,11 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		c.compressionMethod = compress.None
 	default:
 		c.compression = proto.CompressionDisabled
+	}
+
+	if _, ok := conn.(*net.TCPConn); writevAvailable && // writev available only on Unix platforms.
+		ok && c.compression == proto.CompressionDisabled { // Could not be used with TLS and compression.
+		c.writer = proto.NewWriter(c.conn, c.buf)
 	}
 
 	handshakeCtx, cancel := context.WithTimeout(ctx, opt.HandshakeTimeout)
