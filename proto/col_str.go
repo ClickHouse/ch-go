@@ -21,6 +21,7 @@ type ColStr struct {
 
 // Append string to column.
 func (c *ColStr) Append(v string) {
+	c.Buf = binary.AppendUvarint(c.Buf, uint64(len(v)))
 	start := len(c.Buf)
 	c.Buf = append(c.Buf, v...)
 	end := len(c.Buf)
@@ -29,6 +30,7 @@ func (c *ColStr) Append(v string) {
 
 // AppendBytes append byte slice as string to column.
 func (c *ColStr) AppendBytes(v []byte) {
+	c.Buf = binary.AppendUvarint(c.Buf, uint64(len(v)))
 	start := len(c.Buf)
 	c.Buf = append(c.Buf, v...)
 	end := len(c.Buf)

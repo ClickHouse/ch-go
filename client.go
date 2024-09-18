@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -94,6 +93,7 @@ func (c *Client) Close() error {
 		return errors.Wrap(err, "conn")
 	}
 
+	c.buf.Reset() // avoid memory leak.
 	return nil
 }
 
@@ -269,15 +269,13 @@ func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
 		// Reset deadline.
 		defer func() { _ = c.conn.SetWriteDeadline(time.Time{}) }()
 	}
-	n, err := c.conn.Write(b.Buf)
+	b.Buffers = append(b.Buffers, b.Buf)
+	n, err := b.Buffers.WriteTo(c.conn)
 	if err != nil {
 		return errors.Wrap(err, "write")
 	}
-	if n != len(b.Buf) {
-		return errors.Wrap(io.ErrShortWrite, "wrote less than expected")
-	}
 	if ce := c.lg.Check(zap.DebugLevel, "Flush"); ce != nil {
-		ce.Write(zap.Int("bytes", n))
+		ce.Write(zap.Int("bytes", int(n)))
 	}
 	b.Reset()
 	return nil
