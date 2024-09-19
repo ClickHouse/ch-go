@@ -178,14 +178,7 @@ func (b Block) EncodeRawBlock(buf *Buffer, version int, input []InputColumn) err
 		if v, ok := col.Data.(StateEncoder); ok {
 			v.EncodeState(buf)
 		}
-		if v, ok := col.Data.(*ColStr); ok {
-			// TODO SUPPORT OTHER COLUMN.
-			buf.Buffers = append(buf.Buffers, buf.Buf)
-			buf.Buf = nil
-			buf.Buffers = append(buf.Buffers, v.Buf)
-		} else {
-			col.Data.EncodeColumn(buf)
-		}
+		col.Data.EncodeColumn(buf)
 	}
 	return nil
 }

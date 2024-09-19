@@ -70,12 +70,11 @@ func (c *ColStr) Reset() {
 
 // EncodeColumn encodes String rows to *Buffer.
 func (c ColStr) EncodeColumn(b *Buffer) {
-	buf := make([]byte, binary.MaxVarintLen64)
-	for _, p := range c.Pos {
-		n := binary.PutUvarint(buf, uint64(p.End-p.Start))
-		b.Buf = append(b.Buf, buf[:n]...)
-		b.Buf = append(b.Buf, c.Buf[p.Start:p.End]...)
+	if b.Buf != nil {
+		b.Buffers = append(b.Buffers, b.Buf)
+		b.Buf = nil
 	}
+	b.Buffers = append(b.Buffers, c.Buf)
 }
 
 // ForEach calls f on each string from column.
