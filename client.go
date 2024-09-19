@@ -255,6 +255,7 @@ func (c *Client) packet(ctx context.Context) (proto.ServerCode, error) {
 }
 
 func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
+	defer b.Reset()
 	if err := ctx.Err(); err != nil {
 		return errors.Wrap(err, "context")
 	}
@@ -279,7 +280,6 @@ func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
 	if ce := c.lg.Check(zap.DebugLevel, "Flush"); ce != nil {
 		ce.Write(zap.Int("bytes", n))
 	}
-	b.Reset()
 	return nil
 }
 
