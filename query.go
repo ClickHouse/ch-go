@@ -572,6 +572,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 
 // Do performs Query on ClickHouse server.
 func (c *Client) Do(ctx context.Context, q Query) (err error) {
+	defer c.buf.Reset() // reset buf.
 	if c.IsClosed() {
 		return ErrClosed
 	}
