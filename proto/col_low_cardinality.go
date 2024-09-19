@@ -286,17 +286,6 @@ func (c ColLowCardinality[T]) Rows() int {
 
 // Prepare column for ingestion.
 func (c *ColLowCardinality[T]) Prepare() error {
-	// Select minimum possible size for key.
-	if n := len(c.Values); n < math.MaxUint8 {
-		c.key = KeyUInt8
-	} else if n < math.MaxUint16 {
-		c.key = KeyUInt16
-	} else if uint32(n) < math.MaxUint32 {
-		c.key = KeyUInt32
-	} else {
-		c.key = KeyUInt64
-	}
-
 	// Allocate keys slice.
 	c.keys = append(c.keys[:0], make([]int, len(c.Values))...)
 	if c.kv == nil {
@@ -315,6 +304,17 @@ func (c *ColLowCardinality[T]) Prepare() error {
 			last++
 		}
 		c.keys[i] = idx
+	}
+
+	// Select minimum possible size for key.
+	if n := last; n < math.MaxUint8 {
+		c.key = KeyUInt8
+	} else if n < math.MaxUint16 {
+		c.key = KeyUInt16
+	} else if uint32(n) < math.MaxUint32 {
+		c.key = KeyUInt32
+	} else {
+		c.key = KeyUInt64
 	}
 
 	// Fill key column with key indexes.
