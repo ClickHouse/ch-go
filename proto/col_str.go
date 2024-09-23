@@ -21,6 +21,7 @@ type ColStr struct {
 
 // Append string to column.
 func (c *ColStr) Append(v string) {
+	c.Buf = binary.AppendUvarint(c.Buf, uint64(len(v)))
 	start := len(c.Buf)
 	c.Buf = append(c.Buf, v...)
 	end := len(c.Buf)
@@ -29,6 +30,7 @@ func (c *ColStr) Append(v string) {
 
 // AppendBytes append byte slice as string to column.
 func (c *ColStr) AppendBytes(v []byte) {
+	c.Buf = binary.AppendUvarint(c.Buf, uint64(len(v)))
 	start := len(c.Buf)
 	c.Buf = append(c.Buf, v...)
 	end := len(c.Buf)
@@ -68,12 +70,11 @@ func (c *ColStr) Reset() {
 
 // EncodeColumn encodes String rows to *Buffer.
 func (c ColStr) EncodeColumn(b *Buffer) {
-	buf := make([]byte, binary.MaxVarintLen64)
-	for _, p := range c.Pos {
-		n := binary.PutUvarint(buf, uint64(p.End-p.Start))
-		b.Buf = append(b.Buf, buf[:n]...)
-		b.Buf = append(b.Buf, c.Buf[p.Start:p.End]...)
+	if b.Buf != nil {
+		b.Buffers = append(b.Buffers, b.Buf)
+		b.Buf = nil
 	}
+	b.Buffers = append(b.Buffers, c.Buf)
 }
 
 // ForEach calls f on each string from column.

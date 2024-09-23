@@ -5,11 +5,13 @@ import (
 	"encoding/binary"
 	"io"
 	"math"
+	"net"
 )
 
 // Buffer implements ClickHouse binary protocol encoding.
 type Buffer struct {
 	Buf []byte
+	net.Buffers
 }
 
 // Reader returns new *Reader from *Buffer.
@@ -45,6 +47,7 @@ func (b *Buffer) Encode(e Encoder) {
 // Reset buffer to zero length.
 func (b *Buffer) Reset() {
 	b.Buf = b.Buf[:0]
+	b.Buffers = nil
 }
 
 // Read implements io.Reader.
