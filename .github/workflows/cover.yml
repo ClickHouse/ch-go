@@ -1,12 +1,12 @@
 name: cover
 
 on:
-# TODO: setup codecov
-# https://github.com/ClickHouse/ch-go/issues/137
-#  push:
-#    branches:
-#      - main
-#  pull_request:
+  # TODO: setup codecov
+  # https://github.com/ClickHouse/ch-go/issues/137
+  #  push:
+  #    branches:
+  #      - main
+  #  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.21
+          go-version: oldstable
 
       - name: Get Go environment
         id: go-env
