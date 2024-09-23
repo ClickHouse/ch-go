@@ -1,4 +1,7 @@
 linters-settings:
+  gosec:
+    excludes:
+      - G115 # Annoying and have a lot of false-positive results.
   govet:
     check-shadowing: true
   gocyclo:
@@ -95,41 +98,41 @@ issues:
 
     # Disable linters that are not needed for testing infra.
     - path: internal/cht
-      linters: [ gosec ]
+      linters: [gosec]
 
     - path: _test\.go
       text: "Combine"
-      linters: [ gocritic ]
+      linters: [gocritic]
 
     # Check that equal to self is true
-    - linters: [ gocritic ]
-      source: '(assert|require).+Equal'
-      text: 'dupArg'
+    - linters: [gocritic]
+      source: "(assert|require).+Equal"
+      text: "dupArg"
       path: _test\.go
 
     # Ignore shadowing of err.
-    - linters: [ govet ]
+    - linters: [govet]
       text: 'declaration of "(err|ctx|log|lg|c)"'
 
     # Probably some broken linter for generics?
-    - linters: [ revive ]
+    - linters: [revive]
       text: 'receiver-naming: receiver name \S+ should be consistent with previous receiver name \S+ for invalid-type'
 
     # Ignore linters in main packages.
     - path: main\.go
-      linters: [ goconst, funlen, gocognit, gocyclo ]
+      linters: [goconst, funlen, gocognit, gocyclo]
 
     - path: main\.go
-      linters: [ gosec ]
+      linters: [gosec]
       text: "G307"
 
     - source: 'func Fuzz.+\(f \*testing\.F\)'
-      linters: [ stylecheck ]
+      linters: [stylecheck]
       text: "ST1003" # underscores lol
 
     - path: (internal|cmd)
-      linters: [ revive ]
+      linters: [revive]
       text: "package-comments"
 
-    - linters: [ revive ]
+    - linters: [revive]
       text: "comment on exported const .+ should be of the form"
