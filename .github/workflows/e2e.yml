@@ -14,8 +14,8 @@ jobs:
       fail-fast: true
       matrix:
         go:
-          - "1.20"
-          - "1.21"
+          - "oldstable"
+          - "stable"
         clickhouse:
           - v21.8.14.5-lts
           - v22.3.11.12-lts
@@ -24,6 +24,7 @@ jobs:
           - v23.3.8.21-lts
           - v23.8.7.24-lts
           - v23.10.3.5-stable
+          - v24.8.4.13-lts
     steps:
       - uses: actions/checkout@v4
 
