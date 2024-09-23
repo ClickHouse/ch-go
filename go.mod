@@ -10,7 +10,7 @@ require (
 	github.com/go-faster/errors v0.7.1
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
-	github.com/jackc/puddle/v2 v2.2.1
+	github.com/jackc/puddle/v2 v2.2.2
 	github.com/klauspost/compress v1.17.10
 	github.com/pierrec/lz4/v4 v4.1.21
 	github.com/segmentio/asm v1.2.0
