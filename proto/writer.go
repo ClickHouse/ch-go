@@ -25,8 +25,6 @@ func NewWriter(conn io.Writer, buf *Buffer) *Writer {
 		buf:  buf,
 		vec:  make(net.Buffers, 0, 16),
 	}
-	// In case if passed buf is not empty.
-	w.cutBuffer()
 	return w
 }
 
@@ -34,9 +32,7 @@ func NewWriter(conn io.Writer, buf *Buffer) *Writer {
 //
 // Passed byte slice may be captured until [Writer.Flush] is called.
 func (w *Writer) ChainWrite(data []byte) {
-	if w.needCut {
-		w.cutBuffer()
-	}
+	w.cutBuffer()
 	w.vec = append(w.vec, data)
 }
 
@@ -47,12 +43,9 @@ func (w *Writer) ChainWrite(data []byte) {
 // NB: do not retain buffer.
 func (w *Writer) ChainBuffer(cb func(*Buffer)) {
 	cb(w.buf)
-	w.needCut = true
 }
 
 func (w *Writer) cutBuffer() {
-	w.needCut = false
-
 	newOffset := len(w.buf.Buf)
 	data := w.buf.Buf[w.bufOffset:newOffset:newOffset]
 	if len(data) == 0 {
@@ -72,11 +65,9 @@ func (w *Writer) reset() {
 }
 
 // Flush flushes all data to writer.
-func (w *Writer) Flush() (err error) {
-	if w.needCut {
-		w.cutBuffer()
-	}
-	_, err = w.vec.WriteTo(w.conn)
+func (w *Writer) Flush() (n int64, err error) {
+	w.cutBuffer()
+	n, err = w.vec.WriteTo(w.conn)
 	w.reset()
-	return err
+	return n, err
 }

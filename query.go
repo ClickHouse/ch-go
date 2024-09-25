@@ -271,16 +271,16 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 // If input length is zero, blank block will be encoded, which is special case
 // for "end of data".
 func (c *Client) encodeBlock(ctx context.Context, tableName string, input []proto.InputColumn) error {
-	proto.ClientCodeData.Encode(c.buf)
-	clientData := proto.ClientData{
-		// External data table name.
-		// https://clickhouse.com/docs/en/engines/table-engines/special/external-data/
-		TableName: tableName,
-	}
-	clientData.EncodeAware(c.buf, c.protocolVersion)
+	c.writer.ChainBuffer(func(buf *proto.Buffer) {
+		proto.ClientCodeData.Encode(buf)
+		clientData := proto.ClientData{
+			// External data table name.
+			// https://clickhouse.com/docs/en/engines/table-engines/special/external-data/
+			TableName: tableName,
+		}
+		clientData.EncodeAware(buf, c.protocolVersion)
+	})
 
-	// Saving offset of compressible data.
-	start := len(c.buf.Buf)
 	b := proto.Block{
 		Columns: len(input),
 	}
@@ -293,46 +293,41 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 		}
 	}
 
-	if w := c.writer; w != nil {
-		if err := b.WriteBlock(w, c.protocolVersion, input); err != nil {
+	if c.compression == proto.CompressionDisabled {
+		if err := b.WriteBlock(c.writer, c.protocolVersion, input); err != nil {
 			return err
 		}
-		if err := c.flushWritev(ctx); err != nil {
-			return errors.Wrap(err, "write buffers")
-		}
 	} else {
-		if err := b.EncodeBlock(c.buf, c.protocolVersion, input); err != nil {
-			return errors.Wrap(err, "encode")
-		}
-	}
+		// TODO(tdakkota): find out if we can actually stream compressed blocks.
 
-	// Performing compression.
-	//
-	// Note: only blocks are compressed.
-	// See "Compressible" method of server or client code for reference.
-	if c.compression == proto.CompressionEnabled {
-		data := c.buf.Buf[start:]
-		if err := c.compressor.Compress(c.compressionMethod, data); err != nil {
-			return errors.Wrap(err, "compress")
+		var rerr error
+		c.writer.ChainBuffer(func(buf *proto.Buffer) {
+			// Saving offset of compressible data.
+			start := len(buf.Buf)
+			if err := b.EncodeBlock(buf, c.protocolVersion, input); err != nil {
+				rerr = errors.Wrap(err, "encode")
+				return
+			}
+
+			// Performing compression.
+			//
+			// Note: only blocks are compressed.
+			// See "Compressible" method of server or client code for reference.
+			if c.compression == proto.CompressionEnabled {
+				data := buf.Buf[start:]
+				if err := c.compressor.Compress(c.compressionMethod, data); err != nil {
+					rerr = errors.Wrap(err, "compress")
+					return
+				}
+				buf.Buf = append(buf.Buf[:start], c.compressor.Data...)
+			}
+		})
+		if rerr != nil {
+			return rerr
 		}
-		c.buf.Buf = append(c.buf.Buf[:start], c.compressor.Data...)
 	}
 
 	return nil
-}
-
-func (c *Client) flushWritev(ctx context.Context) error {
-	if err := ctx.Err(); err != nil {
-		return errors.Wrap(err, "context")
-	}
-	if deadline, ok := ctx.Deadline(); ok {
-		if err := c.conn.SetWriteDeadline(deadline); err != nil {
-			return errors.Wrap(err, "set write deadline")
-		}
-		// Reset deadline.
-		defer func() { _ = c.conn.SetWriteDeadline(time.Time{}) }()
-	}
-	return c.writer.Flush()
 }
 
 // encodeBlankBlock encodes block with zero columns and rows which is special

@@ -28,7 +28,8 @@ func checkWriteColumn(data ColInput) func(*testing.T) {
 			w   = NewWriter(&got, new(Buffer))
 		)
 		data.WriteColumn(w)
-		require.NoError(t, w.Flush())
+		_, err := w.Flush()
+		require.NoError(t, err)
 
 		require.Equal(t, expect.Buf, got.Bytes())
 	}
