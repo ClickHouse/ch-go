@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,25 @@ func requireEqual[T any](t *testing.T, a, b ColumnOf[T]) {
 	require.Equal(t, a.Rows(), b.Rows(), "rows count should match")
 	for i := 0; i < a.Rows(); i++ {
 		require.Equalf(t, a.Row(i), b.Row(i), "[%d]", i)
+	}
+}
+
+func checkWriteColumn(data ColInput) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Parallel()
+
+		var expect Buffer
+		data.EncodeColumn(&expect)
+
+		var (
+			got bytes.Buffer
+			w   = NewWriter(&got, new(Buffer))
+		)
+		data.WriteColumn(w)
+		_, err := w.Flush()
+		require.NoError(t, err)
+
+		require.Equal(t, expect.Buf, got.Bytes())
 	}
 }
 

@@ -36,7 +36,9 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 			span.End()
 		}()
 	}
-	c.buf.Encode(proto.ClientCodePing)
+	c.writer.ChainBuffer(func(b *proto.Buffer) {
+		b.Encode(proto.ClientCodePing)
+	})
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
 	}

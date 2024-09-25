@@ -230,6 +230,41 @@ func (c *ColLowCardinality[T]) EncodeColumn(b *Buffer) {
 	}
 }
 
+func (c *ColLowCardinality[T]) WriteColumn(w *Writer) {
+	// Using pointer receiver as Prepare() is expected to be called before
+	// encoding.
+
+	if c.Rows() == 0 {
+		// Skipping encoding entirely.
+		return
+	}
+
+	w.ChainBuffer(func(b *Buffer) {
+		// Meta encodes whether reader should update
+		// low cardinality metadata and keys column type.
+		meta := cardinalityUpdateAll | int64(c.key)
+		b.PutInt64(meta)
+
+		// Writing index (dictionary).
+		b.PutInt64(int64(c.index.Rows()))
+	})
+	c.index.WriteColumn(w)
+
+	w.ChainBuffer(func(b *Buffer) {
+		b.PutInt64(int64(c.Rows()))
+	})
+	switch c.key {
+	case KeyUInt8:
+		c.keys8.WriteColumn(w)
+	case KeyUInt16:
+		c.keys16.WriteColumn(w)
+	case KeyUInt32:
+		c.keys32.WriteColumn(w)
+	case KeyUInt64:
+		c.keys64.WriteColumn(w)
+	}
+}
+
 func (c *ColLowCardinality[T]) Reset() {
 	for k := range c.kv {
 		delete(c.kv, k)

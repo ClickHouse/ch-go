@@ -76,6 +76,18 @@ func (c ColStr) EncodeColumn(b *Buffer) {
 	}
 }
 
+// WriteColumn writes String rows to *Writer.
+func (c ColStr) WriteColumn(w *Writer) {
+	buf := make([]byte, binary.MaxVarintLen64)
+	for _, p := range c.Pos {
+		w.ChainBuffer(func(b *Buffer) {
+			n := binary.PutUvarint(buf, uint64(p.End-p.Start))
+			b.PutRaw(buf[:n])
+		})
+		w.ChainWrite(c.Buf[p.Start:p.End])
+	}
+}
+
 // ForEach calls f on each string from column.
 func (c ColStr) ForEach(f func(i int, s string) error) error {
 	return c.ForEachBytes(func(i int, b []byte) error {
