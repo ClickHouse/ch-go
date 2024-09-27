@@ -131,6 +131,27 @@ func (e *Exception) Error() string {
 	return fmt.Sprintf("%s: %s: %s", e.Code, e.Name, msg)
 }
 
+// Unwrap implements errors.Unwrap interface.
+func (e *Exception) Unwrap() []error {
+	if e == nil {
+		return nil
+	}
+	codes := make([]error, 0, 12)
+	// Flatten the error tree by collecting all error codes. Only error codes
+	// matter because they are declared and therefore can be compared using
+	// errors.Is. Dynamically created Exception instances are not relevant for
+	// this functionality.
+	return collectCodes(e, codes)
+}
+
+func collectCodes(e *Exception, codes []error) []error {
+	codes = append(codes, e.Code)
+	for _, next := range e.Next {
+		codes = collectCodes(&next, codes)
+	}
+	return codes
+}
+
 // AsException finds first *Exception in err chain.
 func AsException(err error) (*Exception, bool) {
 	var e *Exception
