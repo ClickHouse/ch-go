@@ -79,13 +79,15 @@ func (c ColStr) EncodeColumn(b *Buffer) {
 // WriteColumn writes String rows to *Writer.
 func (c ColStr) WriteColumn(w *Writer) {
 	buf := make([]byte, binary.MaxVarintLen64)
-	for _, p := range c.Pos {
-		w.ChainBuffer(func(b *Buffer) {
+	// Writing values from c.Buf directly might improve performance if [ColStr] contains a few rows of very long strings.
+	// However, most of the time it is quite opposite, so we copy data.
+	w.ChainBuffer(func(b *Buffer) {
+		for _, p := range c.Pos {
 			n := binary.PutUvarint(buf, uint64(p.End-p.Start))
 			b.PutRaw(buf[:n])
-		})
-		w.ChainWrite(c.Buf[p.Start:p.End])
-	}
+			b.PutRaw(c.Buf[p.Start:p.End])
+		}
+	})
 }
 
 // ForEach calls f on each string from column.
