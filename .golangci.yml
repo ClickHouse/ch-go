@@ -3,7 +3,8 @@ linters-settings:
     excludes:
       - G115 # Annoying and have a lot of false-positive results.
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   gocyclo:
     min-complexity: 15
   maligned:
