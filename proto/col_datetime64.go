@@ -125,6 +125,10 @@ func (c ColDateTime64) Raw() *ColDateTime64Raw {
 	return &ColDateTime64Raw{ColDateTime64: c}
 }
 
+func (c *ColDateTime64) Nullable() *ColNullable[time.Time] {
+	return &ColNullable[time.Time]{Values: c}
+}
+
 func (c *ColDateTime64) Array() *ColArr[time.Time] {
 	return &ColArr[time.Time]{Data: c}
 }

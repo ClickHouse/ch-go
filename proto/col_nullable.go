@@ -117,6 +117,12 @@ func (c ColNullable[T]) Row(i int) Nullable[T] {
 	}
 }
 
+func (c *ColNullable[T]) Array() *ColArr[Nullable[T]] {
+	return &ColArr[Nullable[T]]{
+		Data: c,
+	}
+}
+
 func (c *ColNullable[T]) Reset() {
 	c.Nulls.Reset()
 	c.Values.Reset()
