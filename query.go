@@ -271,16 +271,16 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 // If input length is zero, blank block will be encoded, which is special case
 // for "end of data".
 func (c *Client) encodeBlock(ctx context.Context, tableName string, input []proto.InputColumn) error {
-	proto.ClientCodeData.Encode(c.buf)
-	clientData := proto.ClientData{
-		// External data table name.
-		// https://clickhouse.com/docs/en/engines/table-engines/special/external-data/
-		TableName: tableName,
-	}
-	clientData.EncodeAware(c.buf, c.protocolVersion)
+	c.writer.ChainBuffer(func(buf *proto.Buffer) {
+		proto.ClientCodeData.Encode(buf)
+		clientData := proto.ClientData{
+			// External data table name.
+			// https://clickhouse.com/docs/en/engines/table-engines/special/external-data/
+			TableName: tableName,
+		}
+		clientData.EncodeAware(buf, c.protocolVersion)
+	})
 
-	// Saving offset of compressible data.
-	start := len(c.buf.Buf)
 	b := proto.Block{
 		Columns: len(input),
 	}
@@ -292,20 +292,39 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 			BucketNum: -1,
 		}
 	}
-	if err := b.EncodeBlock(c.buf, c.protocolVersion, input); err != nil {
-		return errors.Wrap(err, "encode")
-	}
 
-	// Performing compression.
-	//
-	// Note: only blocks are compressed.
-	// See "Compressible" method of server or client code for reference.
-	if c.compression == proto.CompressionEnabled {
-		data := c.buf.Buf[start:]
-		if err := c.compressor.Compress(c.compressionMethod, data); err != nil {
-			return errors.Wrap(err, "compress")
+	if c.compression == proto.CompressionDisabled {
+		if err := b.WriteBlock(c.writer, c.protocolVersion, input); err != nil {
+			return err
 		}
-		c.buf.Buf = append(c.buf.Buf[:start], c.compressor.Data...)
+	} else {
+		// TODO(tdakkota): find out if we can actually stream compressed blocks.
+
+		var rerr error
+		c.writer.ChainBuffer(func(buf *proto.Buffer) {
+			// Saving offset of compressible data.
+			start := len(buf.Buf)
+			if err := b.EncodeBlock(buf, c.protocolVersion, input); err != nil {
+				rerr = errors.Wrap(err, "encode")
+				return
+			}
+
+			// Performing compression.
+			//
+			// Note: only blocks are compressed.
+			// See "Compressible" method of server or client code for reference.
+			if c.compression == proto.CompressionEnabled {
+				data := buf.Buf[start:]
+				if err := c.compressor.Compress(c.compressionMethod, data); err != nil {
+					rerr = errors.Wrap(err, "compress")
+					return
+				}
+				buf.Buf = append(buf.Buf[:start], c.compressor.Data...)
+			}
+		})
+		if rerr != nil {
+			return rerr
+		}
 	}
 
 	return nil

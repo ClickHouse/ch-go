@@ -29,7 +29,7 @@ import (
 type Client struct {
 	lg       *zap.Logger
 	conn     net.Conn
-	buf      *proto.Buffer
+	writer   *proto.Writer
 	reader   *proto.Reader
 	info     proto.ClientHello
 	server   proto.ServerHello
@@ -276,7 +276,7 @@ func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
 	if n != len(b.Buf) {
 		return errors.Wrap(io.ErrShortWrite, "wrote less than expected")
 	}
-	if ce := c.lg.Check(zap.DebugLevel, "Flush"); ce != nil {
+	if ce := c.lg.Check(zap.DebugLevel, "Buffer flush"); ce != nil {
 		ce.Write(zap.Int("bytes", n))
 	}
 	b.Reset()
@@ -284,11 +284,30 @@ func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
 }
 
 func (c *Client) flush(ctx context.Context) error {
-	return c.flushBuf(ctx, c.buf)
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context")
+	}
+	if deadline, ok := ctx.Deadline(); ok {
+		if err := c.conn.SetWriteDeadline(deadline); err != nil {
+			return errors.Wrap(err, "set write deadline")
+		}
+		// Reset deadline.
+		defer func() { _ = c.conn.SetWriteDeadline(time.Time{}) }()
+	}
+	n, err := c.writer.Flush()
+	if err != nil {
+		return err
+	}
+	if ce := c.lg.Check(zap.DebugLevel, "Flush"); ce != nil {
+		ce.Write(zap.Int64("bytes", n))
+	}
+	return nil
 }
 
 func (c *Client) encode(v proto.AwareEncoder) {
-	v.EncodeAware(c.buf, c.protocolVersion)
+	c.writer.ChainBuffer(func(b *proto.Buffer) {
+		v.EncodeAware(b, c.protocolVersion)
+	})
 }
 
 //go:generate go run github.com/dmarkham/enumer -transform upper -type Compression -trimprefix Compression -output compression_enum.go
@@ -451,9 +470,32 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 		ctx = newCtx
 		defer span.End()
 	}
+
+	var (
+		compressor        = compress.NewWriterWithLevel(compress.Level(opt.CompressionLevel))
+		compression       proto.Compression
+		compressionMethod compress.Method
+	)
+	switch opt.Compression {
+	case CompressionLZ4:
+		compression = proto.CompressionEnabled
+		compressionMethod = compress.LZ4
+	case CompressionLZ4HC:
+		compression = proto.CompressionEnabled
+		compressionMethod = compress.LZ4HC
+	case CompressionZSTD:
+		compression = proto.CompressionEnabled
+		compressionMethod = compress.ZSTD
+	case CompressionNone:
+		compression = proto.CompressionEnabled
+		compressionMethod = compress.None
+	default:
+		compression = proto.CompressionDisabled
+	}
+
 	c := &Client{
 		conn:     conn,
-		buf:      new(proto.Buffer),
+		writer:   proto.NewWriter(conn, new(proto.Buffer)),
 		reader:   proto.NewReader(conn),
 		settings: opt.Settings,
 		lg:       opt.Logger,
@@ -464,7 +506,9 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 
 		readTimeout: opt.ReadTimeout,
 
-		compressor: compress.NewWriterWithLevel(compress.Level(opt.CompressionLevel)),
+		compression:       compression,
+		compressionMethod: compressionMethod,
+		compressor:        compressor,
 
 		version:         ver,
 		protocolVersion: opt.ProtocolVersion,
@@ -479,22 +523,6 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 			User:     opt.User,
 			Password: opt.Password,
 		},
-	}
-	switch opt.Compression {
-	case CompressionLZ4:
-		c.compression = proto.CompressionEnabled
-		c.compressionMethod = compress.LZ4
-	case CompressionLZ4HC:
-		c.compression = proto.CompressionEnabled
-		c.compressionMethod = compress.LZ4HC
-	case CompressionZSTD:
-		c.compression = proto.CompressionEnabled
-		c.compressionMethod = compress.ZSTD
-	case CompressionNone:
-		c.compression = proto.CompressionEnabled
-		c.compressionMethod = compress.None
-	default:
-		c.compression = proto.CompressionDisabled
 	}
 
 	handshakeCtx, cancel := context.WithTimeout(ctx, opt.HandshakeTimeout)

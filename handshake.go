@@ -15,7 +15,9 @@ import (
 
 func (c *Client) encodeAddendum() {
 	if proto.FeatureQuotaKey.In(c.protocolVersion) {
-		c.buf.PutString(c.quotaKey)
+		c.writer.ChainBuffer(func(b *proto.Buffer) {
+			b.PutString(c.quotaKey)
+		})
 	}
 }
 
@@ -45,8 +47,9 @@ func (c *Client) handshake(ctx context.Context) error {
 	wg.Go(func() error {
 		defer cancel()
 
-		c.buf.Reset()
-		c.info.Encode(c.buf)
+		c.writer.ChainBuffer(func(b *proto.Buffer) {
+			c.info.Encode(b)
+		})
 		if err := c.flush(wgCtx); err != nil {
 			return errors.Wrap(err, "flush")
 		}

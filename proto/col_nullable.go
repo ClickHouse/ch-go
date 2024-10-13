@@ -127,6 +127,11 @@ func (c ColNullable[T]) EncodeColumn(b *Buffer) {
 	c.Values.EncodeColumn(b)
 }
 
+func (c ColNullable[T]) WriteColumn(w *Writer) {
+	c.Nulls.WriteColumn(w)
+	c.Values.WriteColumn(w)
+}
+
 func (c ColNullable[T]) IsElemNull(i int) bool {
 	if i < c.Rows() {
 		return c.Nulls[i] == boolTrue
