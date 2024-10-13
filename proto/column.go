@@ -207,6 +207,7 @@ const (
 	ColumnTypeBool           ColumnType = "Bool"
 	ColumnTypeTuple          ColumnType = "Tuple"
 	ColumnTypeNullable       ColumnType = "Nullable"
+	ColumnTypeDecimal        ColumnType = "Decimal"
 	ColumnTypeDecimal32      ColumnType = "Decimal32"
 	ColumnTypeDecimal64      ColumnType = "Decimal64"
 	ColumnTypeDecimal128     ColumnType = "Decimal128"
