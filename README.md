@@ -247,7 +247,7 @@ _, _ = out.Write(buf.Buf)
 // To do this, reset buf and all columns, append new values
 // to columns and call EncodeRawBlock again.
 buf.Reset()
-colV.Reset()
+colK.Reset()
 colV.Reset()
 ```
 
