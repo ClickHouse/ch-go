@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/go-faster/errors"
@@ -72,6 +73,49 @@ func (c *ColAuto) Infer(t ColumnType) error {
 				return errors.Wrap(err, "datetime")
 			}
 			c.Data = v
+			c.DataType = t
+			return nil
+		case ColumnTypeDecimal:
+			var prec int
+			precStr, _, _ := strings.Cut(string(t.Elem()), ",")
+			if precStr != "" {
+				var err error
+				precStr = strings.TrimSpace(precStr)
+				prec, err = strconv.Atoi(precStr)
+				if err != nil {
+					return errors.Wrap(err, "decimal")
+				}
+			} else {
+				prec = 10
+			}
+			switch {
+			case prec >= 1 && prec < 10:
+				c.Data = new(ColDecimal32)
+			case prec >= 10 && prec < 19:
+				c.Data = new(ColDecimal64)
+			case prec >= 19 && prec < 39:
+				c.Data = new(ColDecimal128)
+			case prec >= 39 && prec < 77:
+				c.Data = new(ColDecimal256)
+			default:
+				return errors.Errorf("decimal precision %d out of range", prec)
+			}
+			c.DataType = t
+			return nil
+		case ColumnTypeDecimal32:
+			c.Data = new(ColDecimal32)
+			c.DataType = t
+			return nil
+		case ColumnTypeDecimal64:
+			c.Data = new(ColDecimal64)
+			c.DataType = t
+			return nil
+		case ColumnTypeDecimal128:
+			c.Data = new(ColDecimal128)
+			c.DataType = t
+			return nil
+		case ColumnTypeDecimal256:
+			c.Data = new(ColDecimal256)
 			c.DataType = t
 			return nil
 		case ColumnTypeEnum8, ColumnTypeEnum16:
