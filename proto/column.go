@@ -74,8 +74,8 @@ func (c ColumnType) Base() ColumnType {
 	}
 	var (
 		v     = string(c)
-		start = strings.Index(v, "(")
-		end   = strings.LastIndex(v, ")")
+		start = strings.IndexByte(v, '(')
+		end   = strings.LastIndexByte(v, ')')
 	)
 	if start <= 0 || end <= 0 || end < start {
 		return c
@@ -150,8 +150,8 @@ func (c ColumnType) Elem() ColumnType {
 	}
 	var (
 		v     = string(c)
-		start = strings.Index(v, "(")
-		end   = strings.LastIndex(v, ")")
+		start = strings.IndexByte(v, '(')
+		end   = strings.LastIndexByte(v, ')')
 	)
 	if start <= 0 || end <= 0 || end < start {
 		// No element.

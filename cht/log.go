@@ -17,17 +17,14 @@ type logInfo struct {
 
 // cut field between start and end, trimming space.
 //
-// E.g. cut("[ 12345 ]", "[", "]") == "12345".
-func cut(s, start, end string) string {
-	if s == "" || start == "" || end == "" {
-		return ""
-	}
-	left := strings.Index(s, start)
+// E.g. cut("[ 12345 ]", '[', ']') == "12345".
+func cut(s string, start, end byte) string {
+	left := strings.IndexByte(s, start)
 	if left < 0 {
 		return ""
 	}
 	s = s[left+1:]
-	right := strings.Index(s, end)
+	right := strings.IndexByte(s, end)
 	if right < 0 {
 		return ""
 	}
@@ -61,18 +58,18 @@ func (e LogEntry) Level() zapcore.Level {
 
 func parseLog(s string) LogEntry {
 	s = strings.TrimSpace(s)
-	tid, _ := strconv.ParseUint(cut(s, "[", "]"), 10, 64)
+	tid, _ := strconv.ParseUint(cut(s, '[', ']'), 10, 64)
 	var textStart int
-	if idx := strings.Index(s, "}"); idx > 0 {
-		textStart = strings.Index(s[idx:], ":") + idx + 1
+	if idx := strings.IndexByte(s, '}'); idx > 0 {
+		textStart = strings.IndexByte(s[idx:], ':') + idx + 1
 	}
 	if textStart-1 > len(s) {
 		textStart = 0
 	}
 	return LogEntry{
-		QueryID:  cut(s, "{", "}"),
-		Severity: cut(s, "<", ">"),
-		Name:     cut(s, ">", ":"),
+		QueryID:  cut(s, '{', '}'),
+		Severity: cut(s, '<', '>'),
+		Name:     cut(s, '>', ':'),
 		Message:  strings.TrimSpace(s[textStart:]),
 		ThreadID: tid,
 	}

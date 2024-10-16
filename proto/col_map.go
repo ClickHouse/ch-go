@@ -191,18 +191,18 @@ func (c ColMap[K, V]) Prepare() error {
 
 // Infer ensures Inferable column propagation.
 func (c *ColMap[K, V]) Infer(t ColumnType) error {
-	elems := strings.Split(string(t.Elem()), ",")
-	if len(elems) != 2 {
+	keytype, valtype, hascomma := strings.Cut(string(t.Elem()), ",")
+	if !hascomma || strings.ContainsRune(valtype, ',') {
 		return errors.New("invalid map type")
 	}
 	if v, ok := c.Keys.(Inferable); ok {
-		ct := ColumnType(strings.TrimSpace(elems[0]))
+		ct := ColumnType(strings.TrimSpace(keytype))
 		if err := v.Infer(ct); err != nil {
 			return errors.Wrap(err, "infer data")
 		}
 	}
 	if v, ok := c.Values.(Inferable); ok {
-		ct := ColumnType(strings.TrimSpace(elems[1]))
+		ct := ColumnType(strings.TrimSpace(valtype))
 		if err := v.Infer(ct); err != nil {
 			return errors.Wrap(err, "infer data")
 		}
