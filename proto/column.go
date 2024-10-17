@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/go-faster/errors"
@@ -83,30 +84,58 @@ func (c ColumnType) Base() ColumnType {
 	return c[:start]
 }
 
+// reduces Decimal(P, ...) to Decimal32/Decimal64/Decimal128/Decimal256
+// returns c if any errors occur during conversion
+func (c ColumnType) decimalDowncast() ColumnType {
+	if c.Base() != ColumnTypeDecimal {
+		return c
+	}
+	elem := c.Elem()
+	precStr, _, _ := strings.Cut(string(elem), ",")
+	precStr = strings.TrimSpace(precStr)
+	prec, err := strconv.Atoi(precStr)
+	if err != nil {
+		return c
+	}
+	switch {
+	case prec < 10:
+		return ColumnTypeDecimal32
+	case prec < 19:
+		return ColumnTypeDecimal64
+	case prec < 39:
+		return ColumnTypeDecimal128
+	case prec < 77:
+		return ColumnTypeDecimal256
+	default:
+		return c
+	}
+}
+
 // Conflicts reports whether two types conflict.
 func (c ColumnType) Conflicts(b ColumnType) bool {
 	if c == b {
 		return false
 	}
-	{
-		a := c
-		if b.Base() == ColumnTypeEnum8 || b.Base() == ColumnTypeEnum16 {
-			a, b = b, a
-		}
-		switch {
-		case a.Base() == ColumnTypeEnum8 && b == ColumnTypeInt8:
-			return false
-		case a.Base() == ColumnTypeEnum16 && b == ColumnTypeInt16:
-			return false
-		}
+	cBase := c.Base()
+	bBase := b.Base()
+	if (cBase == ColumnTypeEnum8 && b == ColumnTypeInt8) ||
+		(cBase == ColumnTypeEnum16 && b == ColumnTypeInt16) ||
+		(bBase == ColumnTypeEnum8 && c == ColumnTypeInt8) ||
+		(bBase == ColumnTypeEnum16 && c == ColumnTypeInt16) {
+		return false
 	}
-	if c.Base() != b.Base() {
+	if cBase == ColumnTypeDecimal || bBase == ColumnTypeDecimal {
+		return c.decimalDowncast() != b.decimalDowncast()
+	}
+	if cBase != bBase {
 		return true
 	}
 	if c.normalizeCommas() == b.normalizeCommas() {
 		return false
 	}
-	switch c.Base() {
+	switch cBase {
+	case ColumnTypeArray, ColumnTypeNullable, ColumnTypeLowCardinality:
+		return c.Elem().Conflicts(b.Elem())
 	case ColumnTypeDateTime, ColumnTypeDateTime64:
 		// TODO(ernado): improve check
 		return false
