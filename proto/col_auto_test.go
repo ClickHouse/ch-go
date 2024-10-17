@@ -57,6 +57,8 @@ func TestColAuto_Infer(t *testing.T) {
 		"Decimal64(2)",
 		"Decimal128(3)",
 		"Decimal256(4)",
+		"Array(Nullable(Int8))",
+		"Nullable(DateTime64(3))",
 	} {
 		r := AutoResult("foo")
 		require.NoError(t, r.Data.(Inferable).Infer(columnType))

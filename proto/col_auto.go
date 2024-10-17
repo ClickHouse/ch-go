@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -37,20 +38,8 @@ func (c *ColAuto) Infer(t ColumnType) error {
 	switch t {
 	case ColumnTypeNothing:
 		c.Data = new(ColNothing)
-	case ColumnTypeNullable.Sub(ColumnTypeNothing):
-		c.Data = new(ColNothing).Nullable()
-	case ColumnTypeArray.Sub(ColumnTypeNothing):
-		c.Data = new(ColNothing).Array()
 	case ColumnTypeString:
 		c.Data = new(ColStr)
-	case ColumnTypeArray.Sub(ColumnTypeString):
-		c.Data = new(ColStr).Array()
-	case ColumnTypeNullable.Sub(ColumnTypeString):
-		c.Data = new(ColStr).Nullable()
-	case ColumnTypeLowCardinality.Sub(ColumnTypeString):
-		c.Data = new(ColStr).LowCardinality()
-	case ColumnTypeArray.Sub(ColumnTypeLowCardinality.Sub(ColumnTypeString)):
-		c.Data = new(ColStr).LowCardinality().Array()
 	case ColumnTypeBool:
 		c.Data = new(ColBool)
 	case ColumnTypeDateTime:
@@ -61,12 +50,50 @@ func (c *ColAuto) Infer(t ColumnType) error {
 		c.Data = NewMap[string, string](new(ColStr), new(ColStr))
 	case ColumnTypeUUID:
 		c.Data = new(ColUUID)
-	case ColumnTypeArray.Sub(ColumnTypeUUID):
-		c.Data = new(ColUUID).Array()
-	case ColumnTypeNullable.Sub(ColumnTypeUUID):
-		c.Data = new(ColUUID).Nullable()
 	default:
 		switch t.Base() {
+		case ColumnTypeArray:
+			inner := new(ColAuto)
+			if err := inner.Infer(t.Elem()); err != nil {
+				return errors.Wrap(err, "array")
+			}
+			innerValue := reflect.ValueOf(inner.Data)
+			arrayMethod := innerValue.MethodByName("Array")
+			if arrayMethod.IsValid() && arrayMethod.Type().NumOut() == 1 {
+				if col, ok := arrayMethod.Call(nil)[0].Interface().(Column); ok {
+					c.Data = col
+					c.DataType = t
+					return nil
+				}
+			}
+		case ColumnTypeNullable:
+			inner := new(ColAuto)
+			if err := inner.Infer(t.Elem()); err != nil {
+				return errors.Wrap(err, "nullable")
+			}
+			innerValue := reflect.ValueOf(inner.Data)
+			nullableMethod := innerValue.MethodByName("Nullable")
+			if nullableMethod.IsValid() && nullableMethod.Type().NumOut() == 1 {
+				if col, ok := nullableMethod.Call(nil)[0].Interface().(Column); ok {
+					c.Data = col
+					c.DataType = t
+					return nil
+				}
+			}
+		case ColumnTypeLowCardinality:
+			inner := new(ColAuto)
+			if err := inner.Infer(t.Elem()); err != nil {
+				return errors.Wrap(err, "low cardinality")
+			}
+			innerValue := reflect.ValueOf(inner.Data)
+			lowCardinalityMethod := innerValue.MethodByName("LowCardinality")
+			if lowCardinalityMethod.IsValid() && lowCardinalityMethod.Type().NumOut() == 1 {
+				if col, ok := lowCardinalityMethod.Call(nil)[0].Interface().(Column); ok {
+					c.Data = col
+					c.DataType = t
+					return nil
+				}
+			}
 		case ColumnTypeDateTime:
 			v := new(ColDateTime)
 			if err := v.Infer(t); err != nil {
