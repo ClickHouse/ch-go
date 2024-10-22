@@ -21,6 +21,7 @@ type ColStr struct {
 
 // Append string to column.
 func (c *ColStr) Append(v string) {
+	c.Buf = binary.AppendUvarint(c.Buf, uint64(len(v)))
 	start := len(c.Buf)
 	c.Buf = append(c.Buf, v...)
 	end := len(c.Buf)
@@ -29,6 +30,7 @@ func (c *ColStr) Append(v string) {
 
 // AppendBytes append byte slice as string to column.
 func (c *ColStr) AppendBytes(v []byte) {
+	c.Buf = binary.AppendUvarint(c.Buf, uint64(len(v)))
 	start := len(c.Buf)
 	c.Buf = append(c.Buf, v...)
 	end := len(c.Buf)
@@ -68,26 +70,12 @@ func (c *ColStr) Reset() {
 
 // EncodeColumn encodes String rows to *Buffer.
 func (c ColStr) EncodeColumn(b *Buffer) {
-	buf := make([]byte, binary.MaxVarintLen64)
-	for _, p := range c.Pos {
-		n := binary.PutUvarint(buf, uint64(p.End-p.Start))
-		b.Buf = append(b.Buf, buf[:n]...)
-		b.Buf = append(b.Buf, c.Buf[p.Start:p.End]...)
-	}
+	b.Buf = append(b.Buf, c.Buf...)
 }
 
 // WriteColumn writes String rows to *Writer.
 func (c ColStr) WriteColumn(w *Writer) {
-	buf := make([]byte, binary.MaxVarintLen64)
-	// Writing values from c.Buf directly might improve performance if [ColStr] contains a few rows of very long strings.
-	// However, most of the time it is quite opposite, so we copy data.
-	w.ChainBuffer(func(b *Buffer) {
-		for _, p := range c.Pos {
-			n := binary.PutUvarint(buf, uint64(p.End-p.Start))
-			b.PutRaw(buf[:n])
-			b.PutRaw(c.Buf[p.Start:p.End])
-		}
-	})
+	w.ChainWrite(c.Buf)
 }
 
 // ForEach calls f on each string from column.
@@ -138,6 +126,11 @@ func (c *ColStr) DecodeColumn(r *Reader, rows int) error {
 		if err != nil {
 			return errors.Wrapf(err, "row %d: read length", i)
 		}
+
+		if len(c.Buf)-p.End < binary.MaxVarintLen64 {
+			c.Buf = append(c.Buf, make([]byte, binary.MaxVarintLen64)...)
+		}
+		p.End += binary.PutUvarint(c.Buf[p.End:], uint64(n))
 
 		p.Start = p.End
 		p.End += n
