@@ -127,9 +127,15 @@ func (c ColumnType) Conflicts(b ColumnType) bool {
 	if cBase == ColumnTypeDecimal || bBase == ColumnTypeDecimal {
 		return c.decimalDowncast() != b.decimalDowncast()
 	}
+
 	if cBase != bBase {
 		return true
 	}
+	switch cBase {
+	case ColumnTypeEnum8, ColumnTypeEnum16:
+		return false
+	}
+
 	if c.normalizeCommas() == b.normalizeCommas() {
 		return false
 	}

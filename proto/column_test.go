@@ -60,6 +60,8 @@ func TestColumnType_Elem(t *testing.T) {
 				{A: "Map(String,String)", B: "Map(String, String)"},
 				{A: "Enum8('increment' = 1, 'gauge' = 2)", B: "Int8"},
 				{A: "Int8", B: "Enum8('increment' = 1, 'gauge' = 2)"},
+				{A: "Enum8('increment' = 1, 'gauge' = 2)", B: "Enum8"},
+				{A: "Enum8", B: "Enum8('increment' = 1, 'gauge' = 2)"},
 				{A: "Decimal256", B: "Decimal(76, 38)"},
 				{A: "Nullable(Decimal256)", B: "Nullable(Decimal(76, 38))"},
 			} {
