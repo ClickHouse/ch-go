@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/jackc/puddle/v2 v2.2.2
 	github.com/klauspost/compress v1.17.11
-	github.com/pierrec/lz4/v4 v4.1.21
+	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/segmentio/asm v1.2.0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.32.0
