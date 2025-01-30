@@ -23,5 +23,7 @@ func TestDial_Exception(t *testing.T) {
 	var e *Exception
 	require.Nil(t, client)
 	require.ErrorAs(t, err, &e)
-	require.True(t, IsErr(err, proto.ErrAuthenticationFailed))
+	require.Truef(t, IsErr(err, proto.ErrAuthenticationFailed),
+		"expected %v, got %v", proto.ErrAuthenticationFailed, err,
+	)
 }
