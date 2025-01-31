@@ -23,6 +23,7 @@ func main() {
     ts                DateTime64(9),
     severity_text     Enum8('INFO'=1, 'DEBUG'=2),
     severity_number   UInt8,
+	service_name      LowCardinality(String),
     body              String,
     name              String,
     arr               Array(String)
@@ -38,9 +39,11 @@ func main() {
 		sevText   proto.ColEnum
 		sevNumber proto.ColUInt8
 
-		ts  = new(proto.ColDateTime64).WithPrecision(proto.PrecisionNano) // DateTime64(9)
-		arr = new(proto.ColStr).Array()                                   // Array(String)
-		now = time.Date(2010, 1, 1, 10, 22, 33, 345678, time.UTC)
+		// or new(proto.ColStr).LowCardinality()
+		serviceName = proto.NewLowCardinality(new(proto.ColStr))
+		ts          = new(proto.ColDateTime64).WithPrecision(proto.PrecisionNano) // DateTime64(9)
+		arr         = new(proto.ColStr).Array()                                   // Array(String)
+		now         = time.Date(2010, 1, 1, 10, 22, 33, 345678, time.UTC)
 	)
 
 	// Append 10 rows to initial data block.
@@ -51,6 +54,7 @@ func main() {
 		sevText.Append("INFO")
 		sevNumber.Append(10)
 		arr.Append([]string{"foo", "bar", "baz"})
+		serviceName.Append("service")
 	}
 
 	// Insert single data block.
@@ -58,6 +62,7 @@ func main() {
 		{Name: "ts", Data: ts},
 		{Name: "severity_text", Data: &sevText},
 		{Name: "severity_number", Data: &sevNumber},
+		{Name: "service_name", Data: serviceName},
 		{Name: "body", Data: &body},
 		{Name: "name", Data: &name},
 		{Name: "arr", Data: arr},
@@ -106,6 +111,7 @@ func main() {
 				sevText.Append("DEBUG")
 				sevNumber.Append(10)
 				arr.Append([]string{"foo", "bar", "baz"})
+				serviceName.Append("service")
 			}
 
 			// Data will be encoded and sent to ClickHouse server after returning nil.
