@@ -10,21 +10,21 @@ const JSONStringSerializationVersion uint64 = 1
 //
 // Use ColJSONBytes for []bytes ColumnOf implementation.
 type ColJSONStr struct {
-	str ColStr
+	Str ColStr
 }
 
 // Append string to column.
 func (c *ColJSONStr) Append(v string) {
-	c.str.Append(v)
+	c.Str.Append(v)
 }
 
 // AppendBytes append byte slice as string to column.
 func (c *ColJSONStr) AppendBytes(v []byte) {
-	c.str.AppendBytes(v)
+	c.Str.AppendBytes(v)
 }
 
 func (c *ColJSONStr) AppendArr(v []string) {
-	c.str.AppendArr(v)
+	c.Str.AppendArr(v)
 }
 
 // Compile-time assertions for ColJSONStr.
@@ -43,19 +43,19 @@ func (ColJSONStr) Type() ColumnType {
 
 // Rows returns count of rows in column.
 func (c ColJSONStr) Rows() int {
-	return c.str.Rows()
+	return c.Str.Rows()
 }
 
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColJSONStr) Reset() {
-	c.str.Reset()
+	c.Str.Reset()
 }
 
 // EncodeColumn encodes String rows to *Buffer.
 func (c ColJSONStr) EncodeColumn(b *Buffer) {
 	b.PutUInt64(JSONStringSerializationVersion)
 
-	c.str.EncodeColumn(b)
+	c.Str.EncodeColumn(b)
 }
 
 // WriteColumn writes JSON rows to *Writer.
@@ -64,32 +64,32 @@ func (c ColJSONStr) WriteColumn(w *Writer) {
 		b.PutUInt64(JSONStringSerializationVersion)
 	})
 
-	c.str.WriteColumn(w)
+	c.Str.WriteColumn(w)
 }
 
 // ForEach calls f on each string from column.
 func (c ColJSONStr) ForEach(f func(i int, s string) error) error {
-	return c.str.ForEach(f)
+	return c.Str.ForEach(f)
 }
 
 // First returns the first row of the column.
 func (c ColJSONStr) First() string {
-	return c.str.First()
+	return c.Str.First()
 }
 
 // Row returns row with number i.
 func (c ColJSONStr) Row(i int) string {
-	return c.str.Row(i)
+	return c.Str.Row(i)
 }
 
 // RowBytes returns row with number i as byte slice.
 func (c ColJSONStr) RowBytes(i int) []byte {
-	return c.str.RowBytes(i)
+	return c.Str.RowBytes(i)
 }
 
 // ForEachBytes calls f on each string from column as byte slice.
 func (c ColJSONStr) ForEachBytes(f func(i int, b []byte) error) error {
-	return c.str.ForEachBytes(f)
+	return c.Str.ForEachBytes(f)
 }
 
 // DecodeColumn decodes String rows from *Reader.
@@ -103,22 +103,22 @@ func (c *ColJSONStr) DecodeColumn(r *Reader, rows int) error {
 		return errors.Errorf("received invalid JSON string serialization version %d. Setting \"output_format_native_write_json_as_string\" must be enabled.", jsonSerializationVersion)
 	}
 
-	return c.str.DecodeColumn(r, rows)
+	return c.Str.DecodeColumn(r, rows)
 }
 
 // LowCardinality returns LowCardinality(JSON).
 func (c *ColJSONStr) LowCardinality() *ColLowCardinality[string] {
-	return c.str.LowCardinality()
+	return c.Str.LowCardinality()
 }
 
 // Array is helper that creates Array(JSON).
 func (c *ColJSONStr) Array() *ColArr[string] {
-	return c.str.Array()
+	return c.Str.Array()
 }
 
 // Nullable is helper that creates Nullable(JSON).
 func (c *ColJSONStr) Nullable() *ColNullable[string] {
-	return c.str.Nullable()
+	return c.Str.Nullable()
 }
 
 // ColJSONBytes is ColJSONStr wrapper to be ColumnOf for []byte.
