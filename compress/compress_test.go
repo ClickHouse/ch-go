@@ -90,6 +90,13 @@ func TestCompressWithMethod(t *testing.T) {
 
 			// Using none should also work
 			require.NoError(t, w.Compress(None, data))
+
+			// Using a different method should fail.
+			nextMethod := Method((int(m) + 1) % NumMethods)
+			if nextMethod == None {
+				nextMethod = LZ4
+			}
+			require.Errorf(t, w.Compress(nextMethod, data), "writer was not configured to accept method: %s", nextMethod.String())
 		})
 	}
 

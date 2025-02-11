@@ -20,13 +20,18 @@ const (
 type Writer struct {
 	Data []byte
 
-	lz4   *lz4.Compressor
-	lz4hc *lz4.CompressorHC
-	zstd  *zstd.Encoder
+	methods [NumMethods]bool // methods supported by this writer
+	lz4     *lz4.Compressor
+	lz4hc   *lz4.CompressorHC
+	zstd    *zstd.Encoder
 }
 
 // Compress buf into Data.
 func (w *Writer) Compress(m Method, buf []byte) error {
+	if !w.methods[m] {
+		return errors.Errorf("writer was not configured to accept method: %s", m.String())
+	}
+
 	maxSize := lz4.CompressBlockBound(len(buf))
 	w.Data = append(w.Data[:0], make([]byte, maxSize+headerSize)...)
 	_ = w.Data[:headerSize]
@@ -36,27 +41,18 @@ func (w *Writer) Compress(m Method, buf []byte) error {
 
 	switch m {
 	case LZ4:
-		if w.lz4 == nil {
-			return errors.Errorf("writer was not configured to accept method: %s", m.String())
-		}
 		compressedSize, err := w.lz4.CompressBlock(buf, w.Data[headerSize:])
 		if err != nil {
 			return errors.Wrap(err, "block")
 		}
 		n = compressedSize
 	case LZ4HC:
-		if w.lz4hc == nil {
-			return errors.Errorf("writer was not configured to accept method: %s", m.String())
-		}
 		compressedSize, err := w.lz4hc.CompressBlock(buf, w.Data[headerSize:])
 		if err != nil {
 			return errors.Wrap(err, "block")
 		}
 		n = compressedSize
 	case ZSTD:
-		if w.zstd == nil {
-			return errors.Errorf("writer was not configured to accept method: %s", m.String())
-		}
 		w.Data = w.zstd.EncodeAll(buf, w.Data[:headerSize])
 		n = len(w.Data) - headerSize
 	case None:
@@ -76,7 +72,15 @@ func (w *Writer) Compress(m Method, buf []byte) error {
 
 // NewWriterWithMethods creates a new Writer with the specified compression level that supports only the specified methods.
 func NewWriterWithMethods(l Level, m ...Method) *Writer {
-	w := &Writer{}
+	var methods [NumMethods]bool
+	methods[None] = true // None is always supported
+	for _, method := range m {
+		methods[method] = true
+	}
+
+	w := &Writer{
+		methods: methods,
+	}
 
 	for _, method := range m {
 		switch method {
