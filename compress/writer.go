@@ -108,7 +108,7 @@ func NewWriterWithMethods(l Level, m ...Method) *Writer {
 		case None:
 			// Nothing to initialize.
 		default:
-			panic(fmt.Sprintf("unsupported compression method: %v", method.String()))
+			panic(fmt.Sprintf("unsupported compression method: %s", method.String()))
 		}
 	}
 
