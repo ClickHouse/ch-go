@@ -2,7 +2,6 @@ package compress
 
 import (
 	"encoding/binary"
-	"fmt"
 	"math"
 
 	"github.com/go-faster/city"
@@ -78,41 +77,43 @@ func NewWriterWithMethods(l Level, m ...Method) *Writer {
 		methods[method] = true
 	}
 
-	w := &Writer{
-		methods: methods,
-	}
+	var err error
+	var zstdWriter *zstd.Encoder
+	var lz4Writer *lz4.Compressor
+	var lz4hcWriter *lz4.CompressorHC
 
-	for _, method := range m {
-		switch method {
-		case LZ4:
-			w.lz4 = &lz4.Compressor{}
-		case LZ4HC:
-			// handle level for LZ4HC
-			levelLZ4HC := l
-			if levelLZ4HC == 0 {
-				levelLZ4HC = CompressionLevelLZ4HCDefault
-			} else {
-				levelLZ4HC = Level(math.Min(float64(levelLZ4HC), float64(CompressionLevelLZ4HCMax)))
-			}
-			w.lz4hc = &lz4.CompressorHC{Level: lz4.CompressionLevel(1 << (8 + levelLZ4HC))}
-		case ZSTD:
-			var err error
-			w.zstd, err = zstd.NewWriter(nil,
-				zstd.WithEncoderLevel(zstd.SpeedDefault),
-				zstd.WithEncoderConcurrency(1),
-				zstd.WithLowerEncoderMem(true),
-			)
-			if err != nil {
-				panic(err)
-			}
-		case None:
-			// Nothing to initialize.
-		default:
-			panic(fmt.Sprintf("unsupported compression method: %s", method.String()))
+	if methods[ZSTD] {
+		zstdWriter, err = zstd.NewWriter(nil,
+			zstd.WithEncoderLevel(zstd.SpeedDefault),
+			zstd.WithEncoderConcurrency(1),
+			zstd.WithLowerEncoderMem(true),
+		)
+		if err != nil {
+			panic(err)
 		}
 	}
 
-	return w
+	if methods[LZ4] {
+		lz4Writer = &lz4.Compressor{}
+	}
+
+	if methods[LZ4HC] {
+		// handle level for LZ4HC
+		levelLZ4HC := l
+		if levelLZ4HC == 0 {
+			levelLZ4HC = CompressionLevelLZ4HCDefault
+		} else {
+			levelLZ4HC = Level(math.Min(float64(levelLZ4HC), float64(CompressionLevelLZ4HCMax)))
+		}
+		lz4hcWriter = &lz4.CompressorHC{Level: lz4.CompressionLevel(1 << (8 + levelLZ4HC))}
+	}
+
+	return &Writer{
+		methods: methods,
+		lz4:     lz4Writer,
+		lz4hc:   lz4hcWriter,
+		zstd:    zstdWriter,
+	}
 }
 
 // NewWriterWithLevel creates a new Writer with the specified compression level that supports all methods.
