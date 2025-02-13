@@ -28,8 +28,8 @@ func TestCompress(t *testing.T) {
 	for i := range MethodValues() {
 		m := MethodValues()[i]
 		t.Run(m.String(), func(t *testing.T) {
-			w := NewWriter()
-			require.NoError(t, w.Compress(m, data))
+			w := NewWriter(LevelZero, m)
+			require.NoError(t, w.Compress(data))
 
 			gold.Bytes(t, w.Data, "data_compressed_"+strings.ToLower(m.String()))
 
@@ -77,39 +77,6 @@ func TestCompress(t *testing.T) {
 	}
 }
 
-func TestCompressWithMethod(t *testing.T) {
-	data := []byte(strings.Repeat("Hello!\n", 25))
-	gold.Bytes(t, data, "data_raw")
-
-	for i := range MethodValues() {
-		m := MethodValues()[i]
-		t.Run(m.String(), func(t *testing.T) {
-			// Create a writer that only supports this method.
-			w := NewWriterWithMethods(0, m)
-			require.NoError(t, w.Compress(m, data))
-
-			// Using none should also work
-			require.NoError(t, w.Compress(None, data))
-
-			// Using a different method should fail.
-			nextMethod := Method((int(m) + 1) % NumMethods)
-			if nextMethod == None {
-				nextMethod = LZ4
-			}
-			require.Errorf(t, w.Compress(nextMethod, data), "writer was not configured to accept method: %s", nextMethod.String())
-		})
-	}
-
-	// Create a writer that only supports 2 methods.
-	t.Run("LZ4+ZSTD", func(t *testing.T) {
-		w := NewWriterWithMethods(0, LZ4, ZSTD)
-		require.NoError(t, w.Compress(None, data), "none method should always be accepted")
-		require.NoError(t, w.Compress(ZSTD, data))
-		require.NoError(t, w.Compress(LZ4, data))
-		require.Errorf(t, w.Compress(LZ4HC, data), "writer was not configured to accept method: LZ4HC")
-	})
-}
-
 func BenchmarkWriter_Compress(b *testing.B) {
 	// Highly compressible data.
 	data := bytes.Repeat([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, 1800)
@@ -120,15 +87,16 @@ func BenchmarkWriter_Compress(b *testing.B) {
 			b.ReportAllocs()
 			b.SetBytes(int64(len(data)))
 
-			w := NewWriter()
+			w := NewWriter(LevelZero, m)
 
 			// First round to warmup.
-			if err := w.Compress(m, data); err != nil {
+			if err := w.Compress(data); err != nil {
 				b.Fatal(err)
 			}
 
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				if err := w.Compress(m, data); err != nil {
+				if err := w.Compress(data); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -153,8 +121,8 @@ func BenchmarkReader_Read(b *testing.B) {
 	for i := range MethodValues() {
 		m := MethodValues()[i]
 		b.Run(m.String(), func(b *testing.B) {
-			w := NewWriter()
-			if err := w.Compress(m, data); err != nil {
+			w := NewWriter(LevelZero, m)
+			if err := w.Compress(data); err != nil {
 				b.Fatal(err)
 			}
 			b.ReportAllocs()

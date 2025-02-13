@@ -253,7 +253,7 @@ func (s *Server) handle(conn net.Conn) error {
 			Revision: s.ver,
 		},
 		tz:         time.UTC,
-		compressor: compress.NewWriter(),
+		compressor: compress.NewWriter(compress.LevelZero, compress.None),
 	}
 	return sConn.Handle()
 }

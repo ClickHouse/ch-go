@@ -315,7 +315,7 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 			// See "Compressible" method of server or client code for reference.
 			if c.compression == proto.CompressionEnabled {
 				data := buf.Buf[start:]
-				if err := c.compressor.Compress(c.compressionMethod, data); err != nil {
+				if err := c.compressor.Compress(data); err != nil {
 					rerr = errors.Wrap(err, "compress")
 					return
 				}

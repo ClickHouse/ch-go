@@ -11,34 +11,32 @@ import (
 )
 
 const (
-	CompressionLevelLZ4HCDefault Level = 9
-	CompressionLevelLZ4HCMax     Level = 12
+	LevelZero         Level = 0
+	LevelLZ4HCDefault Level = 9
+	LevelLZ4HCMax     Level = 12
 )
 
 // Writer encodes compressed blocks.
 type Writer struct {
 	Data []byte
 
-	methods [NumMethods]bool // methods supported by this writer
-	lz4     *lz4.Compressor
-	lz4hc   *lz4.CompressorHC
-	zstd    *zstd.Encoder
+	method Method
+
+	lz4   *lz4.Compressor
+	lz4hc *lz4.CompressorHC
+	zstd  *zstd.Encoder
 }
 
 // Compress buf into Data.
-func (w *Writer) Compress(m Method, buf []byte) error {
-	if !w.methods[m] {
-		return errors.Errorf("writer was not configured to accept method: %s", m.String())
-	}
-
+func (w *Writer) Compress(buf []byte) error {
 	maxSize := lz4.CompressBlockBound(len(buf))
 	w.Data = append(w.Data[:0], make([]byte, maxSize+headerSize)...)
 	_ = w.Data[:headerSize]
-	w.Data[hMethod] = byte(methodTable[m])
+	w.Data[hMethod] = byte(methodTable[w.method])
 
 	var n int
 
-	switch m {
+	switch w.method {
 	case LZ4:
 		compressedSize, err := w.lz4.CompressBlock(buf, w.Data[headerSize:])
 		if err != nil {
@@ -69,20 +67,25 @@ func (w *Writer) Compress(m Method, buf []byte) error {
 	return nil
 }
 
-// NewWriterWithMethods creates a new Writer with the specified compression level that supports only the specified methods.
-func NewWriterWithMethods(l Level, m ...Method) *Writer {
-	var methods [NumMethods]bool
-	methods[None] = true // None is always supported
-	for _, method := range m {
-		methods[method] = true
-	}
-
+// NewWriter creates a new Writer with the specified compression level that supports the specified method.
+func NewWriter(l Level, m Method) *Writer {
 	var err error
 	var zstdWriter *zstd.Encoder
 	var lz4Writer *lz4.Compressor
 	var lz4hcWriter *lz4.CompressorHC
 
-	if methods[ZSTD] {
+	switch m {
+	case LZ4:
+		lz4Writer = &lz4.Compressor{}
+	case LZ4HC:
+		levelLZ4HC := l
+		if levelLZ4HC == 0 {
+			levelLZ4HC = LevelLZ4HCDefault
+		} else {
+			levelLZ4HC = Level(math.Min(float64(levelLZ4HC), float64(LevelLZ4HCMax)))
+		}
+		lz4hcWriter = &lz4.CompressorHC{Level: lz4.CompressionLevel(1 << (8 + levelLZ4HC))}
+	case ZSTD:
 		zstdWriter, err = zstd.NewWriter(nil,
 			zstd.WithEncoderLevel(zstd.SpeedDefault),
 			zstd.WithEncoderConcurrency(1),
@@ -91,37 +94,13 @@ func NewWriterWithMethods(l Level, m ...Method) *Writer {
 		if err != nil {
 			panic(err)
 		}
-	}
-
-	if methods[LZ4] {
-		lz4Writer = &lz4.Compressor{}
-	}
-
-	if methods[LZ4HC] {
-		// handle level for LZ4HC
-		levelLZ4HC := l
-		if levelLZ4HC == 0 {
-			levelLZ4HC = CompressionLevelLZ4HCDefault
-		} else {
-			levelLZ4HC = Level(math.Min(float64(levelLZ4HC), float64(CompressionLevelLZ4HCMax)))
-		}
-		lz4hcWriter = &lz4.CompressorHC{Level: lz4.CompressionLevel(1 << (8 + levelLZ4HC))}
+	default:
 	}
 
 	return &Writer{
-		methods: methods,
-		lz4:     lz4Writer,
-		lz4hc:   lz4hcWriter,
-		zstd:    zstdWriter,
+		method: m,
+		lz4:    lz4Writer,
+		lz4hc:  lz4hcWriter,
+		zstd:   zstdWriter,
 	}
-}
-
-// NewWriterWithLevel creates a new Writer with the specified compression level that supports all methods.
-func NewWriterWithLevel(l Level) *Writer {
-	return NewWriterWithMethods(l, MethodValues()...)
-}
-
-// NewWriter creates a new Writer with compression level 0 that supports all methods.
-func NewWriter() *Writer {
-	return NewWriterWithLevel(0)
 }
