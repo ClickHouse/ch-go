@@ -58,8 +58,13 @@ func (w *Writer) Compress(m Method, buf []byte) error {
 		n = copy(w.Data[headerSize:], buf)
 	}
 
-	w.Data = w.Data[:n+headerSize]
+	if n+headerSize > cap(w.Data) {
+		return errors.New("compressed data exceeds allocated buffer capacity")
+	} else if uint64(n)+uint64(compressHeaderSize) > math.MaxUint32 {
+		return errors.New("compressed size overflows uint32")
+	}
 
+	w.Data = w.Data[:n+headerSize]
 	binary.LittleEndian.PutUint32(w.Data[hRawSize:], uint32(n+compressHeaderSize))
 	binary.LittleEndian.PutUint32(w.Data[hDataSize:], uint32(len(buf)))
 	h := city.CH128(w.Data[hMethod:])
