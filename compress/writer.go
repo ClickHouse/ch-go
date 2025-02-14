@@ -58,9 +58,8 @@ func (w *Writer) Compress(m Method, buf []byte) error {
 		n = copy(w.Data[headerSize:], buf)
 	}
 
-	if n+headerSize > cap(w.Data) {
-		return errors.New("compressed data exceeds allocated buffer capacity")
-	} else if uint64(n)+uint64(compressHeaderSize) > math.MaxUint32 {
+	// security: https://github.com/ClickHouse/ch-go/pull/1041
+	if uint64(n)+uint64(compressHeaderSize) > math.MaxUint32 {
 		return errors.New("compressed size overflows uint32")
 	}
 
