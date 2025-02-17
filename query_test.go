@@ -967,6 +967,92 @@ func TestClient_Query(t *testing.T) {
 			},
 		}), "select table")
 	})
+	t.Run("InsertJSONStr", func(t *testing.T) {
+		t.Parallel()
+		conn := ConnOpt(t, Options{
+			Settings: []Setting{
+				{Key: "enable_json_type", Value: "1"},
+				{Key: "output_format_native_write_json_as_string", Value: "1"},
+				{Key: "output_format_json_quote_64bit_integers", Value: "0"},
+			},
+		})
+		SkipNoFeature(t, conn, proto.FeatureJSONStrings)
+
+		createTable := Query{
+			Body: "CREATE TABLE json_test_table (c JSON) ENGINE = MergeTree ORDER BY tuple()",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		data := proto.ColJSONStr{}
+		data.Append("{\"x\":5}")
+
+		insertQuery := Query{
+			Body: "INSERT INTO json_test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "c", Data: &data},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		t.Run("Read", func(t *testing.T) {
+			// Select single JSON row.
+			var data proto.ColJSONStr
+			require.NoError(t, conn.Do(ctx, Query{
+				Body: "SELECT '{\"x\":5}'::JSON AS j",
+				Result: proto.Results{
+					{
+						Name: "j",
+						Data: &data,
+					},
+				},
+			}))
+			require.Equal(t, 1, data.Rows())
+			require.Equal(t, "{\"x\":5}", data.First())
+		})
+	})
+	t.Run("InsertArrayJSONStr", func(t *testing.T) {
+		t.Parallel()
+		conn := ConnOpt(t, Options{
+			Settings: []Setting{
+				{Key: "enable_json_type", Value: "1"},
+				{Key: "output_format_native_write_json_as_string", Value: "1"},
+				{Key: "output_format_json_quote_64bit_integers", Value: "0"},
+			},
+		})
+		SkipNoFeature(t, conn, proto.FeatureJSONStrings)
+
+		createTable := Query{
+			Body: "CREATE TABLE json_test_table (c Array(JSON)) ENGINE = MergeTree ORDER BY tuple()",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		data := proto.NewArray[string](&proto.ColJSONStr{})
+		data.Append([]string{"{\"x\":5}", "{\"y\":6}"})
+
+		insertQuery := Query{
+			Body: "INSERT INTO json_test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "c", Data: data},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		t.Run("Read", func(t *testing.T) {
+			// Select single Array(JSON) row.
+			data := proto.NewArray[string](&proto.ColJSONStr{})
+			require.NoError(t, conn.Do(ctx, Query{
+				Body: "SELECT ['{\"x\":5}', '{\"y\":6}']::Array(JSON) AS j",
+				Result: proto.Results{
+					{
+						Name: "j",
+						Data: data,
+					},
+				},
+			}))
+			require.Equal(t, 1, data.Rows())
+			require.Equal(t, []string{"{\"x\":5}", "{\"y\":6}"}, data.Row(0))
+		})
+	})
 }
 
 func TestClientCompression(t *testing.T) {
