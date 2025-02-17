@@ -973,7 +973,6 @@ func TestClient_Query(t *testing.T) {
 			Settings: []Setting{
 				{Key: "enable_json_type", Value: "1"},
 				{Key: "output_format_native_write_json_as_string", Value: "1"},
-				{Key: "output_format_json_quote_64bit_integers", Value: "0"},
 			},
 		})
 		SkipNoFeature(t, conn, proto.FeatureJSONStrings)
@@ -984,7 +983,7 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.ColJSONStr{}
-		data.Append("{\"x\":5}")
+		data.Append(`{"x":"test1"}`)
 
 		insertQuery := Query{
 			Body: "INSERT INTO json_test_table VALUES",
@@ -998,7 +997,7 @@ func TestClient_Query(t *testing.T) {
 			// Select single JSON row.
 			var data proto.ColJSONStr
 			require.NoError(t, conn.Do(ctx, Query{
-				Body: "SELECT '{\"x\":5}'::JSON AS j",
+				Body: `SELECT '{"x":"test1"}'::JSON AS j`,
 				Result: proto.Results{
 					{
 						Name: "j",
@@ -1007,7 +1006,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			}))
 			require.Equal(t, 1, data.Rows())
-			require.Equal(t, "{\"x\":5}", data.First())
+			require.Equal(t, `{"x":"test1"}`, data.First())
 		})
 	})
 	t.Run("InsertArrayJSONStr", func(t *testing.T) {
@@ -1016,7 +1015,6 @@ func TestClient_Query(t *testing.T) {
 			Settings: []Setting{
 				{Key: "enable_json_type", Value: "1"},
 				{Key: "output_format_native_write_json_as_string", Value: "1"},
-				{Key: "output_format_json_quote_64bit_integers", Value: "0"},
 			},
 		})
 		SkipNoFeature(t, conn, proto.FeatureJSONStrings)
@@ -1027,7 +1025,7 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
 		data := proto.NewArray[string](&proto.ColJSONStr{})
-		data.Append([]string{"{\"x\":5}", "{\"y\":6}"})
+		data.Append([]string{`{"x":"test1"}`, `{"y":"test2"}`})
 
 		insertQuery := Query{
 			Body: "INSERT INTO json_test_table VALUES",
@@ -1041,7 +1039,7 @@ func TestClient_Query(t *testing.T) {
 			// Select single Array(JSON) row.
 			data := proto.NewArray[string](&proto.ColJSONStr{})
 			require.NoError(t, conn.Do(ctx, Query{
-				Body: "SELECT ['{\"x\":5}', '{\"y\":6}']::Array(JSON) AS j",
+				Body: `SELECT ['{"x":"test1"}', '{"y":"test2"}']::Array(JSON) AS j`,
 				Result: proto.Results{
 					{
 						Name: "j",
@@ -1050,7 +1048,7 @@ func TestClient_Query(t *testing.T) {
 				},
 			}))
 			require.Equal(t, 1, data.Rows())
-			require.Equal(t, []string{"{\"x\":5}", "{\"y\":6}"}, data.Row(0))
+			require.Equal(t, []string{`{"x":"test1"}`, `{"y":"test2"}`}, data.Row(0))
 		})
 	})
 }
