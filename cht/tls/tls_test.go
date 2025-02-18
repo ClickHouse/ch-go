@@ -36,14 +36,16 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/ClickHouse/ch-go"
-	"github.com/ClickHouse/ch-go/chpool"
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/ClickHouse/ch-go"
+	"github.com/ClickHouse/ch-go/chpool"
 )
 
 func TestMutualTLS(t *testing.T) {
@@ -51,7 +53,10 @@ func TestMutualTLS(t *testing.T) {
 		t.Skip("Not configured to run TLS tests")
 	}
 
-	_, b, _, _ := runtime.Caller(0)
+	_, b, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller ok false")
+	}
 	testDir := filepath.Join(filepath.Dir(b), ".")
 
 	certTxt, err := os.ReadFile(testDir + "/clickhouse_test_client.crt")
@@ -96,5 +101,4 @@ func TestMutualTLS(t *testing.T) {
 	require.NoError(t, pool.Ping(context.Background()))
 
 	pool.Close()
-
 }
