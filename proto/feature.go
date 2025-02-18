@@ -32,7 +32,7 @@ const (
 	FeatureAddendum                    Feature = 54458
 	FeatureParameters                  Feature = 54459
 	FeatureServerQueryTimeInProgress   Feature = 54460
-	FeatureJSONStrings                 Feature = 54473
+	FeatureJSONStrings                 Feature = 54475
 )
 
 // Version reports protocol version when Feature was introduced.
