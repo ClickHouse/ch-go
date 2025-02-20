@@ -5,10 +5,10 @@ import (
 	"io"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-faster/errors"
-	"go.uber.org/atomic"
 	"go.uber.org/zap"
 
 	"github.com/ClickHouse/ch-go/compress"
@@ -236,7 +236,7 @@ func (c *ServerConn) Handle() error {
 
 func (s *Server) handle(conn net.Conn) error {
 	lg := s.lg.With(
-		zap.Uint64("conn", s.conn.Inc()),
+		zap.Uint64("conn", s.conn.Add(1)),
 	)
 	lg.Info("Connected",
 		zap.String("addr", conn.RemoteAddr().String()),
