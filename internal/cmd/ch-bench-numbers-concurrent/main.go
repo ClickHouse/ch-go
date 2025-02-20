@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"os"
 	"runtime/pprof"
+	"sync/atomic"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/go-faster/errors"
-	"go.uber.org/atomic"
 	"go.uber.org/multierr"
 	"golang.org/x/sync/errgroup"
 
