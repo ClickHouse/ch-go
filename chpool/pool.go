@@ -18,6 +18,7 @@ type Pool struct {
 
 	closeOnce sync.Once
 	closeChan chan struct{}
+	wg        sync.WaitGroup
 }
 
 // Options for Pool.
@@ -107,6 +108,7 @@ func newPool(ctx context.Context, opt Options, dial bool) (*Pool, error) {
 		res.Release()
 	}
 
+	p.wg.Add(1)
 	go p.backgroundHealthCheck()
 
 	return p, nil
@@ -143,8 +145,8 @@ func (p *Pool) Ping(ctx context.Context) error {
 }
 
 func (p *Pool) backgroundHealthCheck() {
+	defer p.wg.Done()
 	ticker := time.NewTicker(p.options.HealthCheckPeriod)
-
 	for {
 		select {
 		case <-p.closeChan:
@@ -202,6 +204,7 @@ func (p *Pool) Stat() *puddle.Stat {
 func (p *Pool) Close() {
 	p.closeOnce.Do(func() {
 		close(p.closeChan)
+		p.wg.Wait()
 		p.pool.Close()
 	})
 }
