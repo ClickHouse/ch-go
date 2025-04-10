@@ -39,6 +39,19 @@ func (c *Client) Ping(ctx context.Context) error {
 	return c.client().Ping(ctx)
 }
 
+func (c *Client) Close() error {
+	var err error
+
+	client := c.client()
+	if !client.IsClosed() {
+		err = client.Close()
+	}
+
+	c.res.Destroy()
+
+	return err
+}
+
 func (c *Client) client() *ch.Client {
 	return c.res.Value().client
 }
