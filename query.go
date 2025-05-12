@@ -634,6 +634,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 				semconv.DBStatementKey.String(q.Body),
 				semconv.DBUserKey.String(c.info.User),
 				semconv.DBNameKey.String(c.info.Database),
+				semconv.NetPeerIPKey.String(c.conn.RemoteAddr().String()),
 				otelch.ProtocolVersion(c.protocolVersion),
 				otelch.QuotaKey(q.QuotaKey),
 				otelch.QueryID(q.QueryID),
