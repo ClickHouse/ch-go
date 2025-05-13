@@ -23,7 +23,7 @@ type staticAware struct {
 }
 
 func (s staticAware) Decode(r *Reader) error {
-	return s.AwareDecoder.DecodeAware(r, Version)
+	return s.DecodeAware(r, Version)
 }
 
 func aware(v AwareDecoder) Decoder {
