@@ -1,137 +1,125 @@
-linters-settings:
-  gosec:
-    excludes:
-      - G115 # Annoying and have a lot of false-positive results.
-  govet:
-    enable:
-      - shadow
-  gocyclo:
-    min-complexity: 15
-  dupl:
-    threshold: 120
-  goconst:
-    min-len: 2
-    min-occurrences: 3
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  goimports:
-    local-prefixes: github.com/ClickHouse/ch-go
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - hugeParam
-      - rangeValCopy
-      - exitAfterDefer
-      - whyNoLint
-      - singleCaseSwitch
-      - commentedOutCode
-      - appendAssign
-      - unnecessaryBlock
-      - redundantSprint
-      - octalLiteral
-      - ifElseChain
-  revive:
-    rules:
-      - name: unused-parameter
-        disabled: true
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - dogsled
     - errcheck
     - goconst
     - gocritic
-    - gofmt
-    - goimports
-    - revive
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - misspell
     - nakedret
+    - revive
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
     - whitespace
-
-  # Do not enable:
-  # - wsl       (too opinionated about newlines)
-  # - godox     (todos are OK)
-  # - bodyclose (false positives on helper functions)
-  # - prealloc  (not worth it in scope of this project)
-  # - maligned  (same as prealloc)
-  # - funlen    (gocyclo is enough)
-  # - gochecknoglobals (we know when it is ok to use globals)
-  # - depguard  (broken)
-
-issues:
-  exclude-use-default: false
-  exclude-rules:
-    # Document when API is stable
-    - text: "should have comment"
-      linters: [revive]
-
-    # Disable linters that are annoying in tests.
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-        - funlen
-        - goconst
-        - gocognit
-        - scopelint
-        - lll
-
-    # Disable linters that are not needed for testing infra.
-    - path: internal/cht
-      linters: [gosec]
-
-    - path: _test\.go
-      text: "Combine"
-      linters: [gocritic]
-
-    # Check that equal to self is true
-    - linters: [gocritic]
-      source: "(assert|require).+Equal"
-      text: "dupArg"
-      path: _test\.go
-
-    # Ignore shadowing of err.
-    - linters: [govet]
-      text: 'declaration of "(err|ctx|log|lg|c)"'
-
-    # Probably some broken linter for generics?
-    - linters: [revive]
-      text: 'receiver-naming: receiver name \S+ should be consistent with previous receiver name \S+ for invalid-type'
-
-    # Ignore linters in main packages.
-    - path: main\.go
-      linters: [goconst, funlen, gocognit, gocyclo]
-
-    - path: main\.go
-      linters: [gosec]
-      text: "G307"
-
-    - source: 'func Fuzz.+\(f \*testing\.F\)'
-      linters: [stylecheck]
-      text: "ST1003" # underscores lol
-
-    - path: (internal|cmd)
-      linters: [revive]
-      text: "package-comments"
-
-    - linters: [revive]
-      text: "comment on exported const .+ should be of the form"
+  settings:
+    dupl:
+      threshold: 120
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    gocritic:
+      disabled-checks:
+        - hugeParam
+        - rangeValCopy
+        - exitAfterDefer
+        - whyNoLint
+        - singleCaseSwitch
+        - commentedOutCode
+        - appendAssign
+        - unnecessaryBlock
+        - redundantSprint
+        - octalLiteral
+        - ifElseChain
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 15
+    gosec:
+      excludes:
+        - G115
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: unused-parameter
+          disabled: true
+  exclusions:
+    generated: strict
+    rules:
+      - linters:
+          - revive
+        text: should have comment
+      - linters:
+          - dupl
+          - errcheck
+          - funlen
+          - gocognit
+          - goconst
+          - gocyclo
+          - gosec
+          - lll
+          - scopelint
+        path: _test\.go
+      - linters:
+          - gosec
+        path: internal/cht
+      - linters:
+          - gocritic
+        path: _test\.go
+        text: Combine
+      - linters:
+          - gocritic
+        path: _test\.go
+        text: dupArg
+        source: (assert|require).+Equal
+      - linters:
+          - govet
+        text: declaration of "(err|ctx|log|lg|c)"
+      - linters:
+          - revive
+        text: 'receiver-naming: receiver name \S+ should be consistent with previous receiver name \S+ for invalid-type'
+      - linters:
+          - funlen
+          - gocognit
+          - goconst
+          - gocyclo
+        path: main\.go
+      - linters:
+          - gosec
+        path: main\.go
+        text: G307
+      - linters:
+          - staticcheck
+        text: ST1003
+        source: func Fuzz.+\(f \*testing\.F\)
+      - linters:
+          - revive
+        path: (internal|cmd)
+        text: package-comments
+      - linters:
+          - revive
+        text: comment on exported const .+ should be of the form
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/ClickHouse/ch-go
+  exclusions:
+    generated: strict
