@@ -12,6 +12,10 @@ func inferGenerated(t ColumnType) Column {
 		return new(ColIPv4)
 	case ColumnTypeIPv6:
 		return new(ColIPv6)
+	case ColumnTypeTime32:
+		return new(ColTime32)
+	case ColumnTypeTime64:
+		return new(ColTime64)
 	case ColumnTypeDate:
 		return new(ColDate)
 	case ColumnTypeDate32:
