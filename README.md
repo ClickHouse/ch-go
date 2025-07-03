@@ -288,7 +288,7 @@ colV.Reset()
 ## Supported types
 * UInt8, UInt16, UInt32, UInt64, UInt128, UInt256
 * Int8, Int16, Int32, Int64, Int128, Int256
-* Date, Date32, DateTime, DateTime64
+* Date, Date32, DateTime, DateTime64, Time64, Time (as Time32)
 * Decimal32, Decimal64, Decimal128, Decimal256 (only low-level raw values)
 * IPv4, IPv6
 * String, FixedString(N)

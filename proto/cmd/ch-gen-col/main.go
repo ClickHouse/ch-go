@@ -21,6 +21,7 @@ const (
 	KindIP
 	KindDateTime
 	KindDate
+	KindTime
 	KindEnum
 	KindDecimal
 	KindFixedStr
@@ -168,7 +169,7 @@ func (v Variant) Complex() bool {
 
 func (v Variant) Time() bool {
 	switch v.Kind {
-	case KindDate, KindDateTime:
+	case KindDate, KindDateTime, KindTime:
 		return true
 	default:
 		return false
@@ -214,6 +215,12 @@ func (v Variant) ElemType() string {
 			return "Date32"
 		}
 		return "Date"
+	}
+	if v.Kind == KindTime {
+		if v.Bits == 64 {
+			return "Time64"
+		}
+		return "Time32"
 	}
 	var b strings.Builder
 	var (
@@ -302,6 +309,16 @@ func run() error {
 			Signed: true,
 			Kind:   KindDateTime,
 		},
+		{ // Time32
+			Bits:   32,
+			Signed: true,
+			Kind:   KindTime,
+		},
+		{ // Time64
+			Bits:   64,
+			Signed: false,
+			Kind:   KindTime,
+		},
 		{ // Date
 			Bits:   16,
 			Signed: true,
@@ -381,7 +398,7 @@ func run() error {
 		if v.Kind == KindFixedStr {
 			base = "col_fixedstr" + strconv.Itoa(v.Bytes())
 		}
-		if !v.DateTime() {
+		if !v.DateTime() && !v.Time() {
 			if err := write(base+"_gen", v, tpl); err != nil {
 				return errors.Wrap(err, "write")
 			}

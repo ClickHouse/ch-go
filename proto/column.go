@@ -232,6 +232,8 @@ const (
 	ColumnTypeIPv6           ColumnType = "IPv6"
 	ColumnTypeDateTime       ColumnType = "DateTime"
 	ColumnTypeDateTime64     ColumnType = "DateTime64"
+	ColumnTypeTime64		 ColumnType = "Time64"
+	ColumnTypeTime32         ColumnType = "Time32"
 	ColumnTypeDate           ColumnType = "Date"
 	ColumnTypeDate32         ColumnType = "Date32"
 	ColumnTypeUUID           ColumnType = "UUID"
