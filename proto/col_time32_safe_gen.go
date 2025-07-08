@@ -22,28 +22,30 @@ func (c *ColTime32) DecodeColumn(r *Reader, rows int) error {
 	if err != nil {
 		return errors.Wrap(err, "read")
 	}
+	v := c.Data
 	// Move bound check out of loop.
 	//
 	// See https://github.com/golang/go/issues/30945.
 	_ = data[len(data)-size]
-	c.Data = c.Data[:0]
 	for i := 0; i <= len(data)-size; i += size {
-		c.Data = append(c.Data,
+		v = append(v,
 			Time32(binary.LittleEndian.Uint32(data[i:i+size])),
 		)
 	}
+	c.Data = v
 	return nil
 }
 
 // EncodeColumn encodes Time32 rows to *Buffer.
 func (c ColTime32) EncodeColumn(b *Buffer) {
-	if len(c.Data) == 0 {
+	v := c.Data
+	if len(v) == 0 {
 		return
 	}
 	const size = 32 / 8
 	offset := len(b.Buf)
-	b.Buf = append(b.Buf, make([]byte, size*len(c.Data))...)
-	for _, vv := range c.Data {
+	b.Buf = append(b.Buf, make([]byte, size*len(v))...)
+	for _, vv := range v {
 		binary.LittleEndian.PutUint32(
 			b.Buf[offset:offset+size],
 			uint32(vv),

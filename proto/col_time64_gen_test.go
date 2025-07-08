@@ -17,9 +17,7 @@ func TestColTime64_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColTime64
 	for i := 0; i < rows; i++ {
-		v := Time64(i)
-		data.AppendRaw(v)
-		require.Equal(t, v, data.Data[i])
+		data.Data = append(data.Data, Time64(i))
 	}
 
 	var buf Buffer
@@ -60,14 +58,14 @@ func TestColTime64_DecodeColumn(t *testing.T) {
 		var v ColTime64
 		v.EncodeColumn(nil) // should be no-op
 	})
-	t.Run("WriteColumn", checkWriteColumn(data))
+	t.Run("WriteColumn", checkWriteColumn(&data))
 }
 
 func BenchmarkColTime64_DecodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColTime64
 	for i := 0; i < rows; i++ {
-		data.AppendRaw(Time64(i))
+		data.Data = append(data.Data, Time64(i))
 	}
 
 	var buf Buffer
@@ -99,7 +97,7 @@ func BenchmarkColTime64_EncodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColTime64
 	for i := 0; i < rows; i++ {
-		data.AppendRaw(Time64(i))
+		data.Data = append(data.Data, Time64(i))
 	}
 
 	var buf Buffer

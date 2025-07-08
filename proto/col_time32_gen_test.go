@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"io"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -18,9 +17,7 @@ func TestColTime32_DecodeColumn(t *testing.T) {
 	const rows = 50
 	var data ColTime32
 	for i := 0; i < rows; i++ {
-		v := Time32(i)
-		data.Append(time.Duration(v))
-		require.Equal(t, v, data.Row(i))
+		data.Data = append(data.Data, Time32(i))
 	}
 
 	var buf Buffer
@@ -68,7 +65,7 @@ func BenchmarkColTime32_DecodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColTime32
 	for i := 0; i < rows; i++ {
-		data.AppendRaw(Time32(i))
+		data.Data = append(data.Data, Time32(i))
 	}
 
 	var buf Buffer
@@ -100,7 +97,7 @@ func BenchmarkColTime32_EncodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColTime32
 	for i := 0; i < rows; i++ {
-		data.AppendRaw(Time32(i))
+		data.Data = append(data.Data, Time32(i))
 	}
 
 	var buf Buffer

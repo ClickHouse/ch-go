@@ -31,9 +31,16 @@ func (t Time32) Duration() time.Duration {
 // String returns a string representation of Time32 as "HH:MM:SS".
 func (t Time32) String() string {
 	d := t.Duration()
+	neg := d < 0
+	if neg {
+		d = -d
+	}
 	h := int(d.Hours())
 	m := int(d.Minutes()) % 60
 	s := int(d.Seconds()) % 60
+	if neg {
+		return fmt.Sprintf("-%02d:%02d:%02d", h, m, s)
+	}
 	return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
 }
 
@@ -60,6 +67,12 @@ func ParseTime32(s string) (Time32, error) {
 	if err != nil {
 		return 0, fmt.Errorf("invalid second: %w", err)
 	}
+
+	// Add validation for proper HH:MM:SS format
+	if h < 0 || m < 0 || sec < 0 || m >= 60 || sec >= 60 {
+		return 0, fmt.Errorf("invalid time values: %02d:%02d:%02d", h, m, sec)
+	}
+
 	total := h*3600 + m*60 + sec
 	if neg {
 		total = -total

@@ -15,7 +15,7 @@ func (c *ColTime64) DecodeColumn(r *Reader, rows int) error {
 	if rows == 0 {
 		return nil
 	}
-	c.Data = make([]Time64, rows)
+	c.Data = append(c.Data, make([]Time64, rows)...)
 	s := *(*slice)(unsafe.Pointer(&c.Data))
 	const size = 64 / 8
 	s.Len *= size
@@ -29,13 +29,14 @@ func (c *ColTime64) DecodeColumn(r *Reader, rows int) error {
 
 // EncodeColumn encodes Time64 rows to *Buffer.
 func (c ColTime64) EncodeColumn(b *Buffer) {
-	if len(c.Data) == 0 {
+	v := c.Data
+	if len(v) == 0 {
 		return
 	}
 	offset := len(b.Buf)
 	const size = 64 / 8
-	b.Buf = append(b.Buf, make([]byte, size*len(c.Data))...)
-	s := *(*slice)(unsafe.Pointer(&c.Data))
+	b.Buf = append(b.Buf, make([]byte, size*len(v))...)
+	s := *(*slice)(unsafe.Pointer(&v))
 	s.Len *= size
 	s.Cap *= size
 	src := *(*[]byte)(unsafe.Pointer(&s))
@@ -44,12 +45,13 @@ func (c ColTime64) EncodeColumn(b *Buffer) {
 }
 
 func (c ColTime64) WriteColumn(w *Writer) {
-	if len(c.Data) == 0 {
+	v := c.Data
+	if len(v) == 0 {
 		return
 	}
 	const size = 64 / 8
 
-	s := *(*slice)(unsafe.Pointer(&c.Data))
+	s := *(*slice)(unsafe.Pointer(&v))
 	s.Len *= size
 	s.Cap *= size
 
