@@ -22,6 +22,7 @@ import (
 	pkgVersion "github.com/ClickHouse/ch-go/internal/version"
 	"github.com/ClickHouse/ch-go/otelch"
 	"github.com/ClickHouse/ch-go/proto"
+	"github.com/ClickHouse/ch-go/ssh"
 )
 
 // Client implements ClickHouse binary protocol client on top of
@@ -55,6 +56,10 @@ type Client struct {
 	compression proto.Compression
 
 	settings []Setting
+
+	// SSH authentication
+	sshKey *ssh.SSHKey
+	useSSH bool
 }
 
 // Setting to send to server.
@@ -386,6 +391,10 @@ type Options struct {
 	TracerProvider               trace.TracerProvider
 	MeterProvider                metric.MeterProvider
 
+	// SSH authentication
+	SSHKeyFile       string // path to SSH private key file
+	SSHKeyPassphrase string // passphrase for SSH key (if encrypted)
+
 	meter  metric.Meter
 	tracer trace.Tracer
 }
@@ -516,6 +525,23 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 		compression = proto.CompressionDisabled
 	}
 
+	// Handle SSH authentication
+	var sshKey *ssh.SSHKey
+	var useSSH bool
+	if opt.SSHKeyFile != "" {
+		var err error
+		sshKey, err = ssh.LoadPrivateKeyFromFile(opt.SSHKeyFile, opt.SSHKeyPassphrase)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load SSH key")
+		}
+		useSSH = true
+	}
+
+	user := opt.User
+	if useSSH {
+		user = " SSH KEY AUTHENTICATION " + user
+	}
+
 	c := &Client{
 		conn:     conn,
 		writer:   proto.NewWriter(conn, buf),
@@ -535,16 +561,16 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 		version:         ver,
 		protocolVersion: opt.ProtocolVersion,
 		info: proto.ClientHello{
-			Name:  clientName,
-			Major: ver.Major,
-			Minor: ver.Minor,
-
+			Name:            clientName,
+			Major:           ver.Major,
+			Minor:           ver.Minor,
 			ProtocolVersion: opt.ProtocolVersion,
-
-			Database: opt.Database,
-			User:     opt.User,
-			Password: opt.Password,
+			Database:        opt.Database,
+			User:            user,
+			Password:        opt.Password,
 		},
+		sshKey: sshKey,
+		useSSH: useSSH,
 	}
 
 	handshakeCtx, cancel := context.WithTimeout(ctx, opt.HandshakeTimeout)
