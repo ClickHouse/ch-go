@@ -460,6 +460,12 @@ type clientVersion struct {
 // Connect performs handshake with ClickHouse server and initializes
 // application level connection.
 func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
+	return ConnectWithBuffer(ctx, conn, opt, new(proto.Buffer))
+}
+
+// ConnectWithBuffer performs handshake with ClickHouse server and initializes
+// application level connection using the provided buffer.
+func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *proto.Buffer) (*Client, error) {
 	opt.setDefaults()
 
 	clientName := proto.Name
@@ -512,7 +518,7 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 
 	c := &Client{
 		conn:     conn,
-		writer:   proto.NewWriter(conn, new(proto.Buffer)),
+		writer:   proto.NewWriter(conn, buf),
 		reader:   proto.NewReader(conn),
 		settings: opt.Settings,
 		lg:       opt.Logger,
@@ -558,6 +564,12 @@ type Dialer interface {
 // Dial dials requested address and establishes TCP connection to ClickHouse
 // server, performing handshake.
 func Dial(ctx context.Context, opt Options) (c *Client, err error) {
+	return DialWithBuffer(ctx, opt, new(proto.Buffer))
+}
+
+// DialWithBuffer dials requested address and establishes TCP connection to ClickHouse
+// server, performing handshake using the provided buffer.
+func DialWithBuffer(ctx context.Context, opt Options, buf *proto.Buffer) (c *Client, err error) {
 	opt.setDefaults()
 
 	if opt.OpenTelemetryInstrumentation {
@@ -595,7 +607,7 @@ func Dial(ctx context.Context, opt Options) (c *Client, err error) {
 		return nil, errors.Wrap(err, "dial")
 	}
 
-	client, err := Connect(ctx, conn, opt)
+	client, err := ConnectWithBuffer(ctx, conn, opt, buf)
 	if err != nil {
 		return nil, errors.Wrap(err, "connect")
 	}
