@@ -6,9 +6,10 @@ import (
 	"log"
 	"os"
 
+	cryptossh "golang.org/x/crypto/ssh"
+
 	"github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/proto"
-	cryptossh "golang.org/x/crypto/ssh"
 )
 
 func main() {
@@ -33,7 +34,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Printf("failed to close client: %v", err)
+		}
+	}()
 
 	var results proto.Results
 	query := ch.Query{
