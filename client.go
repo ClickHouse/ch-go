@@ -17,12 +17,12 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	cryptossh "golang.org/x/crypto/ssh"
 
 	"github.com/ClickHouse/ch-go/compress"
 	pkgVersion "github.com/ClickHouse/ch-go/internal/version"
 	"github.com/ClickHouse/ch-go/otelch"
 	"github.com/ClickHouse/ch-go/proto"
-	"github.com/ClickHouse/ch-go/ssh"
 )
 
 // Client implements ClickHouse binary protocol client on top of
@@ -58,8 +58,7 @@ type Client struct {
 	settings []Setting
 
 	// SSH authentication
-	sshKey *ssh.SSHKey
-	useSSH bool
+	sshSigner cryptossh.Signer
 }
 
 // Setting to send to server.
@@ -391,9 +390,8 @@ type Options struct {
 	TracerProvider               trace.TracerProvider
 	MeterProvider                metric.MeterProvider
 
-	// SSH authentication
-	SSHKeyFile       string // path to SSH private key file
-	SSHKeyPassphrase string // passphrase for SSH key (if encrypted)
+	// SSH authentication.
+	SSHSigner cryptossh.Signer
 
 	meter  metric.Meter
 	tracer trace.Tracer
@@ -525,20 +523,8 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 		compression = proto.CompressionDisabled
 	}
 
-	// Handle SSH authentication
-	var sshKey *ssh.SSHKey
-	var useSSH bool
-	if opt.SSHKeyFile != "" {
-		var err error
-		sshKey, err = ssh.LoadPrivateKeyFromFile(opt.SSHKeyFile, opt.SSHKeyPassphrase)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load SSH key")
-		}
-		useSSH = true
-	}
-
 	user := opt.User
-	if useSSH {
+	if opt.SSHSigner != nil {
 		user = " SSH KEY AUTHENTICATION " + user
 	}
 
@@ -569,8 +555,7 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 			User:            user,
 			Password:        opt.Password,
 		},
-		sshKey: sshKey,
-		useSSH: useSSH,
+		sshSigner: opt.SSHSigner,
 	}
 
 	handshakeCtx, cancel := context.WithTimeout(ctx, opt.HandshakeTimeout)

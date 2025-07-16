@@ -2,6 +2,8 @@ package ch
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -24,7 +26,7 @@ func (c *Client) encodeAddendum() {
 }
 
 func (c *Client) performSSHAuthentication(ctx context.Context) error {
-	if !c.useSSH || c.sshKey == nil {
+	if c.sshSigner == nil {
 		return nil
 	}
 
@@ -62,16 +64,16 @@ func (c *Client) performSSHAuthentication(ctx context.Context) error {
 		cleanUser,
 		challenge)
 
-	// Sign the string
-	signature, err := c.sshKey.SignString(stringToSign)
+	// Sign the string with the SSH signer
+	signature, err := c.sshSigner.Sign(rand.Reader, []byte(stringToSign))
 	if err != nil {
 		return errors.Wrap(err, "sign SSH challenge")
 	}
 
-	// Send SSH challenge response
+	// Send SSH challenge response with base64-encoded signature
 	c.writer.ChainBuffer(func(b *proto.Buffer) {
 		proto.ClientCodeSSHChallengeResponse.Encode(b)
-		b.PutString(signature)
+		b.PutString(base64.StdEncoding.EncodeToString(signature.Blob))
 	})
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "send SSH challenge response")

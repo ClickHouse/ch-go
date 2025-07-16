@@ -24,11 +24,9 @@ func TestSSHKeyLoading(t *testing.T) {
 		err = os.WriteFile(tmpFile.Name(), privateKey, 0600)
 		require.NoError(t, err)
 
-		key, err := LoadPrivateKeyFromFile(tmpFile.Name(), "")
+		signer, err := LoadPrivateKeyFromFile(tmpFile.Name(), "")
 		require.NoError(t, err)
-		require.NotNil(t, key)
-		require.False(t, key.IsEmpty())
-		require.Equal(t, "ssh-rsa", key.GetKeyType())
+		require.NotNil(t, signer)
 	})
 
 	t.Run("MissingFile", func(t *testing.T) {
@@ -47,7 +45,7 @@ func TestSSHKeyLoading(t *testing.T) {
 
 		_, err = LoadPrivateKeyFromFile(tmpFile.Name(), "")
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to parse SSH key")
+		require.Contains(t, err.Error(), "no key found")
 	})
 }
 

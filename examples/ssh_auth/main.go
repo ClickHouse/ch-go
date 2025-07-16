@@ -4,32 +4,38 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/ClickHouse/ch-go"
 	"github.com/ClickHouse/ch-go/proto"
+	cryptossh "golang.org/x/crypto/ssh"
 )
 
 func main() {
 	ctx := context.Background()
 
-	// Example with SSH authentication
+	keyData, err := os.ReadFile("/path/to/your/private_key")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	signer, err := cryptossh.ParsePrivateKey(keyData)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	client, err := ch.Dial(ctx, ch.Options{
-		Address:    "localhost:9000",
-		Database:   "default",
-		User:       "default",
-		SSHKeyFile: "/path/to/your/private_key",
+		Address:   "localhost:9000",
+		Database:  "default",
+		User:      "default",
+		SSHSigner: signer,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() {
-		if err := client.Close(); err != nil {
-			log.Printf("failed to close client: %v", err)
-		}
-	}()
+	defer client.Close()
 
 	var results proto.Results
-
 	query := ch.Query{
 		Body:   "SELECT version()",
 		Result: &results,
