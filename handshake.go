@@ -2,6 +2,10 @@ package ch
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"strings"
 
 	"github.com/go-faster/errors"
 	"go.opentelemetry.io/otel/trace"
@@ -19,6 +23,63 @@ func (c *Client) encodeAddendum() {
 			b.PutString(c.quotaKey)
 		})
 	}
+}
+
+func (c *Client) performSSHAuthentication(ctx context.Context) error {
+	if c.sshSigner == nil {
+		return nil
+	}
+
+	// Send SSH challenge request
+	c.writer.ChainBuffer(func(b *proto.Buffer) {
+		proto.ClientCodeSSHChallengeRequest.Encode(b)
+	})
+	if err := c.flush(ctx); err != nil {
+		return errors.Wrap(err, "send SSH challenge request")
+	}
+
+	// Read server response
+	code, err := c.packet(ctx)
+	if err != nil {
+		return errors.Wrap(err, "read SSH challenge response")
+	}
+
+	if code != proto.ServerCodeSSHChallenge {
+		return errors.Wrap(err, "unexpected server code for SSH challenge")
+	}
+
+	// Read challenge string
+	challenge, err := c.reader.Str()
+	if err != nil {
+		return errors.Wrap(err, "read SSH challenge")
+	}
+
+	// Create string to sign: protocol_version + database + username + challenge
+	// Remove the SSH marker from username for signing
+	cleanUser := strings.TrimPrefix(c.info.User, " SSH KEY AUTHENTICATION ")
+
+	stringToSign := fmt.Sprintf("%d%s%s%s",
+		c.protocolVersion,
+		c.info.Database,
+		cleanUser,
+		challenge)
+
+	// Sign the string with the SSH signer
+	signature, err := c.sshSigner.Sign(rand.Reader, []byte(stringToSign))
+	if err != nil {
+		return errors.Wrap(err, "sign SSH challenge")
+	}
+
+	// Send SSH challenge response with base64-encoded signature
+	c.writer.ChainBuffer(func(b *proto.Buffer) {
+		proto.ClientCodeSSHChallengeResponse.Encode(b)
+		b.PutString(base64.StdEncoding.EncodeToString(signature.Blob))
+	})
+	if err := c.flush(ctx); err != nil {
+		return errors.Wrap(err, "send SSH challenge response")
+	}
+
+	return nil
 }
 
 func (c *Client) handshake(ctx context.Context) error {
@@ -77,6 +138,11 @@ func (c *Client) handshake(ctx context.Context) error {
 		if c.protocolVersion > c.server.Revision {
 			// Downgrade to server version.
 			c.protocolVersion = c.server.Revision
+		}
+
+		// Perform SSH authentication if needed
+		if err := c.performSSHAuthentication(ctx); err != nil {
+			return errors.Wrap(err, "SSH authentication")
 		}
 
 		c.lg.Debug("Connected",

@@ -17,6 +17,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	cryptossh "golang.org/x/crypto/ssh"
 
 	"github.com/ClickHouse/ch-go/compress"
 	pkgVersion "github.com/ClickHouse/ch-go/internal/version"
@@ -55,6 +56,9 @@ type Client struct {
 	compression proto.Compression
 
 	settings []Setting
+
+	// SSH authentication
+	sshSigner cryptossh.Signer
 }
 
 // Setting to send to server.
@@ -386,6 +390,9 @@ type Options struct {
 	TracerProvider               trace.TracerProvider
 	MeterProvider                metric.MeterProvider
 
+	// SSH authentication.
+	SSHSigner cryptossh.Signer
+
 	meter  metric.Meter
 	tracer trace.Tracer
 }
@@ -516,6 +523,11 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 		compression = proto.CompressionDisabled
 	}
 
+	user := opt.User
+	if opt.SSHSigner != nil {
+		user = " SSH KEY AUTHENTICATION " + user
+	}
+
 	c := &Client{
 		conn:     conn,
 		writer:   proto.NewWriter(conn, buf),
@@ -535,16 +547,15 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 		version:         ver,
 		protocolVersion: opt.ProtocolVersion,
 		info: proto.ClientHello{
-			Name:  clientName,
-			Major: ver.Major,
-			Minor: ver.Minor,
-
+			Name:            clientName,
+			Major:           ver.Major,
+			Minor:           ver.Minor,
 			ProtocolVersion: opt.ProtocolVersion,
-
-			Database: opt.Database,
-			User:     opt.User,
-			Password: opt.Password,
+			Database:        opt.Database,
+			User:            user,
+			Password:        opt.Password,
 		},
+		sshSigner: opt.SSHSigner,
 	}
 
 	handshakeCtx, cancel := context.WithTimeout(ctx, opt.HandshakeTimeout)
