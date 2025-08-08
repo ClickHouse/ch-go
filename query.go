@@ -341,31 +341,51 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 		return nil
 	}
 
-	// Handling input columns that require inference, e.g. enums, dates with precision, etc.
-	//
-	// Some debug structures and initializations if on debug logging level.
-	var inferenceColumns map[string]proto.ColumnType
-	inferenceDebug := c.lg.Check(zap.DebugLevel, "Inferring columns")
-	if inferenceDebug != nil {
-		inferenceColumns = make(map[string]proto.ColumnType, len(info))
-	}
+	// Create a map of server column info for efficient lookup
+	serverColInfo := make(map[string]proto.ColumnType, len(info))
 	for _, v := range info {
+		serverColInfo[v.Name] = v.Type
+	}
+
+	// Function to apply column inference
+	applyInference := func() error {
+		var inferenceColumns map[string]proto.ColumnType
+		inferenceDebug := c.lg.Check(zap.DebugLevel, "Inferring columns")
+		if inferenceDebug != nil {
+			inferenceColumns = make(map[string]proto.ColumnType, len(info))
+		}
+
+		// Process input columns in their original order
 		for _, inCol := range q.Input {
-			infer, ok := inCol.Data.(proto.Inferable)
-			if !ok || inCol.Name != v.Name {
+			serverType, exists := serverColInfo[inCol.Name]
+			if !exists {
 				continue
 			}
-			if inferenceDebug != nil {
-				inferenceColumns[inCol.Name] = v.Type
+
+			infer, ok := inCol.Data.(proto.Inferable)
+			if !ok {
+				continue
 			}
-			if err := infer.Infer(v.Type); err != nil {
-				return errors.Wrapf(err, "infer %q %q", inCol.Name, v.Type)
+
+			if inferenceDebug != nil {
+				inferenceColumns[inCol.Name] = serverType
+			}
+			if err := infer.Infer(serverType); err != nil {
+				return errors.Wrapf(err, "infer %q %q", inCol.Name, serverType)
 			}
 		}
+
+		if inferenceDebug != nil && len(inferenceColumns) > 0 {
+			inferenceDebug.Write(zap.Any("columns", inferenceColumns))
+		}
+		return nil
 	}
-	if inferenceDebug != nil && len(inferenceColumns) > 0 {
-		inferenceDebug.Write(zap.Any("columns", inferenceColumns))
+
+	// Apply inference for the initial block
+	if err := applyInference(); err != nil {
+		return err
 	}
+
 	var (
 		rows = q.Input[0].Data.Rows()
 		f    = q.OnInput
@@ -386,6 +406,12 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 		if err := ctx.Err(); err != nil {
 			return errors.Wrap(err, "context")
 		}
+
+		// Re-apply inference for each block to ensure column types are correct
+		if err := applyInference(); err != nil {
+			return err
+		}
+
 		if err := c.encodeBlock(ctx, "", q.Input); err != nil {
 			return errors.Wrap(err, "write block")
 		}
