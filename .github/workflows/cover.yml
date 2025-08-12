@@ -37,7 +37,7 @@ jobs:
             e2e-${{ runner.os }}-go-
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up ClickHouse cache
         uses: actions/cache@v4
@@ -82,7 +82,7 @@ jobs:
       - run
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download artifact
         uses: actions/download-artifact@v4
