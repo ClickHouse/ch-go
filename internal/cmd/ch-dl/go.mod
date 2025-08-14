@@ -8,7 +8,7 @@ require (
 	github.com/go-faster/errors v0.5.0
 	github.com/google/go-github/v43 v43.0.0
 	github.com/klauspost/compress v1.15.1
-	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
+	golang.org/x/oauth2 v0.27.0
 )
 
 require (
