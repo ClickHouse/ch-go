@@ -23,7 +23,7 @@ jobs:
           - v24.11.1.2557-stable
           - v25.1.2.3-stable
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Go
         uses: actions/setup-go@v5
