@@ -6,9 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ClickHouse/ch-go"
-
 	"github.com/jackc/puddle/v2"
+	"go.uber.org/zap"
+
+	"github.com/ClickHouse/ch-go"
 )
 
 // Pool of connections to ClickHouse.
@@ -23,19 +24,26 @@ type Pool struct {
 
 // Options for Pool.
 type Options struct {
-	ClientOptions     ch.Options
-	MaxConnLifetime   time.Duration
-	MaxConnIdleTime   time.Duration
-	MaxConns          int32
-	MinConns          int32
-	HealthCheckPeriod time.Duration
+	ClientOptions      ch.Options
+	MaxConnLifetime    time.Duration
+	MaxConnIdleTime    time.Duration
+	MaxConns           int32
+	MinConns           int32
+	HealthCheckPeriod  time.Duration
+	HealthCheckFunc    func(ctx context.Context, client *ch.Client) error
+	HealthCheckTimeout time.Duration
+}
+
+func DefaultHealthCheckFunc(ctx context.Context, client *ch.Client) error {
+	return client.Ping(ctx)
 }
 
 // Defaults for pool.
 const (
-	DefaultMaxConnLifetime   = time.Hour
-	DefaultMaxConnIdleTime   = time.Minute * 30
-	DefaultHealthCheckPeriod = time.Minute
+	DefaultMaxConnLifetime    = time.Hour
+	DefaultMaxConnIdleTime    = time.Minute * 30
+	DefaultHealthCheckPeriod  = time.Minute
+	DefaultHealthCheckTimeout = time.Second
 )
 
 func (o *Options) setDefaults() {
@@ -50,6 +58,15 @@ func (o *Options) setDefaults() {
 	}
 	if o.HealthCheckPeriod == 0 {
 		o.HealthCheckPeriod = DefaultHealthCheckPeriod
+	}
+	if o.HealthCheckFunc == nil {
+		o.HealthCheckFunc = DefaultHealthCheckFunc
+	}
+	if o.HealthCheckTimeout == 0 {
+		o.HealthCheckTimeout = DefaultHealthCheckTimeout
+	}
+	if o.ClientOptions.Logger == nil {
+		o.ClientOptions.Logger = zap.NewNop()
 	}
 }
 
@@ -162,16 +179,47 @@ func (p *Pool) backgroundHealthCheck() {
 func (p *Pool) checkIdleConnsHealth() {
 	resources := p.pool.AcquireAllIdle()
 
-	now := time.Now()
+	wg := sync.WaitGroup{}
 	for _, res := range resources {
-		if now.Sub(res.CreationTime()) > p.options.MaxConnLifetime {
-			res.Destroy()
-		} else if res.IdleDuration() > p.options.MaxConnIdleTime {
-			res.Destroy()
-		} else {
-			res.ReleaseUnused()
+		res := res
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if res.IdleDuration() > p.options.MaxConnIdleTime || !p.connIsHealthy(res) {
+				res.Destroy()
+			} else {
+				res.ReleaseUnused()
+			}
+		}()
+		wg.Wait()
+	}
+}
+
+func (p *Pool) connIsHealthy(res *puddle.Resource[*connResource]) bool {
+	logger := p.options.ClientOptions.Logger
+	if res.Value().client.IsClosed() {
+		logger.Debug("chpool: connection is closed")
+		return false
+	}
+
+	if time.Since(res.CreationTime()) > p.options.MaxConnLifetime {
+		logger.Debug("chpool: connection over max lifetime")
+		return false
+	}
+
+	if p.options.HealthCheckFunc != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), p.options.HealthCheckTimeout)
+		defer cancel()
+		if err := p.options.HealthCheckFunc(ctx, res.Value().client); err != nil {
+			if logger := p.options.ClientOptions.Logger; logger != nil {
+				logger.Warn("chpool: health check failed", zap.Error(err))
+			}
+			return false
 		}
 	}
+
+	res.Value().lastHealthCheckTimestamp = time.Now()
+	return true
 }
 
 func (p *Pool) checkMinConns() {
