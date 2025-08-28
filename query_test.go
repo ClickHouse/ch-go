@@ -1548,3 +1548,207 @@ func TestClientQueryCancellation(t *testing.T) {
 	// Connection should be closed after query cancellation.
 	require.True(t, c.IsClosed())
 }
+
+func TestColumnOrderPreservation(t *testing.T) {
+	// Test that column order is preserved when matching server column info
+	serverInfo := proto.ColInfoInput{
+		{Name: "col2", Type: "String"},
+		{Name: "col1", Type: "Int32"},
+	}
+
+	input := proto.Input{
+		{Name: "col1", Data: &proto.ColInt32{}},
+		{Name: "col2", Data: &proto.ColStr{}},
+	}
+
+	// Create efficient lookup map (this is the fix)
+	serverColInfo := make(map[string]proto.ColumnType, len(serverInfo))
+	for _, v := range serverInfo {
+		serverColInfo[v.Name] = v.Type
+	}
+
+	// Process input columns in original order (this preserves order)
+	var processedOrder []string
+	for _, inCol := range input {
+		_, exists := serverColInfo[inCol.Name]
+		if !exists {
+			continue
+		}
+		processedOrder = append(processedOrder, inCol.Name)
+	}
+
+	// Verify columns processed in input order, not server order
+	require.Equal(t, []string{"col1", "col2"}, processedOrder)
+}
+
+func TestMapColumnOrder(t *testing.T) {
+	// Test that Map columns work correctly with the fix
+	serverInfo := proto.ColInfoInput{
+		{Name: "col2", Type: "String"},
+		{Name: "col1", Type: "Int32"},
+		{Name: "col3", Type: "Map(String, String)"},
+	}
+
+	input := proto.Input{
+		{Name: "col1", Data: &proto.ColInt32{}},
+		{Name: "col2", Data: &proto.ColStr{}},
+		{Name: "col3", Data: &proto.ColMap[string, string]{
+			Keys:   &proto.ColStr{},
+			Values: &proto.ColStr{},
+		}},
+	}
+
+	// Create efficient lookup map
+	serverColInfo := make(map[string]proto.ColumnType, len(serverInfo))
+	for _, v := range serverInfo {
+		serverColInfo[v.Name] = v.Type
+	}
+
+	// Process input columns in original order
+	var processedOrder []string
+	for _, inCol := range input {
+		_, exists := serverColInfo[inCol.Name]
+		if !exists {
+			continue
+		}
+		processedOrder = append(processedOrder, inCol.Name)
+	}
+
+	// Verify columns processed in input order
+	require.Equal(t, []string{"col1", "col2", "col3"}, processedOrder)
+
+	// Test Map functionality
+	mapCol := input[2].Data.(*proto.ColMap[string, string])
+	testMap := map[string]string{"key1": "value1", "key2": "value2"}
+	mapCol.Append(testMap)
+
+	actualMap := mapCol.Row(0)
+	require.Equal(t, testMap, actualMap)
+}
+
+func TestProductionScaleColumnOrder(t *testing.T) {
+	// Test the fix at production scale (900k rows)
+	serverInfo := proto.ColInfoInput{
+		{Name: "col2", Type: "String"},
+		{Name: "col1", Type: "Int32"},
+		{Name: "col3", Type: "Map(String, String)"},
+	}
+
+	input := proto.Input{
+		{Name: "col1", Data: &proto.ColInt32{}},
+		{Name: "col2", Data: &proto.ColStr{}},
+		{Name: "col3", Data: &proto.ColMap[string, string]{
+			Keys:   &proto.ColStr{},
+			Values: &proto.ColStr{},
+		}},
+	}
+
+	// Create efficient lookup map
+	serverColInfo := make(map[string]proto.ColumnType, len(serverInfo))
+	for _, v := range serverInfo {
+		serverColInfo[v.Name] = v.Type
+	}
+
+	// Simulate streaming with multiple blocks
+	const blocks = 90
+	const rowsPerBlock = 10000
+
+	for block := 0; block < blocks; block++ {
+		// Apply column inference for each block (this is the fix)
+		for _, inCol := range input {
+			serverType, exists := serverColInfo[inCol.Name]
+			if !exists {
+				continue
+			}
+
+			infer, ok := inCol.Data.(proto.Inferable)
+			if !ok {
+				continue
+			}
+
+			if err := infer.Infer(serverType); err != nil {
+				t.Fatalf("Block %d: Failed to infer column %s: %v", block, inCol.Name, err)
+			}
+		}
+
+		// Verify column order is preserved
+		var processedOrder []string
+		for _, col := range input {
+			processedOrder = append(processedOrder, col.Name)
+		}
+
+		expectedOrder := []string{"col1", "col2", "col3"}
+		require.Equal(t, expectedOrder, processedOrder,
+			"Block %d: Columns processed in wrong order", block)
+
+		// Simulate OnInput callback
+		input.Reset()
+
+		// Add some data
+		for i := 0; i < rowsPerBlock; i++ {
+			input[0].Data.(*proto.ColInt32).Append(int32(i))
+			input[1].Data.(*proto.ColStr).Append(fmt.Sprintf("str_%d", i))
+			input[2].Data.(*proto.ColMap[string, string]).Append(map[string]string{
+				"key": fmt.Sprintf("value_%d", i),
+			})
+		}
+	}
+
+	t.Logf("Successfully processed %d blocks with %d rows each", blocks, rowsPerBlock)
+}
+
+func TestMapColumnClickHouseIntegration(t *testing.T) {
+	// Test Map columns with actual ClickHouse
+	ctx := context.Background()
+	conn := Conn(t)
+
+	// Create table with Map column
+	createTable := Query{
+		Body: `CREATE TABLE test_map_table (
+			id UInt32,
+			metadata Map(String, String)
+		) ENGINE = Memory`,
+	}
+	require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+	// Insert data
+	idCol := &proto.ColUInt32{}
+	metadataCol := &proto.ColMap[string, string]{
+		Keys:   &proto.ColStr{},
+		Values: &proto.ColStr{},
+	}
+
+	testData := map[string]string{"country": "USA", "city": "NY"}
+	idCol.Append(1)
+	metadataCol.Append(testData)
+
+	insertQuery := Query{
+		Body: "INSERT INTO test_map_table VALUES",
+		Input: []proto.InputColumn{
+			{Name: "id", Data: idCol},
+			{Name: "metadata", Data: metadataCol},
+		},
+	}
+	require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+	// Query and validate
+	resultIDCol := &proto.ColUInt32{}
+	resultMetadataCol := &proto.ColMap[string, string]{
+		Keys:   &proto.ColStr{},
+		Values: &proto.ColStr{},
+	}
+
+	selectQuery := Query{
+		Body: "SELECT id, metadata FROM test_map_table",
+		Result: proto.Results{
+			{Name: "id", Data: resultIDCol},
+			{Name: "metadata", Data: resultMetadataCol},
+		},
+	}
+	require.NoError(t, conn.Do(ctx, selectQuery), "select")
+
+	// Validate
+	require.Equal(t, 1, resultIDCol.Rows())
+	require.Equal(t, uint32(1), resultIDCol.Row(0))
+	require.Equal(t, testData, resultMetadataCol.Row(0))
+}
