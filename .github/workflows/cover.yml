@@ -16,7 +16,7 @@ jobs:
       CH_VER: v22.7.1.2484-stable
     steps:
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: oldstable
 
