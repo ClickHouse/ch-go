@@ -7,33 +7,31 @@ import (
 	"time"
 )
 
-// Time32 represents time of day in seconds since midnight.
+// Time32 represents duration in seconds.
 type Time32 int32
 
-// Time64 represents time of day with precision as a decimal with configurable scale.
+// Time64 represents duration up until nanoseconds.
 type Time64 int64
 
 func (t Time32) String() string {
-	seconds := int32(t)
-	hours := seconds / 3600
-	minutes := (seconds % 3600) / 60
-	secs := seconds % 60
+	d := time.Duration(t) * time.Second
+
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	secs := int(d.Seconds()) % 60
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, secs)
 }
 
 func (t Time64) String() string {
-	// Time64 stores as decimal with scale, convert to nanoseconds for display
-	scale := int64(1e9) // Default to nanosecond scale for display
-	value := int64(t)
+	d := time.Duration(t)
 
-	// Convert to nanoseconds since midnight
-	seconds := value / scale
-	nanos := (value % scale) * (1e9 / scale)
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	secs := int(d.Seconds()) % 60
+	nanos := d.Nanoseconds() % 1e9
 
-	hours := seconds / 3600
-	minutes := (seconds % 3600) / 60
-	secs := seconds % 60
-
+	// NOTE(kavi): do we need multiple formatting depending on precision (3, 6, 9) instead of
+	// always 9?
 	return fmt.Sprintf("%02d:%02d:%02d.%09d", hours, minutes, secs, nanos)
 }
 
@@ -112,77 +110,55 @@ func ParseTime64(s string) (Time64, error) {
 	return Time64(totalSeconds*1e9 + fractional), nil
 }
 
-func FromTime32(t time.Time) Time32 {
-	hour := t.Hour()
-	minute := t.Minute()
-	second := t.Second()
-	totalSeconds := int32(hour*3600 + minute*60 + second)
-	return Time32(totalSeconds)
+func IntoTime32(t time.Duration) Time32 {
+	return Time32(int(t.Seconds()))
 }
 
-// FromTime64 converts time.Time to Time64 with default precision (9 - nanoseconds)
-func FromTime64(t time.Time) Time64 {
-	return FromTime64WithPrecision(t, 9)
+// IntoTime64 converts time.Time to Time64 with default precision (9 - nanoseconds)
+func IntoTime64(t time.Duration) Time64 {
+	return IntoTime64WithPrecision(t, PrecisionMax)
 }
 
-// FromTime64WithPrecision converts time.Time to Time64 with specified precision
+// IntoTime64WithPrecision converts time.Time to Time64 with specified precision
 // Time64 stores time as a decimal with configurable scale, similar to DateTime64
-func FromTime64WithPrecision(t time.Time, precision int) Time64 {
-	hour := t.Hour()
-	minute := t.Minute()
-	second := t.Second()
-	nanosecond := t.Nanosecond()
-
-	// Calculate seconds since midnight
-	totalSeconds := int64(hour*3600 + minute*60 + second)
-
-	// Calculate scale based on precision (same as DateTime64)
-	scale := int64(1)
-	for i := 0; i < precision; i++ {
-		scale *= 10
-	}
-
-	// Convert to the appropriate scale
-	// Store as: seconds * scale + fractional_part
-	fractional := int64(nanosecond) * scale / 1e9
-	return Time64(totalSeconds*scale + fractional)
+func IntoTime64WithPrecision(d time.Duration, precision Precision) Time64 {
+	res := truncateDuration(d, precision)
+	return Time64(res)
 }
 
-func (t Time32) ToTime32() time.Time {
+func (t Time32) Duration() time.Duration {
 	seconds := int32(t)
-	hours := seconds / 3600
-	minutes := (seconds % 3600) / 60
-	secs := seconds % 60
-	return time.Date(1970, 1, 1, int(hours), int(minutes), int(secs), 0, time.UTC)
+	return time.Second * time.Duration(seconds)
 }
 
 // ToTime converts Time64 to time.Time with default precision (9 - nanoseconds)
-func (t Time64) ToTime() time.Time {
+func (t Time64) Duration() time.Duration {
 	return t.ToTimeWithPrecision(9)
 }
 
 // ToTimeWithPrecision converts Time64 to time.Time with specified precision
 // Time64 stores time as a decimal with configurable scale, similar to DateTime64
-func (t Time64) ToTimeWithPrecision(precision int) time.Time {
-	// Calculate scale based on precision (same as DateTime64)
-	scale := int64(1)
-	for i := 0; i < precision; i++ {
-		scale *= 10
+func (t Time64) ToTimeWithPrecision(precision Precision) time.Duration {
+	d := time.Duration(t)
+	return truncateDuration(d, precision)
+}
+
+func truncateDuration(d time.Duration, precision Precision) time.Duration {
+	var res time.Duration
+	switch precision {
+	case PrecisionSecond:
+		res = d.Truncate(time.Second)
+	case PrecisionMilli:
+		res = d.Truncate(time.Millisecond)
+	case PrecisionMicro:
+		res = d.Truncate(time.Microsecond)
+	// NOTE: NO additional case needed for PrecisionMax, given it's type alias for PrecisionNano
+	case PrecisionNano:
+		res = d
+	default:
+		// if wrong precision, treat it as Millisecond.
+		res = d.Truncate(time.Millisecond)
 	}
 
-	value := int64(t)
-
-	// Extract whole and fractional parts
-	whole := value / scale
-	fractional := value % scale
-
-	// Convert fractional part to nanoseconds
-	nanoseconds := fractional * 1e9 / scale
-
-	// Convert whole part to time components
-	hours := whole / 3600
-	minutes := (whole % 3600) / 60
-	seconds := whole % 60
-
-	return time.Date(1970, 1, 1, int(hours), int(minutes), int(seconds), int(nanoseconds), time.UTC)
+	return res
 }
