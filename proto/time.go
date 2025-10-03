@@ -13,6 +13,7 @@ type Time32 int32
 // Time64 represents duration up until nanoseconds.
 type Time64 int64
 
+// String implements formatting Time32 to string of form Hour:Minutes:Seconds.
 func (t Time32) String() string {
 	d := time.Duration(t) * time.Second
 
@@ -22,6 +23,7 @@ func (t Time32) String() string {
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, secs)
 }
 
+// String implements formatting Time64 to string of form Hour:Minutes:Seconds.NanoSeconds.
 func (t Time64) String() string {
 	d := time.Duration(t)
 
@@ -35,6 +37,7 @@ func (t Time64) String() string {
 	return fmt.Sprintf("%02d:%02d:%02d.%09d", hours, minutes, secs, nanos)
 }
 
+// ParseTime32 parses string of form "12:34:56" to valid Time32 type.
 func ParseTime32(s string) (Time32, error) {
 	parts := strings.Split(s, ":")
 	if len(parts) != 3 {
@@ -60,8 +63,8 @@ func ParseTime32(s string) (Time32, error) {
 	return Time32(totalSeconds), nil
 }
 
+// ParseTime64 parses string of form "12:34:56.789" to valid Time64 type.
 func ParseTime64(s string) (Time64, error) {
-	// Parse time string like "12:34:56.789"
 	timePart, fractionalStr, ok := strings.Cut(s, ".")
 	if !ok {
 		fractionalStr = ""
@@ -110,35 +113,36 @@ func ParseTime64(s string) (Time64, error) {
 	return Time64(totalSeconds*1e9 + fractional), nil
 }
 
+// IntoTime32 converts time.Druation into Time32 up to seconds precision.
 func IntoTime32(t time.Duration) Time32 {
 	return Time32(int(t.Seconds()))
 }
 
-// IntoTime64 converts time.Time to Time64 with default precision (9 - nanoseconds)
+// IntoTime64 converts time.Duration to Time64 up to nanoseconds precision
 func IntoTime64(t time.Duration) Time64 {
 	return IntoTime64WithPrecision(t, PrecisionMax)
 }
 
-// IntoTime64WithPrecision converts time.Time to Time64 with specified precision
-// Time64 stores time as a decimal with configurable scale, similar to DateTime64
+// IntoTime64WithPrecision converts time.Duration to Time64 with specified precision
 func IntoTime64WithPrecision(d time.Duration, precision Precision) Time64 {
 	res := truncateDuration(d, precision)
 	return Time64(res)
 }
 
+// Duration converts Time32 into time.Duration up to seconds precision
 func (t Time32) Duration() time.Duration {
 	seconds := int32(t)
 	return time.Second * time.Duration(seconds)
 }
 
-// ToTime converts Time64 to time.Time with default precision (9 - nanoseconds)
+// Duration converts Time64 into time.Duration up to nanoseconds precision
 func (t Time64) Duration() time.Duration {
-	return t.ToTimeWithPrecision(9)
+	return t.ToDurationWithPrecision(PrecisionMax)
 }
 
-// ToTimeWithPrecision converts Time64 to time.Time with specified precision
-// Time64 stores time as a decimal with configurable scale, similar to DateTime64
-func (t Time64) ToTimeWithPrecision(precision Precision) time.Duration {
+// ToDurationWithPrecision converts Time64 to time.Duration with specified precision
+// up until PrecisionMax (nanoseconds)
+func (t Time64) ToDurationWithPrecision(precision Precision) time.Duration {
 	d := time.Duration(t)
 	return truncateDuration(d, precision)
 }
