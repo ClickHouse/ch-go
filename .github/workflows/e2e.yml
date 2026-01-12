@@ -23,10 +23,10 @@ jobs:
           - v24.11.1.2557-stable
           - v25.1.2.3-stable
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
 
@@ -37,7 +37,7 @@ jobs:
           echo "::set-output name=modcache::$(go env GOMODCACHE)"
 
       - name: Set up cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ steps.go-env.outputs.cache }}
@@ -47,7 +47,7 @@ jobs:
             e2e-${{ runner.os }}-go${{ matrix.go }}-
 
       - name: Set up ClickHouse cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /opt/ch/clickhouse
           key: ClickHouse-${{ matrix.clickhouse }}

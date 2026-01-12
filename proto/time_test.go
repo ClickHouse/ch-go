@@ -130,90 +130,90 @@ func TestParseTime64(t *testing.T) {
 	}
 }
 
-func TestFromTime32(t *testing.T) {
+func TestIntoTime32(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    time.Time
+		input    time.Duration
 		expected Time32
 	}{
-		{"zero time", time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC), Time32(0)},
-		{"noon", time.Date(1970, 1, 1, 12, 0, 0, 0, time.UTC), Time32(12 * 3600)},
-		{"complex time", time.Date(1970, 1, 1, 13, 45, 30, 0, time.UTC), Time32(13*3600 + 45*60 + 30)},
-		{"max time", time.Date(1970, 1, 1, 23, 59, 59, 0, time.UTC), Time32(23*3600 + 59*60 + 59)},
-		{"with nanoseconds", time.Date(1970, 1, 1, 12, 0, 0, 123456789, time.UTC), Time32(12 * 3600)},
-		{"different date", time.Date(2023, 6, 15, 14, 30, 45, 0, time.UTC), Time32(14*3600 + 30*60 + 45)},
+		{"zero time", time.Duration(0), Time32(0)},
+		{"12h", 12 * time.Hour, Time32(12 * 3600)},
+		{"13h45m30s", 13*time.Hour + 45*time.Minute + 30*time.Second, Time32(13*3600 + 45*60 + 30)},
+		{"23h59m59s", 23*time.Hour + 59*time.Minute + 59*time.Second, Time32(23*3600 + 59*60 + 59)},
+		{"time32 should ignore nanoseconds", 12*time.Hour + 123456789*time.Nanosecond, Time32(12 * 3600)},
+		{"14h30m45s", 14*time.Hour + 30*time.Minute + 45*time.Second, Time32(14*3600 + 30*60 + 45)},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FromTime32(tt.input); got != tt.expected {
+			if got := IntoTime32(tt.input); got != tt.expected {
 				t.Errorf("FromTime32() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestFromTime64(t *testing.T) {
+func TestIntoTime64(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    time.Time
+		input    time.Duration
 		expected Time64
 	}{
-		{"zero time", time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC), Time64(0)},
-		{"noon", time.Date(1970, 1, 1, 12, 0, 0, 0, time.UTC), Time64(12 * 3600 * 1e9)},
-		{"complex time", time.Date(1970, 1, 1, 13, 45, 30, 0, time.UTC), Time64((13*3600 + 45*60 + 30) * 1e9)},
-		{"max time", time.Date(1970, 1, 1, 23, 59, 59, 0, time.UTC), Time64((23*3600 + 59*60 + 59) * 1e9)},
-		{"with nanoseconds", time.Date(1970, 1, 1, 12, 0, 0, 123456789, time.UTC), Time64(12*3600*1e9 + 123456789)},
-		{"different date", time.Date(2023, 6, 15, 14, 30, 45, 123456789, time.UTC), Time64((14*3600+30*60+45)*1e9 + 123456789)},
+		{"zero time", time.Duration(0), Time64(0)},
+		{"12h", 12 * time.Hour, Time64(12 * 3600 * 1e9)},
+		{"13h45m30s", 13*time.Hour + 45*time.Minute + 30*time.Second, Time64((13*3600 + 45*60 + 30) * 1e9)},
+		{"23h59m59s", 23*time.Hour + 59*time.Minute + 59*time.Second, Time64((23*3600 + 59*60 + 59) * 1e9)},
+		{"time64 should not ignore nanoseconds", 12*time.Hour + 123456789*time.Nanosecond, Time64(12*3600*1e9 + 123456789)},
+		{"14h30m45s123456789ns", 14*time.Hour + 30*time.Minute + 45*time.Second + 123456789*time.Nanosecond, Time64((14*3600+30*60+45)*1e9 + 123456789)},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FromTime64(tt.input); got != tt.expected {
+			if got := IntoTime64(tt.input); got != tt.expected {
 				t.Errorf("FromTime64() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestTime32_ToTime32(t *testing.T) {
+func TestTime32_Duration(t *testing.T) {
 	tests := []struct {
 		name     string
 		time     Time32
-		expected time.Time
+		expected time.Duration
 	}{
-		{"zero", Time32(0), time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)},
-		{"noon", Time32(12 * 3600), time.Date(1970, 1, 1, 12, 0, 0, 0, time.UTC)},
-		{"complex time", Time32(13*3600 + 45*60 + 30), time.Date(1970, 1, 1, 13, 45, 30, 0, time.UTC)},
-		{"max time", Time32(23*3600 + 59*60 + 59), time.Date(1970, 1, 1, 23, 59, 59, 0, time.UTC)},
+		{"zero", Time32(0), time.Duration(0)},
+		{"12h", Time32(12 * 3600), 12 * time.Hour},
+		{"13h45m30s", Time32(13*3600 + 45*60 + 30), 13*time.Hour + 45*time.Minute + 30*time.Second},
+		{"23h59m59s", Time32(23*3600 + 59*60 + 59), 23*time.Hour + 59*time.Minute + 59*time.Second},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.time.ToTime32(); !got.Equal(tt.expected) {
-				t.Errorf("Time32.ToTime32() = %v, want %v", got, tt.expected)
+			if got := tt.time.Duration(); got != tt.expected {
+				t.Errorf("Time32.Duration() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestTime64_ToTime(t *testing.T) {
+func TestTime64_Duration(t *testing.T) {
 	tests := []struct {
 		name     string
 		time     Time64
-		expected time.Time
+		expected time.Duration
 	}{
-		{"zero", Time64(0), time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)},
-		{"noon", Time64(12 * 3600 * 1e9), time.Date(1970, 1, 1, 12, 0, 0, 0, time.UTC)},
-		{"complex time", Time64((13*3600 + 45*60 + 30) * 1e9), time.Date(1970, 1, 1, 13, 45, 30, 0, time.UTC)},
-		{"max time", Time64((23*3600 + 59*60 + 59) * 1e9), time.Date(1970, 1, 1, 23, 59, 59, 0, time.UTC)},
-		{"with nanoseconds", Time64(12*3600*1e9 + 123456789), time.Date(1970, 1, 1, 12, 0, 0, 123456789, time.UTC)},
+		{"zero", Time64(0), time.Duration(0)},
+		{"12h", Time64(12 * 3600 * 1e9), 12 * time.Hour},
+		{"13h45m30s", Time64((13*3600 + 45*60 + 30) * 1e9), 13*time.Hour + 45*time.Minute + 30*time.Second},
+		{"23h59m59s", Time64((23*3600 + 59*60 + 59) * 1e9), 23*time.Hour + 59*time.Minute + 59*time.Second},
+		{"12h123456789ns", Time64(12*3600*1e9 + 123456789), 12*time.Hour + 123456789*time.Nanosecond},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.time.ToTime(); !got.Equal(tt.expected) {
-				t.Errorf("Time64.ToTime() = %v, want %v", got, tt.expected)
+			if got := tt.time.Duration(); got != tt.expected {
+				t.Errorf("Time64.Duration() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
@@ -295,10 +295,10 @@ func TestTime32_TimeConversion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Convert to time.Time
-			t1 := tt.time.ToTime32()
+			t1 := tt.time.Duration()
 
 			// Convert back
-			t2 := FromTime32(t1)
+			t2 := IntoTime32(t1)
 
 			if t2 != tt.time {
 				t.Errorf("Time conversion failed: original = %v, converted back = %v", tt.time, t2)
@@ -322,10 +322,10 @@ func TestTime64_TimeConversion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Convert to time.Time
-			t1 := tt.time.ToTime()
+			t1 := tt.time.Duration()
 
 			// Convert back
-			t2 := FromTime64(t1)
+			t2 := IntoTime64(t1)
 
 			if t2 != tt.time {
 				t.Errorf("Time conversion failed: original = %v, converted back = %v", tt.time, t2)
@@ -361,15 +361,15 @@ func BenchmarkParseTime64(b *testing.B) {
 }
 
 func BenchmarkFromTime32(b *testing.B) {
-	t := time.Date(1970, 1, 1, 12, 34, 56, 0, time.UTC)
+	t := 12*time.Hour + 34*time.Minute + 56*time.Second
 	for i := 0; i < b.N; i++ {
-		_ = FromTime32(t)
+		_ = IntoTime32(t)
 	}
 }
 
 func BenchmarkFromTime64(b *testing.B) {
-	t := time.Date(1970, 1, 1, 12, 34, 56, 123456789, time.UTC)
+	t := 12*time.Hour + 34*time.Minute + 56*time.Second + 123456789*time.Nanosecond
 	for i := 0; i < b.N; i++ {
-		_ = FromTime64(t)
+		_ = IntoTime64(t)
 	}
 }
