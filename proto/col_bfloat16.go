@@ -44,8 +44,27 @@ func (c *ColBFloat16) Append(v float32) {
 	// but only 7-bit mantissa instead of 23-bit in float32. Thus reducing the
 	// precision. We use round-to-nearest-even (banker's rounding) for unbiased results.
 	// https://en.wikipedia.org/wiki/Rounding
+	//
+	// Why we need this?
+	//
+	// Without this, we either have to choose round-up or round-down and
+	// both leads to some systematic bias.
+	// e.g:
+	// Round-up always       - 3.5 -> 4.0, 4.5->5.0, 5.5->6.0, 6.5->7.0 (net-total 2.0 positive bias)
+	// Round-down always     - 3.5 -> 3.0, 4.5->4.0, 5.5->5.0, 6.5->6.0 (net-total 2.0 negative bias)
+	// Round-To-Nearest-EVen - 4.5 -> 4.0, 4.5->4.0, 5.5->6.0, 6.5->6.0 (net-total 0 bias)
 
-	roundingBias := uint32(0x7FFF) + ((bits >> 16) & 1)
+	// halfway is 16-bit value with only MSB is 0.
+	// It is used as threshold to round to nearest even of upper 16-bit
+	halfway := uint32(0x7FFF)
+
+	// evenness is basically last bit of upper 16-bits
+	// that represents odd or even of those whole upper 16-bit
+	evenness := ((bits >> 16) & 1)
+
+	// This will make sure we have unbiased rounding. By
+	// always rounding to closest even number.
+	roundingBias := halfway + evenness
 	bits += roundingBias
 
 	// Take the upper 16-bits of float32
