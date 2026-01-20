@@ -15,7 +15,7 @@ func TestColBFloat16_DecodeColumn(t *testing.T) {
 	t.Parallel()
 	const rows = 50
 	var data ColBFloat16
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		v := float32(i)
 		data.Append(v)
 		// BFloat16 may have precision loss, so check with tolerance
@@ -28,7 +28,7 @@ func TestColBFloat16_DecodeColumn(t *testing.T) {
 		t.Parallel()
 		gold.Bytes(t, buf.Buf, "col_bfloat16")
 	})
-	t.Run("Ok", func(t *testing.T) {
+	t.Run("HappyPath", func(t *testing.T) {
 		br := bytes.NewReader(buf.Buf)
 		r := NewReader(br)
 
@@ -235,7 +235,7 @@ func TestBFloat16_RoundTrip(t *testing.T) {
 	var original ColBFloat16
 
 	// Create test data with various values
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		v := float32(i)*0.5 - 25.0 // Range: -25.0 to 24.5
 		original.Append(v)
 	}
@@ -251,7 +251,7 @@ func TestBFloat16_RoundTrip(t *testing.T) {
 
 	// Verify
 	require.Equal(t, original.Rows(), decoded.Rows())
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		require.Equal(t, original[i], decoded[i],
 			"mismatch at index %d: original=%v, decoded=%v",
 			i, original[i], decoded[i])
@@ -302,18 +302,17 @@ func TestBFloat16_Conversion(t *testing.T) {
 func BenchmarkBFloat16_Decode(b *testing.B) {
 	const rows = 1000
 	var data ColBFloat16
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		data.Append(float32(i) * 0.1)
 	}
 
 	var buf Buffer
 	data.EncodeColumn(&buf)
 
-	b.ResetTimer()
 	b.ReportAllocs()
 	b.SetBytes(int64(len(buf.Buf)))
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		br := bytes.NewReader(buf.Buf)
 		r := NewReader(br)
 
@@ -327,14 +326,13 @@ func BenchmarkBFloat16_Decode(b *testing.B) {
 func BenchmarkBFloat16_Encode(b *testing.B) {
 	const rows = 1000
 	var data ColBFloat16
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		data.Append(float32(i) * 0.1)
 	}
 
-	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var buf Buffer
 		data.EncodeColumn(&buf)
 		b.SetBytes(int64(len(buf.Buf)))
@@ -343,10 +341,10 @@ func BenchmarkBFloat16_Encode(b *testing.B) {
 
 func BenchmarkBFloat16_Append(b *testing.B) {
 	var col ColBFloat16
-	b.ResetTimer()
+
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		col.Append(float32(i) * 0.1)
 	}
 }
@@ -354,14 +352,13 @@ func BenchmarkBFloat16_Append(b *testing.B) {
 func BenchmarkBFloat16_Row(b *testing.B) {
 	const rows = 1000
 	var col ColBFloat16
-	for i := 0; i < rows; i++ {
+	for i := range rows {
 		col.Append(float32(i) * 0.1)
 	}
 
-	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		_ = col.Row(i % rows)
 	}
 }

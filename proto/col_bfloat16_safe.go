@@ -28,6 +28,8 @@ func (c *ColBFloat16) DecodeColumn(r *Reader, rows int) error {
 	return nil
 }
 
+// EncodeColumn encodes the BFloat16 rows into given buffer.
+// BFloat16 is written as 16-bit (2 bytes) little-endian uint16.
 func (c ColBFloat16) EncodeColumn(buf *Buffer) {
 	v := c
 	if len(v) == 0 {
@@ -47,6 +49,10 @@ func (c ColBFloat16) EncodeColumn(buf *Buffer) {
 
 }
 
+// WriteColumn encodes the column data and chains it to w for later writing.
+// The data is added to w's internal buffer vector and will be written
+// when [Writer.Flush] is called. This enables efficient vector I/O by
+// avoiding memory copies.
 func (c ColBFloat16) WriteColumn(w *Writer) {
 	w.ChainBuffer(c.EncodeColumn)
 
