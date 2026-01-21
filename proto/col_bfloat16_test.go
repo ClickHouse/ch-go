@@ -6,7 +6,6 @@ import (
 	"math"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -15,7 +14,7 @@ import (
 
 func TestColBFloat16_DecodeColumn(t *testing.T) {
 	t.Parallel()
-	src := rand.NewSource(time.Now().Unix())
+	src := rand.NewSource(99) // don't use random number like timestamp. That would mess up "golden" file everytime
 	rng := rand.New(src)
 
 	// BFloat16 may have precision loss, so check with tolerance
