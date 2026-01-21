@@ -46,7 +46,6 @@ func (c ColBFloat16) EncodeColumn(buf *Buffer) {
 		binary.LittleEndian.PutUint16(buf.Buf[offset:offset+size], vv)
 		offset += size
 	}
-
 }
 
 // WriteColumn encodes the column data and chains it to w for later writing.
@@ -55,5 +54,4 @@ func (c ColBFloat16) EncodeColumn(buf *Buffer) {
 // avoiding memory copies.
 func (c ColBFloat16) WriteColumn(w *Writer) {
 	w.ChainBuffer(c.EncodeColumn)
-
 }
