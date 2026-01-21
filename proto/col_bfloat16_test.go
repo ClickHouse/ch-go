@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"io"
 	"math"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -13,13 +15,21 @@ import (
 
 func TestColBFloat16_DecodeColumn(t *testing.T) {
 	t.Parallel()
-	const rows = 50
+	src := rand.NewSource(time.Now().Unix())
+	rng := rand.New(src)
+
+	// BFloat16 may have precision loss, so check with tolerance
+	// BFloat16 has 7-bit for mantissa compared to 23-bit mantissa for Float32.
+	// which makes it loose 3-4 digits of precision.
+	relativeError := 0.004 // 0.4%
+
+	const rows = 5000
 	var data ColBFloat16
 	for i := range rows {
-		v := float32(i)
+		v := rng.Float32() * 1000 // range [0..1000]
 		data.Append(v)
-		// BFloat16 may have precision loss, so check with tolerance
-		require.InDelta(t, v, data.Row(i), 0.01)
+		maxDelta := math.Abs(float64(v)) * relativeError
+		require.InDelta(t, v, data.Row(i), maxDelta)
 	}
 
 	var buf Buffer
