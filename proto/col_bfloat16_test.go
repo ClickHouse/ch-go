@@ -371,3 +371,120 @@ func BenchmarkBFloat16_Row(b *testing.B) {
 		_ = col.Row(i % rows)
 	}
 }
+
+// TestBFloat16_ExhaustiveBFloat16ToFloat32 tests all 65,536 possible BFloat16 values
+// converting to Float32 and back to BFloat16. This ensures perfect round-trip for
+// all valid BFloat16 values.
+func TestBFloat16_ExhaustiveBFloat16ToFloat32(t *testing.T) {
+	// Test all 65,536 possible BFloat16 values (2^16)
+	// Use int to avoid overflow issues with uint16
+	for i := 0; i <= 65535; i++ {
+		bfloat16Val := uint16(i)
+
+		// Create a BFloat16 value directly
+		var col ColBFloat16
+		col = append(col, bfloat16Val)
+
+		// Convert to Float32
+		f32 := col.Row(0)
+
+		// Convert back to BFloat16
+		var col2 ColBFloat16
+		col2.Append(f32)
+
+		// The round-trip should be exact
+		if col2[0] != bfloat16Val {
+			t.Errorf("BFloat16 round-trip failed for value 0x%04x: got 0x%04x, float32 intermediate = %v (%08x)",
+				bfloat16Val, col2[0], f32, math.Float32bits(f32))
+		}
+
+		// Also verify that Row() correctly reconstructs the float32
+		// by checking the bit pattern
+		expectedBits := uint32(bfloat16Val) << 16
+		actualBits := math.Float32bits(f32)
+		if actualBits != expectedBits {
+			t.Errorf("BFloat16 to Float32 conversion failed for value 0x%04x: expected bits 0x%08x, got 0x%08x",
+				bfloat16Val, expectedBits, actualBits)
+		}
+	}
+}
+
+// TestBFloat16_ExhaustiveFloat32ToBFloat16 tests all 4,294,967,296 possible Float32 values
+// converting to BFloat16. This verifies that the round-to-nearest-even rounding is
+// correctly implemented for all possible inputs.
+// This test is skipped in short mode as it takes ~60-90 seconds to complete.
+func TestBFloat16_ExhaustiveFloat32ToBFloat16(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping exhaustive Float32 to BFloat16 test in short mode (takes ~60-90s)")
+	}
+
+	// Helper function to compute expected BFloat16 value with round-to-nearest-even
+	expectedBFloat16 := func(f32Bits uint32) uint16 {
+		// Extract components
+		upper16 := f32Bits >> 16
+		lower16 := f32Bits & 0xFFFF
+
+		// Round-to-nearest-even logic
+		// If lower16 > 0x8000: round up
+		// If lower16 < 0x8000: round down (truncate)
+		// If lower16 == 0x8000: round to even (check LSB of upper16)
+		if lower16 > 0x8000 {
+			// Round up
+			upper16++
+		} else if lower16 == 0x8000 {
+			// Exactly at midpoint - round to even
+			// If upper16 is odd (LSB=1), round up to make it even
+			if (upper16 & 1) == 1 {
+				upper16++
+			}
+		}
+		// else: lower16 < 0x8000, round down (do nothing, just truncate is enough)
+
+		return uint16(upper16)
+	}
+
+	// Test all 4,294,967,296 possible Float32 bit patterns
+	var f32Bits uint32
+	failCount := 0
+	const maxFailuresToReport = 10
+
+	for {
+		f32 := math.Float32frombits(f32Bits)
+
+		// Convert to BFloat16
+		var col ColBFloat16
+		col.Append(f32)
+		actual := col[0]
+
+		// Compute expected value
+		expected := expectedBFloat16(f32Bits)
+
+		if actual != expected {
+			if failCount < maxFailuresToReport {
+				t.Errorf("Float32 to BFloat16 conversion failed for f32=0x%08x (%v): expected 0x%04x, got 0x%04x",
+					f32Bits, f32, expected, actual)
+			}
+			failCount++
+		}
+
+		// Progress reporting every 100 million iterations (~2.3% intervals)
+		if f32Bits%100000000 == 0 && f32Bits > 0 {
+			progress := float64(f32Bits) / float64(uint64(1)<<32) * 100
+			t.Logf("Progress: %.1f%% (%d / 4294967296)", progress, f32Bits)
+		}
+
+		// Check for overflow/completion
+		if f32Bits == 0xFFFFFFFF {
+			break
+		}
+		f32Bits++
+	}
+
+	if failCount > 0 {
+		if failCount > maxFailuresToReport {
+			t.Errorf("... and %d more failures (total %d failures out of 4,294,967,296 tests)",
+				failCount-maxFailuresToReport, failCount)
+		}
+		t.Fatalf("Exhaustive Float32 to BFloat16 test failed with %d errors", failCount)
+	}
+}
