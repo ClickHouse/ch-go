@@ -225,6 +225,7 @@ const (
 	ColumnTypeUInt256        ColumnType = "UInt256"
 	ColumnTypeFloat32        ColumnType = "Float32"
 	ColumnTypeFloat64        ColumnType = "Float64"
+	ColumnTypeBFloat16       ColumnType = "BFloat16"
 	ColumnTypeString         ColumnType = "String"
 	ColumnTypeFixedString    ColumnType = "FixedString"
 	ColumnTypeArray          ColumnType = "Array"
