@@ -10,7 +10,5 @@ on:
 jobs:
   test:
     uses: go-faster/x/.github/workflows/test.yml@main
-    with:
-      enable-arm64: true
   lint:
     uses: go-faster/x/.github/workflows/lint.yml@main
