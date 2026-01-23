@@ -259,7 +259,8 @@ colV.Reset()
 ## Features
 * OpenTelemetry support
 * No reflection or `interface{}`
-* Generics (go1.18) for `Array[T]`, `LowCardinaliy[T]`, `Map[K, V]`, `Nullable[T]`
+* Generics (go1.18) for `Array[T]`, `LowCardinality[T]`, `Map[K, V]`, `Nullable[T]`
+* Nested type support with helper methods for flattened array columns
 * [Reading or writing](#dumps) ClickHouse dumps in `Native` format
 * **Column**-oriented design that operates directly with **blocks** of data
   * [Dramatically more efficient](https://github.com/ClickHouse/ch-bench)
@@ -300,6 +301,7 @@ colV.Reset()
 * Bool
 * Tuple(T1, T2, ..., Tn)
 * Nullable(T)
+* Nested(T1, T2, ...)
 * Point
 * Nothing, Interval
 
@@ -348,6 +350,59 @@ q := ch.Query{
 }
 // Do ...
 arr.Row(0) // ["foo", "bar", "baz"]
+```
+
+### Nested
+
+Helper for `Nested(name1 Type1, name2 Type2, ...)`. In ClickHouse, Nested columns are stored as parallel arrays with dot notation (e.g., `col.field`).
+
+```go
+// For table:
+// CREATE TABLE t (
+//     id UInt64,
+//     events Nested(name String, value Float64)
+// ) ENGINE = Memory
+
+// Writing data
+nested := proto.NewNested(
+    proto.NestedColumn{Name: "name", Data: new(proto.ColStr).Array()},
+    proto.NestedColumn{Name: "value", Data: new(proto.ColFloat64).Array()},
+)
+// Append a row with 2 events
+nested.Append(map[string]any{
+    "name":  []string{"click", "view"},
+    "value": []float64{1.5, 2.5},
+})
+
+var id proto.ColUInt64
+id.Append(1)
+
+input := proto.Input{{Name: "id", Data: id}}
+input = append(input, nested.InputColumns("events")...)
+
+if err := conn.Do(ctx, ch.Query{
+    Body:  "INSERT INTO t VALUES",
+    Input: input,
+}); err != nil {
+    panic(err)
+}
+
+// Reading data
+var resultID proto.ColUInt64
+resultNested := proto.NewNested(
+    proto.NestedColumn{Name: "name", Data: new(proto.ColStr).Array()},
+    proto.NestedColumn{Name: "value", Data: new(proto.ColFloat64).Array()},
+)
+
+results := proto.Results{{Name: "id", Data: &resultID}}
+results = append(results, resultNested.ResultColumns("events")...)
+
+if err := conn.Do(ctx, ch.Query{
+    Body:   "SELECT id, `events.name`, `events.value` FROM t",
+    Result: results,
+}); err != nil {
+    panic(err)
+}
 ```
 
 ## Dumps
@@ -455,7 +510,7 @@ func TestLocalNativeDump(t *testing.T) {
   - [ ] AggregateFunction
   - [x] Nothing
   - [x] Interval
-  - [ ] Nested
+  - [x] Nested
   - [ ] [Geo types](https://clickhouse.com/docs/en/sql-reference/data-types/geo/)
     - [x] Point
     - [ ] Ring

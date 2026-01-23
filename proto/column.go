@@ -153,7 +153,7 @@ func (c ColumnType) normalizeCommas() ColumnType {
 	// Should we check for escaped commas in enums here?
 	const sep = ","
 	var elems []string
-	for _, e := range strings.Split(string(c), sep) {
+	for e := range strings.SplitSeq(string(c), sep) {
 		elems = append(elems, strings.TrimSpace(e))
 	}
 	return ColumnType(strings.Join(elems, sep))
@@ -254,6 +254,7 @@ const (
 	ColumnTypeInterval       ColumnType = "Interval"
 	ColumnTypeNothing        ColumnType = "Nothing"
 	ColumnTypeJSON           ColumnType = "JSON"
+	ColumnTypeNested         ColumnType = "Nested"
 )
 
 // colWrap wraps Column with type t.
@@ -267,7 +268,7 @@ func (c colWrap) Type() ColumnType { return c.t }
 // Wrap Column with type parameters.
 //
 // So if c type is T, result type will be T(arg0, arg1, ...).
-func Wrap(c Column, args ...interface{}) Column {
+func Wrap(c Column, args ...any) Column {
 	var params []string
 	for _, a := range args {
 		params = append(params, fmt.Sprint(a))
