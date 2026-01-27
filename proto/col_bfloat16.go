@@ -1,7 +1,5 @@
 package proto
 
-import "math"
-
 // ColBFloat16 is ClickHouse's BFloat16 column type.
 // BFloat16 (Brain Floating Point) is a 16-bit floating point format
 // with 1 sign bit, 8 exponent bits and 7 mantissa bits.
@@ -30,45 +28,11 @@ func (c ColBFloat16) Type() ColumnType {
 }
 
 func (c ColBFloat16) Row(i int) float32 {
-	// BFloat16 is upper 16 bits of float32
-	bits := uint32(c[i]) << 16
-	return math.Float32frombits(bits)
+	return BFloat16ToFloat32(c[i])
 }
 
 func (c *ColBFloat16) Append(v float32) {
-	bits := math.Float32bits(v)
-
-	// NOTE: We need only upper 16-bits of float32.
-	// Means we need rounding.
-	// BFloat16 (16 bytes) uses same 8-bit for exponent similar to float32
-	// but only 7-bit mantissa instead of 23-bit in float32. Thus reducing the
-	// precision. We use round-to-nearest-even (banker's rounding) for unbiased results.
-	// https://en.wikipedia.org/wiki/Rounding
-	//
-	// Why we need this?
-	//
-	// Without this, we either have to choose round-up or round-down and
-	// both leads to some systematic bias.
-	// e.g:
-	// Round-up always       - 3.5 -> 4.0, 4.5->5.0, 5.5->6.0, 6.5->7.0 (net-total 2.0 positive bias)
-	// Round-down always     - 3.5 -> 3.0, 4.5->4.0, 5.5->5.0, 6.5->6.0 (net-total 2.0 negative bias)
-	// Round-To-Nearest-EVen - 4.5 -> 4.0, 4.5->4.0, 5.5->6.0, 6.5->6.0 (net-total 0 bias)
-
-	// halfway is 16-bit value with only MSB is 0.
-	// It is used as threshold to round to nearest even of upper 16-bit
-	halfway := uint32(0x7FFF)
-
-	// evenness is basically last bit of upper 16-bits
-	// that represents odd or even of those whole upper 16-bit
-	evenness := ((bits >> 16) & 1)
-
-	// This will make sure we have unbiased rounding. By
-	// always rounding to closest even number.
-	roundingBias := halfway + evenness
-	bits += roundingBias
-
-	// Take the upper 16-bits of float32
-	*c = append(*c, uint16(bits>>16))
+	*c = append(*c, Float32ToBFloat16(v))
 }
 
 func (c *ColBFloat16) AppendArr(vs []float32) {
