@@ -380,10 +380,15 @@ func TestColQBit_SpecialValues_Float32(t *testing.T) {
 	col, err := NewColQBit(ColumnTypeFloat32, 6)
 	require.NoError(t, err)
 
+	// In Go, both 0.0 and -0.0 are exactly same if used as constants.
+	// Hence using it as variable to have sign bit different between those two.
+	pZero := float32(0.0)
+	nZero := -1 * pZero
+
 	// Test special float values
 	vector := []float32{
-		0.0,
-		-0.0,
+		pZero,
+		nZero,
 		float32(math.Inf(1)),  // +Inf
 		float32(math.Inf(-1)), // -Inf
 		float32(math.NaN()),   // NaN
@@ -396,8 +401,8 @@ func TestColQBit_SpecialValues_Float32(t *testing.T) {
 	result := col.Row(0)
 	require.NotNil(t, result)
 
-	assert.Equal(t, float32(0.0), result[0])
-	assert.Equal(t, float32(-0.0), result[1])
+	assert.Equal(t, nZero, result[0])
+	assert.Equal(t, pZero, result[1])
 	assert.True(t, math.IsInf(float64(result[2]), 1), "should be +Inf")
 	assert.True(t, math.IsInf(float64(result[3]), -1), "should be -Inf")
 	assert.True(t, math.IsNaN(float64(result[4])), "should be NaN")
