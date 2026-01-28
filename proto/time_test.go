@@ -153,7 +153,56 @@ func TestIntoTime32(t *testing.T) {
 	}
 }
 
+func TestIntoTime64WithPrecision(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     time.Duration
+		precision Precision
+		expected  Time64
+	}{
+		{"zero time second", time.Duration(0), Precision(0), Time64(0)},
+		{"zero time milli", time.Duration(0), Precision(3), Time64(0)},
+		{"zero time micro", time.Duration(0), Precision(6), Time64(0)},
+		{"zero time nano", time.Duration(0), Precision(9), Time64(0)},
+
+		{"12h second", 12 * time.Hour, Precision(0), Time64(12 * 3600 * 1e0)},
+		{"12h milli", 12 * time.Hour, Precision(3), Time64(12 * 3600 * 1e3)},
+		{"12h micro", 12 * time.Hour, Precision(6), Time64(12 * 3600 * 1e6)},
+		{"12h nano", 12 * time.Hour, Precision(9), Time64(12 * 3600 * 1e9)},
+
+		{"13h45m30s second", 13*time.Hour + 45*time.Minute + 30*time.Second, Precision(0), Time64((13*3600 + 45*60 + 30) * 1e0)},
+		{"13h45m30s milli", 13*time.Hour + 45*time.Minute + 30*time.Second, Precision(3), Time64((13*3600 + 45*60 + 30) * 1e3)},
+		{"13h45m30s micro", 13*time.Hour + 45*time.Minute + 30*time.Second, Precision(6), Time64((13*3600 + 45*60 + 30) * 1e6)},
+		{"13h45m30s nano", 13*time.Hour + 45*time.Minute + 30*time.Second, Precision(9), Time64((13*3600 + 45*60 + 30) * 1e9)},
+
+		{"23h59m59s second", 23*time.Hour + 59*time.Minute + 59*time.Second, Precision(0), Time64((23*3600 + 59*60 + 59) * 1e0)},
+		{"23h59m59s milli", 23*time.Hour + 59*time.Minute + 59*time.Second, Precision(3), Time64((23*3600 + 59*60 + 59) * 1e3)},
+		{"23h59m59s micro", 23*time.Hour + 59*time.Minute + 59*time.Second, Precision(6), Time64((23*3600 + 59*60 + 59) * 1e6)},
+		{"23h59m59s nano", 23*time.Hour + 59*time.Minute + 59*time.Second, Precision(9), Time64((23*3600 + 59*60 + 59) * 1e9)},
+
+		{"time64 should not ignore nanoseconds", 12*time.Hour + 123456789*time.Nanosecond, Precision(9), Time64(12*3600*1e9 + 123456789)},
+		{"time64 should not ignore microseconds", 12*time.Hour + 123456789*time.Microsecond, Precision(6), Time64(12*3600*1e6 + 123456789)},
+		{"time64 should not ignore milliseconds", 12*time.Hour + 123456789*time.Millisecond, Precision(3), Time64(12*3600*1e3 + 123456789)},
+		{"time64 should not ignore seconds", 12*time.Hour + 123456789*time.Second, Precision(0), Time64(12*3600*1e0 + 123456789)},
+
+		{"14h30m45s123456789ns full", 14*time.Hour + 30*time.Minute + 45*time.Second + 123456789*time.Nanosecond, Precision(9), Time64((14*3600+30*60+45)*1e9 + 123456789)},
+		{"14h30m45s123456789ns micro", 14*time.Hour + 30*time.Minute + 45*time.Second + 123456789*time.Nanosecond, Precision(6), Time64((14*3600+30*60+45)*1e6 + 123456)},
+		{"14h30m45s123456789ns milli", 14*time.Hour + 30*time.Minute + 45*time.Second + 123456789*time.Nanosecond, Precision(3), Time64((14*3600+30*60+45)*1e3 + 123)},
+		{"14h30m45s123456789ns seconds", 14*time.Hour + 30*time.Minute + 45*time.Second + 123456789*time.Nanosecond, Precision(0), Time64((14*3600 + 30*60 + 45) * 1e0)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IntoTime64WithPrecision(tt.input, tt.precision); got != tt.expected {
+				t.Errorf("IntoTime64WithPrecision() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestIntoTime64(t *testing.T) {
+	// IntoTime64 always treat duration with PrecisionMax (which is nanoseconds)
+
 	tests := []struct {
 		name     string
 		input    time.Duration
@@ -170,7 +219,7 @@ func TestIntoTime64(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := IntoTime64(tt.input); got != tt.expected {
-				t.Errorf("FromTime64() = %v, want %v", got, tt.expected)
+				t.Errorf("IntoTime64() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
@@ -197,6 +246,47 @@ func TestTime32_Duration(t *testing.T) {
 	}
 }
 
+func TestTime64_DurationWithPrecision(t *testing.T) {
+	tests := []struct {
+		name      string
+		time      Time64
+		precision Precision
+		expected  time.Duration
+	}{
+		{"zero seconds", Time64(0), Precision(0), time.Duration(0)},
+		{"zero milli", Time64(0), Precision(3), time.Duration(0)},
+		{"zero micro", Time64(0), Precision(6), time.Duration(0)},
+		{"zero nano", Time64(0), Precision(9), time.Duration(0)},
+
+		{"12h seconds", Time64(12 * 3600 * 1e0), Precision(0), 12 * time.Hour},
+		{"12h milli", Time64(12 * 3600 * 1e3), Precision(3), 12 * time.Hour},
+		{"12h micro", Time64(12 * 3600 * 1e6), Precision(6), 12 * time.Hour},
+		{"12h nano", Time64(12 * 3600 * 1e9), Precision(9), 12 * time.Hour},
+
+		{"13h45m30s seconds", Time64((13*3600 + 45*60 + 30) * 1e0), Precision(0), 13*time.Hour + 45*time.Minute + 30*time.Second},
+		{"13h45m30s milli", Time64((13*3600 + 45*60 + 30) * 1e3), Precision(3), 13*time.Hour + 45*time.Minute + 30*time.Second},
+		{"13h45m30s micro", Time64((13*3600 + 45*60 + 30) * 1e6), Precision(6), 13*time.Hour + 45*time.Minute + 30*time.Second},
+		{"13h45m30s nano", Time64((13*3600 + 45*60 + 30) * 1e9), Precision(9), 13*time.Hour + 45*time.Minute + 30*time.Second},
+
+		{"23h59m59s seconds", Time64((23*3600 + 59*60 + 59) * 1e0), Precision(0), 23*time.Hour + 59*time.Minute + 59*time.Second},
+		{"23h59m59s milli", Time64((23*3600 + 59*60 + 59) * 1e3), Precision(3), 23*time.Hour + 59*time.Minute + 59*time.Second},
+		{"23h59m59s micro", Time64((23*3600 + 59*60 + 59) * 1e6), Precision(6), 23*time.Hour + 59*time.Minute + 59*time.Second},
+		{"23h59m59s nano", Time64((23*3600 + 59*60 + 59) * 1e9), Precision(9), 23*time.Hour + 59*time.Minute + 59*time.Second},
+
+		{"12h123456789ns", Time64(12*3600*1e9 + 123456789), Precision(9), 12*time.Hour + 123456789*time.Nanosecond},
+		{"12h123456us", Time64(12*3600*1e6 + 123456), Precision(6), 12*time.Hour + 123456*time.Microsecond},
+		{"12h123ms", Time64(12*3600*1e3 + 123), Precision(3), 12*time.Hour + 123*time.Millisecond},
+		{"12h2s", Time64(12*3600*1e0 + 2), Precision(0), 12*time.Hour + 2*time.Second},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.time.ToDurationWithPrecision(tt.precision); got != tt.expected {
+				t.Errorf("Time64.ToDurationWithPrecision() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
 func TestTime64_Duration(t *testing.T) {
 	tests := []struct {
 		name     string

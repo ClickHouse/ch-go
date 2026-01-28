@@ -145,6 +145,8 @@ func (t Time64) Duration() time.Duration {
 // ToDurationWithPrecision converts Time64 to time.Duration with specified precision
 // up until PrecisionMax (nanoseconds)
 func (t Time64) ToDurationWithPrecision(precision Precision) time.Duration {
+	// `t` is stored with precision `precision`. Scale it to nanoseconds before converting it into
+	// time.Duration. Because time.Duration is always nanoseconds.
 	res := time.Duration(int64(t) * precision.Scale())
 	return truncateDuration(res, precision)
 }
