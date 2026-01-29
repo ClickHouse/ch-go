@@ -254,6 +254,7 @@ const (
 	ColumnTypeInterval       ColumnType = "Interval"
 	ColumnTypeNothing        ColumnType = "Nothing"
 	ColumnTypeJSON           ColumnType = "JSON"
+	ColumnTypeQBit           ColumnType = "QBit"
 )
 
 // colWrap wraps Column with type t.
