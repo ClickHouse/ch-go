@@ -55,8 +55,12 @@ func NewColQBit(elementType ColumnType, dimension int) (*ColQBit, error) {
 	if err != nil {
 		return nil, err
 	}
+	bitsPerByte := 8
 
-	bytesPerRow := (dimension + 7) / 8 // ceil(dimension / 8)
+	// ceil(dimension / 8) without needing floating point.
+	// e.g: dimension = 9
+	// (9 + 8 - 1)/8 = 2 (bytes)
+	bytesPerRow := (dimension + bitsPerByte - 1) / bitsPerByte
 	bitPlanes := make([][]byte, bitWidth)
 	for i := range bitPlanes {
 		bitPlanes[i] = make([]byte, 0)

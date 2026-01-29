@@ -12,7 +12,9 @@ import "math"
 //
 // This function takes the upper 16 bits of Float32 with proper rounding.
 //
-// Why banker's rounding?
+// What is banker's rounding?
+// It is rounding-to-nearest-even in case of numbers that are exactly in half-way midpoint.
+//
 // Without rounding-to-nearest-even, we have systematic bias:
 //   - Round-up always:   3.5->4, 4.5->5, 5.5->6, 6.5->7 (net +2.0 bias)
 //   - Round-down always: 3.5->3, 4.5->4, 5.5->5, 6.5->6 (net -2.0 bias)
