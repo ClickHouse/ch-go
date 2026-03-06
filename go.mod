@@ -1,6 +1,6 @@
 module github.com/ClickHouse/ch-go
 
-go 1.24.1
+go 1.25.0
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -15,10 +15,10 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.26
 	github.com/segmentio/asm v1.2.1
 	github.com/stretchr/testify v1.11.1
-	go.opentelemetry.io/otel v1.41.0
-	go.opentelemetry.io/otel/metric v1.41.0
-	go.opentelemetry.io/otel/sdk v1.41.0
-	go.opentelemetry.io/otel/trace v1.41.0
+	go.opentelemetry.io/otel v1.42.0
+	go.opentelemetry.io/otel/metric v1.42.0
+	go.opentelemetry.io/otel/sdk v1.42.0
+	go.opentelemetry.io/otel/trace v1.42.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.48.0
