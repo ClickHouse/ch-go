@@ -97,6 +97,132 @@ func TestArrLowCardinalityStr(t *testing.T) {
 	t.Run("WriteColumn", checkWriteColumn(col))
 }
 
+func TestColLowCardinalityReuse(t *testing.T) {
+	t.Run("ResetBetweenPrepare", func(t *testing.T) {
+		col := new(ColStr).LowCardinality()
+
+		// First use
+		col.Append("hello")
+		col.Append("world")
+		require.NoError(t, col.Prepare())
+		require.Equal(t, 2, col.Rows())
+
+		// Reset and reuse
+		col.Reset()
+
+		// Second use with different values
+		col.Append("foo")
+		col.Append("bar")
+		require.NoError(t, col.Prepare())
+		require.Equal(t, 2, col.Rows())
+
+		// Verify the actual values are correct after reuse
+		require.Equal(t, "foo", col.Row(0))
+		require.Equal(t, "bar", col.Row(1))
+
+		// Verify round-trip encoding/decoding
+		var buf Buffer
+		col.EncodeColumn(&buf)
+
+		dec := new(ColStr).LowCardinality()
+		require.NoError(t, dec.DecodeColumn(buf.Reader(), 2))
+		require.Equal(t, 2, dec.Rows())
+		require.Equal(t, "foo", dec.Row(0))
+		require.Equal(t, "bar", dec.Row(1))
+	})
+	t.Run("PrepareIdempotent", func(t *testing.T) {
+		// Calling Prepare() twice without Reset() must produce correct encoding.
+		col := new(ColStr).LowCardinality()
+		col.Append("hello")
+		col.Append("world")
+		require.NoError(t, col.Prepare())
+
+		// Call Prepare() again on the same data without Reset().
+		require.NoError(t, col.Prepare())
+
+		var buf Buffer
+		col.EncodeColumn(&buf)
+
+		dec := new(ColStr).LowCardinality()
+		require.NoError(t, dec.DecodeColumn(buf.Reader(), 2))
+		require.Equal(t, "hello", dec.Row(0))
+		require.Equal(t, "world", dec.Row(1))
+	})
+	t.Run("AppendAfterPrepare", func(t *testing.T) {
+		// Append more values after Prepare(), then Prepare() again.
+		col := new(ColStr).LowCardinality()
+		col.Append("a")
+		require.NoError(t, col.Prepare())
+
+		col.Append("b")
+		require.NoError(t, col.Prepare())
+
+		var buf Buffer
+		col.EncodeColumn(&buf)
+
+		dec := new(ColStr).LowCardinality()
+		require.NoError(t, dec.DecodeColumn(buf.Reader(), 2))
+		require.Equal(t, "a", dec.Row(0))
+		require.Equal(t, "b", dec.Row(1))
+	})
+}
+
+// encodeLowCardinalityBlock encodes a LowCardinality(String) block with a
+// specific dictionary order and key sequence.
+func encodeLowCardinalityBlock(dict []string, keys []uint8) []byte {
+	var buf Buffer
+	buf.PutInt64(cardinalityUpdateAll | int64(KeyUInt8))
+	buf.PutInt64(int64(len(dict)))
+	var index ColStr
+	for _, s := range dict {
+		index.Append(s)
+	}
+	index.EncodeColumn(&buf)
+	buf.PutInt64(int64(len(keys)))
+	k := ColUInt8(keys)
+	k.EncodeColumn(&buf)
+	return buf.Buf
+}
+
+func TestColLowCardinalityDecodePrepareCycle(t *testing.T) {
+	// Regression test: reusing a column across decode→Prepare→encode cycles
+	// must produce correct output even when the decoded dictionary order
+	// differs from the value encounter order.
+	block1 := encodeLowCardinalityBlock(
+		[]string{"A", "B", "C"},
+		[]uint8{0, 1, 2},
+	)
+	block2 := encodeLowCardinalityBlock(
+		[]string{"A", "B", "C"},
+		[]uint8{2, 0, 1, 2},
+	)
+
+	col := new(ColStr).LowCardinality()
+
+	// Cycle 1: populates c.kv (makes it non-nil).
+	require.NoError(t, col.DecodeColumn(NewReader(bytes.NewReader(block1)), 3))
+	require.NoError(t, col.Prepare())
+
+	// Cycle 2: different key ordering.
+	col.Reset()
+	require.NoError(t, col.DecodeColumn(NewReader(bytes.NewReader(block2)), 4))
+	require.Equal(t, "C", col.Row(0))
+	require.Equal(t, "A", col.Row(1))
+	require.Equal(t, "B", col.Row(2))
+	require.Equal(t, "C", col.Row(3))
+
+	require.NoError(t, col.Prepare())
+	var out Buffer
+	col.EncodeColumn(&out)
+
+	dec := new(ColStr).LowCardinality()
+	require.NoError(t, dec.DecodeColumn(out.Reader(), 4))
+	require.Equal(t, "C", dec.Row(0))
+	require.Equal(t, "A", dec.Row(1))
+	require.Equal(t, "B", dec.Row(2))
+	require.Equal(t, "C", dec.Row(3))
+}
+
 func TestColLowCardinality_DecodeColumn(t *testing.T) {
 	t.Run("Str", func(t *testing.T) {
 		const rows = 25
