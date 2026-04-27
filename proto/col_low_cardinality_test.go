@@ -2,6 +2,7 @@ package proto
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"testing"
 
@@ -168,4 +169,33 @@ func TestColLowCardinality_DecodeColumn(t *testing.T) {
 		require.NoError(t, dec.DecodeColumn(buf.Reader(), 0))
 		require.Error(t, dec.DecodeColumn(buf.Reader(), 1))
 	})
+}
+
+func TestColLowCardinality_PrepareKeyBoundary256(t *testing.T) {
+	cases := []struct {
+		name string
+		rows int
+		key  CardinalityKey
+	}{
+		{name: "255", rows: 255, key: KeyUInt8},
+		{name: "256", rows: 256, key: KeyUInt8},
+		{name: "257", rows: 257, key: KeyUInt16},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			col := new(ColStr).LowCardinality()
+			col.AppendArr(makeLCStrings(1, tc.rows))
+			require.NoError(t, col.Prepare())
+			require.Equal(t, tc.key, col.key)
+		})
+	}
+}
+
+func makeLCStrings(start, count int) []string {
+	values := make([]string, 0, count)
+	for i := 0; i < count; i++ {
+		values = append(values, fmt.Sprintf("lg-%06d", start+i))
+	}
+	return values
 }
