@@ -120,6 +120,16 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 			return errors.Wrap(err, "external data")
 		}
 	}
+
+	for _, t := range q.ExternalTables {
+		if t.Name == "" {
+			return errors.New("external table needs a name")
+		}
+		if err := c.encodeBlock(ctx, t.Name, t.Data); err != nil {
+			return errors.Wrapf(err, "external table %q", t.Name)
+		}
+	}
+
 	// End of external data.
 	if err := c.encodeBlankBlock(ctx); err != nil {
 		return errors.Wrap(err, "external data end")
@@ -196,8 +206,19 @@ type Query struct {
 	// ExternalTable name. Defaults to _data.
 	ExternalTable string
 
+	// ExternalTables is additional external tables sent to server.
+	// If ExternalData is not empty, it's sent along with this tables.
+	ExternalTables []ExternalTable
+
 	// Logger for query, optional, defaults to client logger with `query_id` field.
 	Logger *zap.Logger
+}
+
+// ExternalTable is additional data that can be sent along with query.
+// External tables can be referred by their name just like any temporary table.
+type ExternalTable struct {
+	Name string
+	Data proto.Input
 }
 
 // CorruptedDataErr means that provided hash mismatch with calculated.

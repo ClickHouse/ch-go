@@ -1239,6 +1239,43 @@ func TestClient_ExternalData(t *testing.T) {
 		require.NoError(t, Conn(t).Do(ctx, selectStr))
 		require.Equal(t, 3, data.Rows())
 	})
+	t.Run("More", func(t *testing.T) {
+		t.Parallel()
+		var data proto.ColInt64
+		selectStr := Query{
+			Body: "SELECT * FROM external0",
+			ExternalTables: []ExternalTable{
+				{Name: "external0", Data: proto.Input{
+					{Name: "v", Data: proto.ColInt64{1, 2, 3}},
+				}},
+			},
+			Result: proto.Results{
+				{Name: "v", Data: &data},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectStr))
+		require.Equal(t, 3, data.Rows())
+	})
+	t.Run("DefaultAndMore", func(t *testing.T) {
+		t.Parallel()
+		var data proto.ColInt64
+		selectStr := Query{
+			Body: "SELECT * FROM _data INNER JOIN external0 USING v",
+			ExternalData: []proto.InputColumn{
+				{Name: "v", Data: proto.ColInt64{1, 2, 3}},
+			},
+			ExternalTables: []ExternalTable{
+				{Name: "external0", Data: proto.Input{
+					{Name: "v", Data: proto.ColInt64{1, 2, 3}},
+				}},
+			},
+			Result: proto.Results{
+				{Name: "v", Data: &data},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectStr))
+		require.Equal(t, 3, data.Rows())
+	})
 }
 
 func TestClient_ServerProfile(t *testing.T) {
