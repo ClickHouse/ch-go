@@ -255,7 +255,7 @@ const (
 	ColumnTypeNothing        ColumnType = "Nothing"
 	ColumnTypeJSON           ColumnType = "JSON"
 	ColumnTypeQBit           ColumnType = "QBit"
-  ColumnTypeNested         ColumnType = "Nested"
+	ColumnTypeNested         ColumnType = "Nested"
 )
 
 // colWrap wraps Column with type t.
