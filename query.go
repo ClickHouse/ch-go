@@ -57,6 +57,7 @@ func (c *Client) querySettings(q Query) []proto.Setting {
 			Key:       s.Key,
 			Value:     s.Value,
 			Important: s.Important,
+			Custom:    s.Custom,
 		})
 	}
 	for _, s := range q.Settings {
@@ -64,6 +65,7 @@ func (c *Client) querySettings(q Query) []proto.Setting {
 			Key:       s.Key,
 			Value:     s.Value,
 			Important: s.Important,
+			Custom:    s.Custom,
 		})
 	}
 	return result

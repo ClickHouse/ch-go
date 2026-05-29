@@ -65,6 +65,7 @@ type Client struct {
 type Setting struct {
 	Key, Value string
 	Important  bool
+	Custom     bool
 }
 
 // SettingInt returns Setting with integer value v.

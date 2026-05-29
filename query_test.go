@@ -1547,3 +1547,27 @@ func TestClientQueryCancellation(t *testing.T) {
 	// Connection should be closed after query cancellation.
 	require.True(t, c.IsClosed())
 }
+
+func TestClient_querySettings(t *testing.T) {
+	t.Parallel()
+	c := &Client{
+		settings: []Setting{
+			{Key: "max_threads", Value: "4", Important: true},
+			{Key: "custom_global", Value: "g", Custom: true},
+		},
+	}
+	got := c.querySettings(Query{
+		Settings: []Setting{
+			{Key: "max_block_size", Value: "1024"},
+			{Key: "custom_query", Value: "q", Custom: true},
+			{Key: "custom_query_important", Value: "qi", Important: true, Custom: true},
+		},
+	})
+	require.Equal(t, []proto.Setting{
+		{Key: "max_threads", Value: "4", Important: true},
+		{Key: "custom_global", Value: "g", Custom: true},
+		{Key: "max_block_size", Value: "1024"},
+		{Key: "custom_query", Value: "q", Custom: true},
+		{Key: "custom_query_important", Value: "qi", Important: true, Custom: true},
+	}, got)
+}
