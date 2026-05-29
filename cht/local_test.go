@@ -72,15 +72,16 @@ func TestLocalNativeDump(t *testing.T) {
 		Rows int `json:"rows"`
 		Data []struct {
 			Title string `json:"title"`
-			Data  int    `json:"data,string"`
+			Data  int    `json:"data"`
 		}
 	}{}
-	require.NoError(t, json.Unmarshal(out.Bytes(), &v), "json")
+	val := out.Bytes()
+	require.NoError(t, json.Unmarshal(val, &v), "json")
 	assert.Equal(t, 2, v.Rows)
 	if assert.Len(t, v.Data, 2) {
 		for i, r := range []struct {
 			Title string `json:"title"`
-			Data  int    `json:"data,string"`
+			Data  int    `json:"data"`
 		}{
 			{"Foo", 1},
 			{"Bar", 2},
