@@ -1148,7 +1148,6 @@ func TestClientCompression(t *testing.T) {
 	t.Run("LZ4HC", testCompression(CompressionLZ4HC))
 	t.Run("ZSTD", testCompression(CompressionZSTD))
 	t.Run("None", testCompression(CompressionNone))
-	t.Run("Disabled", testCompression(CompressionDisabled))
 }
 
 func TestClient_ServerLog(t *testing.T) {

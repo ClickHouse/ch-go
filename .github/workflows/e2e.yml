@@ -11,17 +11,17 @@ jobs:
   run:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false # A fail in one of the test instances shouldn't stop other. Make all the failures visible.
       matrix:
         go:
-          - "oldstable"
-          - "stable"
+          - "1.25"
+          - "1.26"
+        # https://github.com/ClickHouse/ClickHouse/blob/master/SECURITY.md#scope-and-supported-versions
         clickhouse:
-          - v21.8.14.5-lts
-          - v22.8.20.11-lts
-          - v23.10.3.5-stable
-          - v24.11.1.2557-stable
-          - v25.1.2.3-stable
+          - v26.4.3.37-stable
+          - v26.3.12.3-lts
+          - v26.2.19.43-stable
+          - v25.8.24.21-lts
     steps:
       - uses: actions/checkout@v6
 
@@ -37,7 +37,7 @@ jobs:
           echo "::set-output name=modcache::$(go env GOMODCACHE)"
 
       - name: Set up cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ steps.go-env.outputs.cache }}
@@ -47,7 +47,7 @@ jobs:
             e2e-${{ runner.os }}-go${{ matrix.go }}-
 
       - name: Set up ClickHouse cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /opt/ch/clickhouse
           key: ClickHouse-${{ matrix.clickhouse }}

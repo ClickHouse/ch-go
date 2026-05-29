@@ -255,7 +255,7 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 	if block.End() {
 		return nil
 	}
-	c.metricsInc(ctx, queryMetrics{
+	c.metricsInc(ctx, queryMetricsDelta{
 		BlocksReceived:  1,
 		RowsReceived:    block.Rows,
 		ColumnsReceived: block.Columns,
@@ -285,7 +285,7 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 		Columns: len(input),
 	}
 	if len(input) > 0 {
-		c.metricsInc(ctx, queryMetrics{BlocksSent: 1})
+		c.metricsInc(ctx, queryMetricsDelta{BlocksSent: 1})
 		b.Rows = input[0].Data.Rows()
 		b.Info = proto.BlockInfo{
 			// TODO(ernado): investigate and document
@@ -467,7 +467,7 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 		if err != nil {
 			return errors.Wrap(err, "progress")
 		}
-		c.metricsInc(ctx, queryMetrics{Rows: int(p.Rows), Bytes: int(p.Bytes)})
+		c.metricsInc(ctx, queryMetricsDelta{Rows: int(p.Rows), Bytes: int(p.Bytes)})
 		if ce := c.lg.Check(zap.DebugLevel, "Progress"); ce != nil {
 			ce.Write(
 				zap.Uint64("rows", p.Rows),

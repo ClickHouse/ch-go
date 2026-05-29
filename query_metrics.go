@@ -1,6 +1,9 @@
 package ch
 
-import "context"
+import (
+	"context"
+	"sync"
+)
 
 type (
 	ctxQueryKey  struct{}
@@ -11,10 +14,34 @@ type (
 		BlocksSent      int
 		Rows            int
 		Bytes           int
+		Lock            sync.Mutex
+	}
+	queryMetricsDelta struct {
+		ColumnsReceived int
+		RowsReceived    int
+		BlocksReceived  int
+		BlocksSent      int
+		Rows            int
+		Bytes           int
 	}
 )
 
-func (c *Client) metricsInc(ctx context.Context, delta queryMetrics) {
+func (q *queryMetrics) Observe(delta queryMetricsDelta) {
+	q.Lock.Lock()
+	defer q.Lock.Unlock()
+
+	q.Bytes += delta.Bytes
+	q.Rows += delta.Rows
+	q.RowsReceived += delta.RowsReceived
+	q.BlocksReceived += delta.BlocksReceived
+	q.BlocksSent += delta.BlocksSent
+
+	if delta.ColumnsReceived > 0 {
+		q.ColumnsReceived = delta.ColumnsReceived
+	}
+}
+
+func (c *Client) metricsInc(ctx context.Context, delta queryMetricsDelta) {
 	if !c.otel {
 		return
 	}
@@ -22,14 +49,5 @@ func (c *Client) metricsInc(ctx context.Context, delta queryMetrics) {
 	if !ok {
 		return
 	}
-
-	v.Bytes += delta.Bytes
-	v.Rows += delta.Rows
-	v.RowsReceived += delta.RowsReceived
-	v.BlocksReceived += delta.BlocksReceived
-	v.BlocksSent += delta.BlocksSent
-
-	if delta.ColumnsReceived > 0 {
-		v.ColumnsReceived = delta.ColumnsReceived
-	}
+	v.Observe(delta)
 }

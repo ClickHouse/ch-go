@@ -113,7 +113,6 @@ type Exception struct {
 	Name    string
 	Message string
 	Stack   string
-	Next    []Exception // non-nil only for top exception
 }
 
 func (e *Exception) IsCode(codes ...proto.Error) bool {
@@ -135,22 +134,12 @@ func (e *Exception) Error() string {
 }
 
 // Unwrap implements errors.Unwrap interface.
-func (e *Exception) Unwrap() []error {
+func (e *Exception) Unwrap() error {
 	if e == nil {
 		return nil
 	}
-	// Flatten error tree by collecting all error codes.
-	// Only check error codes since only they can be compared using errors.Is.
-	// Dynamically created Exceptions are not relevant for this functionality.
-	return e.collectCodes(nil)
-}
-
-func (e *Exception) collectCodes(codes []error) []error {
-	result := append(codes, e.Code)
-	for _, next := range e.Next {
-		result = next.collectCodes(result)
-	}
-	return result
+	// Only the code can be compared using errors.Is.
+	return e.Code
 }
 
 // AsException finds first *Exception in err chain.
@@ -178,34 +167,16 @@ func IsException(err error) bool {
 
 // Exception reads exception from server.
 func (c *Client) exception() (*Exception, error) {
-	var list []proto.Exception
-	for {
-		var ex proto.Exception
-		if err := c.decode(&ex); err != nil {
-			return nil, errors.Wrap(err, "decode")
-		}
-
-		list = append(list, ex)
-		if !ex.Nested {
-			break
-		}
+	var ex proto.Exception
+	if err := c.decode(&ex); err != nil {
+		return nil, errors.Wrap(err, "decode")
 	}
-	top := list[0]
-	e := &Exception{
-		Code:    top.Code,
-		Name:    top.Name,
-		Message: top.Message,
-		Stack:   top.Stack,
-	}
-	for _, next := range list[1:] {
-		e.Next = append(e.Next, Exception{
-			Code:    next.Code,
-			Name:    next.Name,
-			Message: next.Message,
-			Stack:   next.Stack,
-		})
-	}
-	return e, nil
+	return &Exception{
+		Code:    ex.Code,
+		Name:    ex.Name,
+		Message: ex.Message,
+		Stack:   ex.Stack,
+	}, nil
 }
 
 func (c *Client) decode(v proto.AwareDecoder) error {

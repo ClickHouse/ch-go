@@ -94,23 +94,9 @@ func TestExceptionUnwrap(t *testing.T) {
 		Code:    proto.ErrReadonly,
 		Name:    "foo",
 		Message: "bar",
-		Next:    nil,
 	}
 
 	if !errors.Is(flat, proto.ErrReadonly) {
 		t.Fatal("flat exception must be the error code it represents")
-	}
-
-	nested := &Exception{
-		Code:    proto.ErrAborted,
-		Name:    "foo",
-		Message: "bar",
-		Next:    []Exception{*flat},
-	}
-	if !errors.Is(nested, proto.ErrAborted) {
-		t.Fatal("nested exception must be the error code it represents")
-	}
-	if !errors.Is(nested, proto.ErrReadonly) {
-		t.Fatal("nested exception must be the error code it wraps")
 	}
 }
