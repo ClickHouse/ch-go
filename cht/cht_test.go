@@ -52,7 +52,6 @@ func TestConnect(t *testing.T) {
 	ctx := context.Background()
 	server := cht.New(t,
 		cht.WithLog(ztest.NewLogger(t)),
-		cht.WithMaxServerMemoryUsage(1024*1024*256),
 	)
 	t.Parallel()
 

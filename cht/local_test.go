@@ -57,6 +57,8 @@ func TestLocalNativeDump(t *testing.T) {
 		"--file", inFile,
 		"--input-format", "Native",
 		"--output-format", "JSON",
+		// ClickHouse 25.8 flipped this default to false, pin it so 64-bit ints stay quoted for ,string parsing below
+		"--output_format_json_quote_64bit_integers", "1",
 		"--query", "SELECT * FROM table",
 	)
 	out := new(bytes.Buffer)
