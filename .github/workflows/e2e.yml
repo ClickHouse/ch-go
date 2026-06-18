@@ -23,7 +23,7 @@ jobs:
           - v26.2.19.43-stable
           - v25.8.24.21-lts
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Go
         uses: actions/setup-go@v6
