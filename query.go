@@ -102,7 +102,7 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 			InitialQueryID: q.QueryID,
 			InitialAddress: c.conn.LocalAddr().String(),
 			OSUser:         "",
-			ClientHostname: "",
+			ClientHostname: c.hostname,
 			ClientName:     c.version.Name,
 
 			Span:     trace.SpanContextFromContext(ctx),
