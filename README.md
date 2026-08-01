@@ -302,6 +302,7 @@ colV.Reset()
 * Nullable(T)
 * Point
 * Nothing, Interval
+* Variant(T1, T2, ..., Tn)
 
 ## Enums
 
@@ -451,6 +452,8 @@ func TestLocalNativeDump(t *testing.T) {
 - [ ] Types
   - [ ] [Decimal(P, S)](https://clickhouse.com/docs/en/sql-reference/data-types/decimal/) API
   - [ ] JSON
+  - [x] Variant
+  - [ ] Dynamic
   - [ ] SimpleAggregateFunction
   - [ ] AggregateFunction
   - [x] Nothing
