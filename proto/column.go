@@ -195,6 +195,51 @@ func (c ColumnType) Elem() ColumnType {
 	return c[start+1 : end]
 }
 
+// Elems splits Elem() by top level commas.
+//
+// Nested parentheses and quoted strings are respected, so
+// Variant(Array(Int8), Map(String, String)) results in
+// Array(Int8) and Map(String, String).
+func (c ColumnType) Elems() []ColumnType {
+	elem := string(c.Elem())
+	if elem == "" {
+		return nil
+	}
+	var (
+		out   []ColumnType
+		depth int
+		quote bool
+		start int
+	)
+	for i := 0; i < len(elem); i++ {
+		switch elem[i] {
+		case '\\':
+			if quote {
+				i++
+			}
+		case '\'':
+			quote = !quote
+		case '(':
+			if !quote {
+				depth++
+			}
+		case ')':
+			if !quote {
+				depth--
+			}
+		case ',':
+			if quote || depth > 0 {
+				continue
+			}
+			out = append(out, ColumnType(strings.TrimSpace(elem[start:i])))
+			start = i + 1
+		default:
+			// skipping name or string content
+		}
+	}
+	return append(out, ColumnType(strings.TrimSpace(elem[start:])))
+}
+
 // IsArray reports whether ColumnType is composite.
 func (c ColumnType) IsArray() bool {
 	return strings.HasPrefix(string(c), string(ColumnTypeArray))
@@ -255,6 +300,7 @@ const (
 	ColumnTypeNothing        ColumnType = "Nothing"
 	ColumnTypeJSON           ColumnType = "JSON"
 	ColumnTypeQBit           ColumnType = "QBit"
+	ColumnTypeVariant        ColumnType = "Variant"
 )
 
 // colWrap wraps Column with type t.
