@@ -2,8 +2,11 @@ package chpool
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/ClickHouse/ch-go"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,6 +64,7 @@ func TestPool_Ping(t *testing.T) {
 	p := PoolConn(t)
 
 	require.NoError(t, p.Ping(context.Background()))
+	waitForReleaseToComplete()
 
 	stats := p.Stat()
 	assert.EqualValues(t, 0, stats.AcquiredResources())
@@ -77,4 +81,24 @@ func TestPool_Acquire(t *testing.T) {
 	conn.Release()
 	waitForReleaseToComplete()
 	require.EqualValues(t, 2, p.Stat().AcquireCount())
+}
+
+func TestPool_backgroundHealthCheck(t *testing.T) {
+	t.Parallel()
+	var healthCheckCnt int64
+	p := PoolConnOpt(t, Options{
+		MinConns: 1,
+		HealthCheckFunc: func(ctx context.Context, client *ch.Client) error {
+			atomic.AddInt64(&healthCheckCnt, 1)
+			return nil
+		},
+		HealthCheckPeriod: 500 * time.Millisecond,
+	})
+	p.checkMinConns()
+	p.checkIdleConnsHealth()
+	assert.GreaterOrEqual(t, int64(1), atomic.LoadInt64(&healthCheckCnt))
+
+	hc := atomic.LoadInt64(&healthCheckCnt)
+	time.Sleep(750 * time.Millisecond)
+	assert.Equal(t, hc+1, atomic.LoadInt64(&healthCheckCnt))
 }

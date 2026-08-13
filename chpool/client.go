@@ -2,7 +2,6 @@ package chpool
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/puddle/v2"
 
@@ -21,14 +20,16 @@ func (c *Client) Release() {
 		return
 	}
 
-	client := c.client()
-
-	if client.IsClosed() || time.Since(c.res.CreationTime()) > c.p.options.MaxConnLifetime {
-		c.res.Destroy()
-		return
-	}
-
-	c.res.Release()
+	// calling async since connIsHealthy may block
+	go func() {
+		if c.p.connIsHealthy(c.res) {
+			c.p.options.ClientOptions.Logger.Debug("chpool: releasing connection")
+			c.res.Release()
+		} else {
+			c.p.options.ClientOptions.Logger.Debug("chpool: destoying connection")
+			c.res.Destroy()
+		}
+	}()
 }
 
 func (c *Client) Do(ctx context.Context, q ch.Query) (err error) {
