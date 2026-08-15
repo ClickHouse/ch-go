@@ -59,6 +59,8 @@ func TestColAuto_Infer(t *testing.T) {
 		"Decimal256(4)",
 		"Array(Nullable(Int8))",
 		"Nullable(DateTime64(3))",
+		"Nested(id UInt64, name String)",
+		"Nested(value Float64)",
 	} {
 		r := AutoResult("foo")
 		require.NoError(t, r.Data.(Inferable).Infer(columnType))
