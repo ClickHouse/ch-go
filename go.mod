@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.9.0
 	github.com/jackc/puddle/v2 v2.2.2
-	github.com/klauspost/compress v1.19.2
+	github.com/klauspost/compress v1.20.0
 	github.com/pierrec/lz4/v4 v4.1.29
 	github.com/segmentio/asm v1.2.1
 	github.com/stretchr/testify v1.12.1
