@@ -100,7 +100,7 @@ err := conn.Do(ctx, ch.Query{
     Body: "SELECT {user_id:UInt64}, {message:String}",
     Parameters: ch.Parameters(map[string]any{
         "user_id": 12345,
-        "message": `line 1\\nline 2`,
+        "message": `line 1\nline 2`,
     }),
     Result: proto.Results{
         {Data: &userID},
@@ -111,18 +111,18 @@ err := conn.Do(ctx, ch.Query{
 
 #### String values and escape sequences
 
-`ch.Parameters` formats each value and encloses it in single quotes. ClickHouse first decodes that quoted value and then parses it using the placeholder's declared type. A backslash escape must therefore survive two ClickHouse parsing steps, in addition to Go's own string-literal processing.
+`ch.Parameters` formats each value as a quoted Field dump, escaping `\` and `'` so the server's `readQuoted` step restores the text you passed. ClickHouse then parses that text as Escaped-format input for the placeholder's declared type (`\n`, `\t`, `\r`, `\0`, `\\`, …).
 
-Common ClickHouse escapes include `\n` (newline), `\t` (tab), `\r` (carriage return), `\0` (null byte), and `\\` (a literal backslash). Write string parameters as follows:
+Pass Escaped-format text (not a raw Go string that already contains a newline or tab byte):
 
 | Value received by ClickHouse | Go raw string literal | Go interpreted string literal |
 |---|---|---|
-| Newline and tab | `` `line 1\\nline 2\\tend` `` | `"line 1\\\\nline 2\\\\tend"` |
-| Literal `\n` and `\t` text | `` `line 1\\\\nline 2\\\\tend` `` | `"line 1\\\\\\\\nline 2\\\\\\\\tend"` |
+| Newline and tab | `` `line 1\nline 2\tend` `` | `"line 1\\nline 2\\tend"` |
+| Literal `\n` and `\t` text | `` `line 1\\nline 2\\tend` `` | `"line 1\\\\nline 2\\\\tend"` |
 
-Do not use `` `line 1\nline 2` ``, `"line 1\\nline 2"`, or `"line 1\nline 2"` when the result should contain a newline. The first two forms lose their only backslash during quoted-value decoding; the last already contains an actual newline. In all three cases, the second parsing step sees an unescaped field delimiter and rejects the parameter as incompletely parsed.
+Do not use `"line 1\nline 2"` or `"column 1\tcolumn 2"` when constructing parameters. Those Go literals already contain an actual newline or tab; the server treats those bytes as field delimiters and rejects the value. Quotes and backslashes in ordinary strings (e.g. `it's`, `a\b`) are escaped by the helper.
 
-You can construct `[]proto.Parameter` directly, but then each `Value` must include the ClickHouse quotes and escaping that `ch.Parameters` normally adds. Prefer the helper unless you specifically need complete control over the wire representation.
+You can construct `[]proto.Parameter` directly, but then each `Value` must include the ClickHouse quotes and Field-dump escaping that `ch.Parameters` normally adds. Prefer the helper unless you specifically need complete control over the wire representation.
 
 [Full example](./examples/query_parameters)
 
