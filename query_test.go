@@ -1053,6 +1053,68 @@ func TestClient_Query(t *testing.T) {
 			require.Equal(t, []string{`{"x":"test1"}`, `{"y":"test2"}`}, data.Row(0))
 		})
 	})
+	t.Run("InsertVariant", func(t *testing.T) {
+		t.Parallel()
+		conn := ConnOpt(t, Options{
+			Settings: []Setting{
+				{Key: "enable_variant_type", Value: "1"},
+			},
+		})
+		if v := conn.ServerInfo(); v.Major < 24 {
+			t.Skipf("Skipping (Variant is supported since 24.1, got %d.%d)", v.Major, v.Minor)
+		}
+
+		createTable := Query{
+			Body: "CREATE TABLE variant_test_table (id Int64, c Variant(Int64, String)) ENGINE = MergeTree ORDER BY id",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		var (
+			ids  proto.ColInt64
+			ints proto.ColInt64
+			strs proto.ColStr
+		)
+		data := proto.NewVariant(&ints, &strs)
+
+		ids.Append(1)
+		data.AppendDiscriminator(0)
+		ints.Append(42)
+
+		ids.Append(2)
+		data.AppendDiscriminator(1)
+		strs.Append("foo")
+
+		ids.Append(3)
+		data.AppendNull()
+
+		insertQuery := Query{
+			Body: "INSERT INTO variant_test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "id", Data: &ids},
+				{Name: "c", Data: data},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		t.Run("Read", func(t *testing.T) {
+			var (
+				ints proto.ColInt64
+				strs proto.ColStr
+			)
+			data := proto.NewVariant(&ints, &strs)
+			require.NoError(t, conn.Do(ctx, Query{
+				Body: "SELECT c FROM variant_test_table ORDER BY id",
+				Result: proto.Results{
+					{Name: "c", Data: data},
+				},
+			}))
+
+			require.Equal(t, 3, data.Rows())
+			require.Equal(t, int64(42), ints.Row(data.RowOffset(0)))
+			require.Equal(t, "foo", strs.Row(data.RowOffset(1)))
+			require.True(t, data.RowIsNull(2))
+		})
+	})
 }
 
 func TestClientCompression(t *testing.T) {

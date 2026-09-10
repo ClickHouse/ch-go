@@ -94,3 +94,33 @@ func TestColumnType_Elem(t *testing.T) {
 		})
 	})
 }
+
+func TestColumnType_Elems(t *testing.T) {
+	for _, tt := range []struct {
+		Type  ColumnType
+		Elems []ColumnType
+	}{
+		{Type: ColumnTypeInt32},
+		{Type: "Variant(Int64)", Elems: []ColumnType{"Int64"}},
+		{Type: "Variant(Int64, String)", Elems: []ColumnType{"Int64", "String"}},
+		{Type: "Variant(Int64,String)", Elems: []ColumnType{"Int64", "String"}},
+		{
+			Type:  "Variant(Array(Int8), Map(String, String))",
+			Elems: []ColumnType{"Array(Int8)", "Map(String, String)"},
+		},
+		{
+			Type:  "Variant(Enum8('a' = 1, 'b' = 2), String)",
+			Elems: []ColumnType{"Enum8('a' = 1, 'b' = 2)", "String"},
+		},
+		{
+			Type:  `Variant(Enum8('a\'b, c' = 1), String)`,
+			Elems: []ColumnType{`Enum8('a\'b, c' = 1)`, "String"},
+		},
+		{
+			Type:  "Tuple(a Int8, b Array(Tuple(c String, d Int8)))",
+			Elems: []ColumnType{"a Int8", "b Array(Tuple(c String, d Int8))"},
+		},
+	} {
+		assert.Equal(t, tt.Elems, tt.Type.Elems(), "%s", tt.Type)
+	}
+}
