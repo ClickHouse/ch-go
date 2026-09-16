@@ -5,14 +5,15 @@ import (
 )
 
 type Query struct {
-	ID          string
-	Body        string
-	Secret      string
-	Stage       Stage
-	Compression Compression
-	Info        ClientInfo
-	Settings    []Setting
-	Parameters  []Parameter
+	ID              string
+	Body            string
+	Secret          string
+	Stage           Stage
+	Compression     Compression
+	Info            ClientInfo
+	Settings        []Setting
+	Parameters      []Parameter
+	ServerFormatted bool
 }
 
 type Parameter struct {
@@ -182,7 +183,11 @@ func (q *Query) DecodeAware(r *Reader, version int) error {
 }
 
 func (q Query) EncodeAware(b *Buffer, version int) {
-	ClientCodeQuery.Encode(b)
+	if q.ServerFormatted {
+		ClientCodeQueryWithServerFormattedResult.Encode(b)
+	} else {
+		ClientCodeQuery.Encode(b)
+	}
 	b.PutString(q.ID)
 	if FeatureClientWriteInfo.In(version) {
 		q.Info.EncodeAware(b, version)

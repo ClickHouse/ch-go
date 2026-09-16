@@ -10,21 +10,22 @@ import (
 const (
 	_ServerCodeName_0      = "HelloDataExceptionProgressPongEndOfStreamProfileTotalsExtremesTablesStatusLogTableColumnsServerPartUUIDsServerReadTaskRequestServerProfileEvents"
 	_ServerCodeLowerName_0 = "hellodataexceptionprogresspongendofstreamprofiletotalsextremestablesstatuslogtablecolumnsserverpartuuidsserverreadtaskrequestserverprofileevents"
-	_ServerCodeName_1      = "SSHChallenge"
-	_ServerCodeLowerName_1 = "sshchallenge"
+	_ServerCodeName_1      = "SSHChallengeResultMetadataFormattedData"
+	_ServerCodeLowerName_1 = "sshchallengeresultmetadataformatteddata"
 )
 
 var (
 	_ServerCodeIndex_0 = [...]uint8{0, 5, 9, 18, 26, 30, 41, 48, 54, 62, 74, 77, 89, 104, 125, 144}
-	_ServerCodeIndex_1 = [...]uint8{0, 12}
+	_ServerCodeIndex_1 = [...]uint8{0, 12, 26, 39}
 )
 
 func (i ServerCode) String() string {
 	switch {
 	case 0 <= i && i <= 14:
 		return _ServerCodeName_0[_ServerCodeIndex_0[i]:_ServerCodeIndex_0[i+1]]
-	case i == 18:
-		return _ServerCodeName_1
+	case 18 <= i && i <= 20:
+		i -= 18
+		return _ServerCodeName_1[_ServerCodeIndex_1[i]:_ServerCodeIndex_1[i+1]]
 	default:
 		return fmt.Sprintf("ServerCode(%d)", i)
 	}
@@ -50,9 +51,11 @@ func _ServerCodeNoOp() {
 	_ = x[ServerReadTaskRequest-(13)]
 	_ = x[ServerProfileEvents-(14)]
 	_ = x[ServerCodeSSHChallenge-(18)]
+	_ = x[ServerCodeResultMetadata-(19)]
+	_ = x[ServerCodeFormattedData-(20)]
 }
 
-var _ServerCodeValues = []ServerCode{ServerCodeHello, ServerCodeData, ServerCodeException, ServerCodeProgress, ServerCodePong, ServerCodeEndOfStream, ServerCodeProfile, ServerCodeTotals, ServerCodeExtremes, ServerCodeTablesStatus, ServerCodeLog, ServerCodeTableColumns, ServerPartUUIDs, ServerReadTaskRequest, ServerProfileEvents, ServerCodeSSHChallenge}
+var _ServerCodeValues = []ServerCode{ServerCodeHello, ServerCodeData, ServerCodeException, ServerCodeProgress, ServerCodePong, ServerCodeEndOfStream, ServerCodeProfile, ServerCodeTotals, ServerCodeExtremes, ServerCodeTablesStatus, ServerCodeLog, ServerCodeTableColumns, ServerPartUUIDs, ServerReadTaskRequest, ServerProfileEvents, ServerCodeSSHChallenge, ServerCodeResultMetadata, ServerCodeFormattedData}
 
 var _ServerCodeNameToValueMap = map[string]ServerCode{
 	_ServerCodeName_0[0:5]:          ServerCodeHello,
@@ -87,6 +90,10 @@ var _ServerCodeNameToValueMap = map[string]ServerCode{
 	_ServerCodeLowerName_0[125:144]: ServerProfileEvents,
 	_ServerCodeName_1[0:12]:         ServerCodeSSHChallenge,
 	_ServerCodeLowerName_1[0:12]:    ServerCodeSSHChallenge,
+	_ServerCodeName_1[12:26]:        ServerCodeResultMetadata,
+	_ServerCodeLowerName_1[12:26]:   ServerCodeResultMetadata,
+	_ServerCodeName_1[26:39]:        ServerCodeFormattedData,
+	_ServerCodeLowerName_1[26:39]:   ServerCodeFormattedData,
 }
 
 var _ServerCodeNames = []string{
@@ -106,6 +113,8 @@ var _ServerCodeNames = []string{
 	_ServerCodeName_0[104:125],
 	_ServerCodeName_0[125:144],
 	_ServerCodeName_1[0:12],
+	_ServerCodeName_1[12:26],
+	_ServerCodeName_1[26:39],
 }
 
 // ServerCodeString retrieves an enum value from the enum constants string name.

@@ -126,3 +126,17 @@ func TestQuery_EncodeAwareOTEL(t *testing.T) {
 	assert.Equal(t, q, dec)
 	requireNoShortRead(t, b, aware(&dec))
 }
+
+func TestQuery_EncodeAwareServerFormatted(t *testing.T) {
+	var normal Buffer
+	queryCreateDatabase.EncodeAware(&normal, queryProtoVersion)
+
+	formattedQuery := queryCreateDatabase
+	formattedQuery.ServerFormatted = true
+	var formatted Buffer
+	formattedQuery.EncodeAware(&formatted, queryProtoVersion)
+
+	require.Equal(t, byte(ClientCodeQuery), normal.Buf[0])
+	require.Equal(t, byte(ClientCodeQueryWithServerFormattedResult), formatted.Buf[0])
+	require.Equal(t, normal.Buf[1:], formatted.Buf[1:], "compatibility packet must retain the legacy Query body layout")
+}

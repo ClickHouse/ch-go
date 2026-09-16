@@ -68,6 +68,13 @@ func (c *Client) querySettings(q Query) []proto.Setting {
 			Custom:    s.Custom,
 		})
 	}
+	if q.OutputFormat != "" {
+		result = append(result, proto.Setting{
+			Key:       "output_format",
+			Value:     q.OutputFormat,
+			Important: true,
+		})
+	}
 	return result
 }
 
@@ -83,13 +90,14 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 		return ErrClosed
 	}
 	c.encode(proto.Query{
-		ID:          q.QueryID,
-		Body:        q.Body,
-		Secret:      q.Secret,
-		Stage:       proto.StageComplete,
-		Compression: c.compression,
-		Settings:    c.querySettings(q),
-		Parameters:  q.Parameters,
+		ServerFormatted: q.OutputFormat != "",
+		ID:              q.QueryID,
+		Body:            q.Body,
+		Secret:          q.Secret,
+		Stage:           proto.StageComplete,
+		Compression:     c.compression,
+		Settings:        c.querySettings(q),
+		Parameters:      q.Parameters,
 		Info: proto.ClientInfo{
 			ProtocolVersion: c.protocolVersion,
 			Major:           c.version.Major,
@@ -165,6 +173,15 @@ type Query struct {
 	// and no OnResult is provided.
 	OnResult func(ctx context.Context, block proto.Block) error
 
+	// OutputFormat asks ClickHouse to serialize the result on the server and
+	// deliver opaque format bytes instead of Native blocks. It requires a
+	// server with protocol revision 54493 or newer and OnFormattedData.
+	OutputFormat string
+	// OnResultMetadata is called once before server-formatted result bytes.
+	OnResultMetadata func(ctx context.Context, metadata ResultMetadata) error
+	// OnFormattedData is called for each server-formatted result fragment. The
+	// fragment is owned by the caller and may be retained after the callback.
+	OnFormattedData func(ctx context.Context, data []byte) error
 	// OnProgress is optional progress handler. The progress value contain
 	// difference, so progress should be accumulated if needed.
 	OnProgress func(ctx context.Context, p proto.Progress) error
@@ -219,6 +236,12 @@ type Query struct {
 type ExternalTable struct {
 	Name string
 	Data proto.Input
+}
+
+// ResultMetadata describes a server-formatted result stream.
+type ResultMetadata struct {
+	Format      string
+	ContentType string
 }
 
 // CorruptedDataErr means that provided hash mismatch with calculated.
@@ -622,6 +645,23 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			c.protocolVersion, c.server,
 		)
 	}
+	if q.OutputFormat != "" {
+		if !c.server.Has(proto.FeatureServerFormattedResults) {
+			return errors.Errorf("server-formatted results are not supported by server %q", c.server)
+		}
+		if proto.FeatureServerFormattedResults.In(c.protocolVersion) {
+			return errors.Errorf("the server-formatted compatibility query requires a negotiated protocol version below %d", proto.FeatureServerFormattedResults.Version())
+		}
+		if q.OnFormattedData == nil {
+			return errors.New("OnFormattedData is required when OutputFormat is set")
+		}
+		if q.Result != nil || q.OnResult != nil {
+			return errors.New("Result and OnResult cannot be used when OutputFormat is set")
+		}
+		if len(q.Input) > 0 || q.OnInput != nil {
+			return errors.New("Input and OnInput cannot be used when OutputFormat is set")
+		}
+	}
 	if q.QueryID == "" {
 		q.QueryID = uuid.New().String()
 	}
@@ -752,6 +792,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			defer close(colInfo)
 		}
 		onResult := c.resultHandler(q)
+		gotResultMetadata := false
 		for {
 			if ctx.Err() != nil {
 				return ctx.Err()
@@ -774,7 +815,51 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 					return errors.Wrap(err, "decode block")
 				}
 			case proto.ServerCodeEndOfStream:
+				if q.OutputFormat != "" && !gotResultMetadata {
+					return errors.New("server-formatted result ended before metadata")
+				}
 				return nil
+			case proto.ServerCodeResultMetadata:
+				if q.OutputFormat == "" {
+					return errors.New("unexpected server-formatted result metadata")
+				}
+				if gotResultMetadata {
+					return errors.New("duplicate server-formatted result metadata")
+				}
+				format, err := c.reader.Str()
+				if err != nil {
+					return errors.Wrap(err, "result format")
+				}
+				contentType, err := c.reader.Str()
+				if err != nil {
+					return errors.Wrap(err, "result content type")
+				}
+				if format != q.OutputFormat {
+					return errors.Errorf("server selected output format %q, requested %q", format, q.OutputFormat)
+				}
+				gotResultMetadata = true
+				if f := q.OnResultMetadata; f != nil {
+					if err := f(ctx, ResultMetadata{Format: format, ContentType: contentType}); err != nil {
+						return errors.Wrap(err, "result metadata")
+					}
+				}
+			case proto.ServerCodeFormattedData:
+				if q.OutputFormat == "" || !gotResultMetadata {
+					return errors.New("server-formatted data received before metadata")
+				}
+				if c.compression == proto.CompressionEnabled {
+					c.reader.EnableCompression()
+				}
+				data, err := c.reader.StrBytes()
+				if c.compression == proto.CompressionEnabled {
+					c.reader.DisableCompression()
+				}
+				if err != nil {
+					return errors.Wrap(err, "formatted data")
+				}
+				if err := q.OnFormattedData(ctx, data); err != nil {
+					return errors.Wrap(err, "formatted data")
+				}
 			default:
 				if err := c.handlePacket(ctx, code, q); err != nil {
 					if IsException(err) {
