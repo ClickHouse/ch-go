@@ -120,7 +120,7 @@ Pass Escaped-format text (not a raw Go string that already contains a newline or
 | Newline and tab | `` `line 1\nline 2\tend` `` | `"line 1\\nline 2\\tend"` |
 | Literal `\n` and `\t` text | `` `line 1\\nline 2\\tend` `` | `"line 1\\\\nline 2\\\\tend"` |
 
-Do not use `"line 1\nline 2"` or `"column 1\tcolumn 2"` when constructing parameters. Those Go literals already contain an actual newline or tab; the server treats those bytes as field delimiters and rejects the value. Quotes and backslashes in ordinary strings (e.g. `it's`, `a\b`) are escaped by the helper.
+Do not use `"line 1\nline 2"` or `"column 1\tcolumn 2"` when constructing parameters. Those Go literals already contain an actual newline or tab; the server treats those bytes as field delimiters and rejects the value. The helper escapes `'` and `\` for the quoted-field layer only, so a plain `it's` round-trips as-is. A backslash that must appear in the value is still written in Escaped-format, e.g. pass `` `a\\b` `` to receive `` `a\b` `` — a lone `` `a\b` `` would be decoded as the escape `\b` (backspace).
 
 You can construct `[]proto.Parameter` directly, but then each `Value` must include the ClickHouse quotes and Field-dump escaping that `ch.Parameters` normally adds. Prefer the helper unless you specifically need complete control over the wire representation.
 
