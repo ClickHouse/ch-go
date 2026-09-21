@@ -1684,6 +1684,59 @@ func TestClientCancelQueryPacket(t *testing.T) {
 	require.Equal(t, []byte{byte(proto.ClientCodeCancel)}, dialer.LastWrite())
 }
 
+type failingReadConn struct {
+	bytes.Buffer
+}
+
+func (c *failingReadConn) Read([]byte) (int, error) {
+	return 0, io.ErrUnexpectedEOF
+}
+
+func (c *failingReadConn) Close() error {
+	return nil
+}
+
+func (c *failingReadConn) LocalAddr() net.Addr {
+	return testAddr("127.0.0.1:12345")
+}
+
+func (c *failingReadConn) RemoteAddr() net.Addr {
+	return testAddr("127.0.0.1:9000")
+}
+
+func (c *failingReadConn) SetDeadline(time.Time) error {
+	return nil
+}
+
+func (c *failingReadConn) SetReadDeadline(time.Time) error {
+	return nil
+}
+
+func (c *failingReadConn) SetWriteDeadline(time.Time) error {
+	return nil
+}
+
+type testAddr string
+
+func (a testAddr) Network() string { return "tcp" }
+func (a testAddr) String() string  { return string(a) }
+
+func TestClientDoClosesOnTransportError(t *testing.T) {
+	conn := &failingReadConn{}
+	c := &Client{
+		lg:              zap.NewNop(),
+		conn:            conn,
+		writer:          proto.NewWriter(conn, new(proto.Buffer)),
+		reader:          proto.NewReader(conn),
+		protocolVersion: proto.Version,
+		compression:     proto.CompressionDisabled,
+	}
+
+	err := c.Do(context.Background(), Query{Body: "SELECT 1"})
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	require.True(t, c.IsClosed())
+}
+
 func TestClient_querySettings(t *testing.T) {
 	t.Parallel()
 	c := &Client{

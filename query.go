@@ -795,5 +795,11 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		}
 		return nil
 	})
-	return g.Wait()
+	err = g.Wait()
+	if err != nil && !gotException.Load() && !c.IsClosed() {
+		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
+			err = multierr.Append(err, closeErr)
+		}
+	}
+	return err
 }
