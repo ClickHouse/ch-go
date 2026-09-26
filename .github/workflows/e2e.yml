@@ -14,8 +14,8 @@ jobs:
       fail-fast: false # A fail in one of the test instances shouldn't stop other. Make all the failures visible.
       matrix:
         go:
-          - "1.25"
           - "1.26"
+          - "1.27"
         # https://github.com/ClickHouse/ClickHouse/blob/master/SECURITY.md#scope-and-supported-versions
         clickhouse:
           - v26.4.3.37-stable
