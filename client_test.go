@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"os"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/ClickHouse/ch-go/cht"
 	"github.com/ClickHouse/ch-go/internal/gold"
+	pkgVersion "github.com/ClickHouse/ch-go/internal/version"
 	"github.com/ClickHouse/ch-go/proto"
 )
 
@@ -47,6 +50,27 @@ func ConnOpt(t testing.TB, opt Options) *Client {
 
 func Conn(t testing.TB) *Client {
 	return ConnOpt(t, Options{})
+}
+
+func TestFormatClientName(t *testing.T) {
+	metadata := expectedClientMetadata()
+
+	require.Equal(t, "clickhouse/ch-go "+metadata, formatClientName("", pkgVersion.Value{}))
+	require.Equal(t, "clickhouse/ch-go (alpha.1) "+metadata, formatClientName("", pkgVersion.Value{Name: "alpha.1"}))
+	require.Equal(
+		t,
+		"storage/v1.85.2 clickhouse/ch-go/0.71.0 "+metadata,
+		formatClientName("storage/v1.85.2", pkgVersion.Value{Raw: "v0.71.0", Major: 0, Minor: 71, Patch: 0}),
+	)
+	require.Equal(
+		t,
+		"kafka-consumer/v1.85.2 clickhouse/ch-go/0.71.0 "+metadata,
+		formatClientName("kafka-consumer/v1.85.2", pkgVersion.Value{Major: 0, Minor: 71, Patch: 0}),
+	)
+}
+
+func expectedClientMetadata() string {
+	return "(lv:go/" + strings.TrimPrefix(runtime.Version(), "go") + "; os:" + runtime.GOOS + ")"
 }
 
 func SkipNoFeature(t *testing.T, client *Client, feature proto.Feature) {
