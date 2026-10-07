@@ -7,15 +7,16 @@ type ClientCode byte
 
 // Possible client codes.
 const (
-	ClientCodeHello                          ClientCode = 0  // client part of "handshake"
-	ClientCodeQuery                          ClientCode = 1  // query start
-	ClientCodeData                           ClientCode = 2  // data block (can be compressed)
-	ClientCodeCancel                         ClientCode = 3  // query cancel
-	ClientCodePing                           ClientCode = 4  // ping request to server
-	ClientTablesStatusRequest                ClientCode = 5  // tables status request
-	ClientCodeSSHChallengeRequest            ClientCode = 11 // request for SSH signature challenge
-	ClientCodeSSHChallengeResponse           ClientCode = 12 // response with SSH signature
-	ClientCodeQueryWithServerFormattedResult ClientCode = 15 // formatted query using the pre-54493 Query layout
+	ClientCodeHello                  ClientCode = 0  // client part of "handshake"
+	ClientCodeQuery                  ClientCode = 1  // query start
+	ClientCodeData                   ClientCode = 2  // data block (can be compressed)
+	ClientCodeCancel                 ClientCode = 3  // query cancel
+	ClientCodePing                   ClientCode = 4  // ping request to server
+	ClientTablesStatusRequest        ClientCode = 5  // tables status request
+	ClientCodeSSHChallengeRequest    ClientCode = 11 // request for SSH signature challenge
+	ClientCodeSSHChallengeResponse   ClientCode = 12 // response with SSH signature
+	ClientCodeQueryWithFormattedData ClientCode = 15 // query with the pre-54493 Query layout, followed by DataEncoding
+	ClientCodeFormattedData          ClientCode = 16 // fragment of formatted INSERT data; empty fragment ends the data
 )
 
 // Encode to buffer.

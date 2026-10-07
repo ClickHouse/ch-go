@@ -4,16 +4,32 @@ import (
 	"github.com/go-faster/errors"
 )
 
+// DataEncoding is the representation of the main tabular data of a query:
+// the result of a query, or the data of an INSERT.
+type DataEncoding byte
+
+// Possible data encodings.
+const (
+	// DataEncodingNative exchanges the data as Native blocks in Data packets.
+	DataEncodingNative DataEncoding = 0
+	// DataEncodingFormattedResult asks the server to send the result as
+	// ResultMetadata and FormattedData packets, in the requested output format.
+	DataEncodingFormattedResult DataEncoding = 1
+	// DataEncodingFormattedInput announces that the client sends the INSERT
+	// data as is in FormattedData packets, and the server parses it.
+	DataEncodingFormattedInput DataEncoding = 2
+)
+
 type Query struct {
-	ID              string
-	Body            string
-	Secret          string
-	Stage           Stage
-	Compression     Compression
-	Info            ClientInfo
-	Settings        []Setting
-	Parameters      []Parameter
-	ServerFormatted bool
+	ID           string
+	Body         string
+	Secret       string
+	Stage        Stage
+	Compression  Compression
+	Info         ClientInfo
+	Settings     []Setting
+	Parameters   []Parameter
+	DataEncoding DataEncoding
 }
 
 type Parameter struct {
@@ -159,6 +175,16 @@ func (q *Query) DecodeAware(r *Reader, version int) error {
 			return errors.Errorf("unknown compression %d", v)
 		}
 	}
+	if FeatureFormattedData.In(version) {
+		v, err := r.UVarInt()
+		if err != nil {
+			return errors.Wrap(err, "data encoding")
+		}
+		if v > uint64(DataEncodingFormattedInput) {
+			return errors.Errorf("unknown data encoding %d", v)
+		}
+		q.DataEncoding = DataEncoding(v)
+	}
 
 	{
 		v, err := r.Str()
@@ -183,8 +209,13 @@ func (q *Query) DecodeAware(r *Reader, version int) error {
 }
 
 func (q Query) EncodeAware(b *Buffer, version int) {
-	if q.ServerFormatted {
-		ClientCodeQueryWithServerFormattedResult.Encode(b)
+	// Below FeatureFormattedData, the Query packet has no DataEncoding field,
+	// so a formatted query is sent as QueryWithFormattedData: the Query body of
+	// the negotiated version, followed by DataEncoding.
+	withField := FeatureFormattedData.In(version)
+	withTrailingField := !withField && q.DataEncoding != DataEncodingNative
+	if withTrailingField {
+		ClientCodeQueryWithFormattedData.Encode(b)
 	} else {
 		ClientCodeQuery.Encode(b)
 	}
@@ -207,6 +238,10 @@ func (q Query) EncodeAware(b *Buffer, version int) {
 	StageComplete.Encode(b)
 	q.Compression.Encode(b)
 
+	if withField {
+		b.PutUVarInt(uint64(q.DataEncoding))
+	}
+
 	b.PutString(q.Body)
 
 	if FeatureParameters.In(version) {
@@ -214,5 +249,9 @@ func (q Query) EncodeAware(b *Buffer, version int) {
 			p.Encode(b)
 		}
 		b.PutString("") // end of parameters
+	}
+
+	if withTrailingField {
+		b.PutUVarInt(uint64(q.DataEncoding))
 	}
 }

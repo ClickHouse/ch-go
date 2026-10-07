@@ -75,7 +75,26 @@ func (c *Client) querySettings(q Query) []proto.Setting {
 			Important: true,
 		})
 	}
+	if q.InputFormat != "" {
+		result = append(result, proto.Setting{
+			Key:       "input_format",
+			Value:     q.InputFormat,
+			Important: true,
+		})
+	}
 	return result
+}
+
+// dataEncoding returns the representation of the main tabular data of q.
+func (q Query) dataEncoding() proto.DataEncoding {
+	switch {
+	case q.OutputFormat != "":
+		return proto.DataEncodingFormattedResult
+	case q.FormattedInput != nil:
+		return proto.DataEncodingFormattedInput
+	default:
+		return proto.DataEncodingNative
+	}
 }
 
 // sendQuery starts query.
@@ -90,14 +109,14 @@ func (c *Client) sendQuery(ctx context.Context, q Query) error {
 		return ErrClosed
 	}
 	c.encode(proto.Query{
-		ServerFormatted: q.OutputFormat != "",
-		ID:              q.QueryID,
-		Body:            q.Body,
-		Secret:          q.Secret,
-		Stage:           proto.StageComplete,
-		Compression:     c.compression,
-		Settings:        c.querySettings(q),
-		Parameters:      q.Parameters,
+		DataEncoding: q.dataEncoding(),
+		ID:           q.QueryID,
+		Body:         q.Body,
+		Secret:       q.Secret,
+		Stage:        proto.StageComplete,
+		Compression:  c.compression,
+		Settings:     c.querySettings(q),
+		Parameters:   q.Parameters,
 		Info: proto.ClientInfo{
 			ProtocolVersion: c.protocolVersion,
 			Major:           c.version.Major,
@@ -182,6 +201,15 @@ type Query struct {
 	// OnFormattedData is called for each server-formatted result fragment. The
 	// fragment is owned by the caller and may be retained after the callback.
 	OnFormattedData func(ctx context.Context, data []byte) error
+	// FormattedInput streams the data of an INSERT query as is: ClickHouse
+	// parses it on the server, so the client does not implement the format.
+	// The format is the FORMAT clause (or VALUES) of the query, or InputFormat.
+	// It requires a server with protocol revision 54493 or newer. If reading
+	// fails, the query is canceled.
+	FormattedInput io.Reader
+	// InputFormat, if set, is sent as the input_format setting: the format in
+	// which the server parses FormattedInput, overriding the FORMAT clause.
+	InputFormat string
 	// OnProgress is optional progress handler. The progress value contain
 	// difference, so progress should be accumulated if needed.
 	OnProgress func(ctx context.Context, p proto.Progress) error
@@ -374,6 +402,79 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 	}
 
 	return nil
+}
+
+// formattedInputChunkSize is the size of the fragments of FormattedInput.
+const formattedInputChunkSize = 1 << 20
+
+// sendFormattedInput streams r in FormattedData packets, followed by the empty
+// fragment that ends the data.
+//
+// If the server has already reported an exception, sending stops early, and
+// the end of the data is still sent: the server reads the data up to it, to
+// keep the connection usable. If reading r fails, the query is canceled
+// (which closes the connection, as any cancellation), so that the server does
+// not insert the data read so far as if it were complete.
+func (c *Client) sendFormattedInput(ctx context.Context, r io.Reader, gotException *atomic.Bool) error {
+	// Writes use a context that is not canceled when the query fails or is
+	// canceled, because the end of the data must still reach the server.
+	// Sending the data itself stops on cancellation or on a server exception.
+	writeCtx := context.WithoutCancel(ctx)
+	buf := make([]byte, formattedInputChunkSize)
+	var readErr error
+	for !gotException.Load() && ctx.Err() == nil {
+		n, err := io.ReadFull(r, buf)
+		if n > 0 {
+			if err := c.encodeFormattedData(buf[:n]); err != nil {
+				return errors.Wrap(err, "encode")
+			}
+			if err := c.flush(writeCtx); err != nil {
+				return errors.Wrap(err, "flush")
+			}
+		}
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			break
+		}
+		if err != nil {
+			readErr = errors.Wrap(err, "read")
+			break
+		}
+	}
+
+	if readErr != nil {
+		if err := c.cancelQuery(); err != nil {
+			return errors.Join(readErr, errors.Wrap(err, "cancel"))
+		}
+		return readErr
+	}
+	if err := c.encodeFormattedData(nil); err != nil {
+		return errors.Wrap(err, "encode end of data")
+	}
+	if err := c.flush(writeCtx); err != nil {
+		return errors.Wrap(err, "flush end of data")
+	}
+	return nil
+}
+
+// encodeFormattedData encodes a FormattedData packet with a fragment of
+// formatted INSERT data. Like the block of a Data packet, the body is
+// compressed if compression is enabled. An empty fragment ends the data.
+func (c *Client) encodeFormattedData(data []byte) error {
+	var rerr error
+	c.writer.ChainBuffer(func(buf *proto.Buffer) {
+		proto.ClientCodeFormattedData.Encode(buf)
+		start := len(buf.Buf)
+		buf.PutLen(len(data))
+		buf.PutRaw(data)
+		if c.compression == proto.CompressionEnabled {
+			if err := c.compressor.Compress(buf.Buf[start:]); err != nil {
+				rerr = errors.Wrap(err, "compress")
+				return
+			}
+			buf.Buf = append(buf.Buf[:start], c.compressor.Data...)
+		}
+	})
+	return rerr
 }
 
 // encodeBlankBlock encodes block with zero columns and rows which is special
@@ -645,13 +746,26 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			c.protocolVersion, c.server,
 		)
 	}
+	if q.OutputFormat != "" || q.FormattedInput != nil || q.InputFormat != "" {
+		if !c.server.Has(proto.FeatureFormattedData) {
+			return errors.Errorf("formatted data (server-side formats) is not supported by server %q", c.server)
+		}
+		if q.OutputFormat != "" && q.FormattedInput != nil {
+			return errors.New("OutputFormat and FormattedInput cannot be used together")
+		}
+		if q.InputFormat != "" && q.FormattedInput == nil {
+			return errors.New("InputFormat requires FormattedInput")
+		}
+	}
+	if q.FormattedInput != nil {
+		if q.OnFormattedData != nil || q.OnResultMetadata != nil {
+			return errors.New("OnFormattedData and OnResultMetadata cannot be used with FormattedInput")
+		}
+		if len(q.Input) > 0 || q.OnInput != nil {
+			return errors.New("Input and OnInput cannot be used with FormattedInput")
+		}
+	}
 	if q.OutputFormat != "" {
-		if !c.server.Has(proto.FeatureServerFormattedResults) {
-			return errors.Errorf("server-formatted results are not supported by server %q", c.server)
-		}
-		if proto.FeatureServerFormattedResults.In(c.protocolVersion) {
-			return errors.Errorf("the server-formatted compatibility query requires a negotiated protocol version below %d", proto.FeatureServerFormattedResults.Version())
-		}
 		if q.OnFormattedData == nil {
 			return errors.New("OnFormattedData is required when OutputFormat is set")
 		}
@@ -737,7 +851,15 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	var (
 		gotException atomic.Bool
 		colInfo      chan proto.ColInfoInput
+		// sendErr is the error of sending FormattedInput, which is reported
+		// instead of the errors it causes in the other goroutines.
+		sendErr error
 	)
+	defer func() {
+		if sendErr != nil {
+			err = sendErr
+		}
+	}()
 	if q.Result == nil && len(q.Input) > 0 {
 		// Handling input column type inference, e.g. enums.
 		result := proto.ColInfoInput{}
@@ -776,6 +898,13 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			case v := <-colInfo:
 				info = v
 			}
+		}
+		if q.FormattedInput != nil {
+			if err := c.sendFormattedInput(ctx, q.FormattedInput, &gotException); err != nil {
+				sendErr = errors.Wrap(err, "send formatted input")
+				return sendErr
+			}
+			return nil
 		}
 		if err := c.sendInput(ctx, info, q); err != nil {
 			return errors.Wrap(err, "send input")

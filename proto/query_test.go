@@ -127,16 +127,37 @@ func TestQuery_EncodeAwareOTEL(t *testing.T) {
 	requireNoShortRead(t, b, aware(&dec))
 }
 
-func TestQuery_EncodeAwareServerFormatted(t *testing.T) {
+func TestQuery_EncodeAwareFormattedData(t *testing.T) {
 	var normal Buffer
 	queryCreateDatabase.EncodeAware(&normal, queryProtoVersion)
 
-	formattedQuery := queryCreateDatabase
-	formattedQuery.ServerFormatted = true
-	var formatted Buffer
-	formattedQuery.EncodeAware(&formatted, queryProtoVersion)
+	for _, encoding := range []DataEncoding{DataEncodingFormattedResult, DataEncodingFormattedInput} {
+		formattedQuery := queryCreateDatabase
+		formattedQuery.DataEncoding = encoding
+		var formatted Buffer
+		formattedQuery.EncodeAware(&formatted, queryProtoVersion)
 
-	require.Equal(t, byte(ClientCodeQuery), normal.Buf[0])
-	require.Equal(t, byte(ClientCodeQueryWithServerFormattedResult), formatted.Buf[0])
-	require.Equal(t, normal.Buf[1:], formatted.Buf[1:], "compatibility packet must retain the legacy Query body layout")
+		// Below FeatureFormattedData: the compatibility packet, with the legacy
+		// Query body followed by the data encoding.
+		require.Equal(t, byte(ClientCodeQuery), normal.Buf[0])
+		require.Equal(t, byte(ClientCodeQueryWithFormattedData), formatted.Buf[0])
+		require.Equal(t, normal.Buf[1:], formatted.Buf[1:len(formatted.Buf)-1], "compatibility packet must retain the legacy Query body layout")
+		require.Equal(t, byte(encoding), formatted.Buf[len(formatted.Buf)-1])
+	}
+}
+
+func TestQuery_EncodeAwareFormattedDataField(t *testing.T) {
+	version := FeatureFormattedData.Version()
+	q := queryCreateDatabase
+	q.DataEncoding = DataEncodingFormattedInput
+
+	var b Buffer
+	q.EncodeAware(&b, version)
+	require.Equal(t, byte(ClientCodeQuery), b.Buf[0], "the regular Query packet carries the field at this version")
+
+	var dec Query
+	r := NewReader(bytes.NewReader(b.Buf[1:]))
+	require.NoError(t, dec.DecodeAware(r, version))
+	require.Equal(t, DataEncodingFormattedInput, dec.DataEncoding)
+	require.Equal(t, q.Body, dec.Body)
 }

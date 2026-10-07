@@ -12,14 +12,14 @@ const (
 	_ClientCodeLowerName_0 = "helloquerydatacancelpingclienttablesstatusrequest"
 	_ClientCodeName_1      = "SSHChallengeRequestSSHChallengeResponse"
 	_ClientCodeLowerName_1 = "sshchallengerequestsshchallengeresponse"
-	_ClientCodeName_2      = "QueryWithServerFormattedResult"
-	_ClientCodeLowerName_2 = "querywithserverformattedresult"
+	_ClientCodeName_2      = "QueryWithFormattedDataFormattedData"
+	_ClientCodeLowerName_2 = "querywithformatteddataformatteddata"
 )
 
 var (
 	_ClientCodeIndex_0 = [...]uint8{0, 5, 10, 14, 20, 24, 49}
 	_ClientCodeIndex_1 = [...]uint8{0, 19, 39}
-	_ClientCodeIndex_2 = [...]uint8{0, 30}
+	_ClientCodeIndex_2 = [...]uint8{0, 22, 35}
 )
 
 func (i ClientCode) String() string {
@@ -29,8 +29,9 @@ func (i ClientCode) String() string {
 	case 11 <= i && i <= 12:
 		i -= 11
 		return _ClientCodeName_1[_ClientCodeIndex_1[i]:_ClientCodeIndex_1[i+1]]
-	case i == 15:
-		return _ClientCodeName_2
+	case 15 <= i && i <= 16:
+		i -= 15
+		return _ClientCodeName_2[_ClientCodeIndex_2[i]:_ClientCodeIndex_2[i+1]]
 	default:
 		return fmt.Sprintf("ClientCode(%d)", i)
 	}
@@ -48,10 +49,11 @@ func _ClientCodeNoOp() {
 	_ = x[ClientTablesStatusRequest-(5)]
 	_ = x[ClientCodeSSHChallengeRequest-(11)]
 	_ = x[ClientCodeSSHChallengeResponse-(12)]
-	_ = x[ClientCodeQueryWithServerFormattedResult-(15)]
+	_ = x[ClientCodeQueryWithFormattedData-(15)]
+	_ = x[ClientCodeFormattedData-(16)]
 }
 
-var _ClientCodeValues = []ClientCode{ClientCodeHello, ClientCodeQuery, ClientCodeData, ClientCodeCancel, ClientCodePing, ClientTablesStatusRequest, ClientCodeSSHChallengeRequest, ClientCodeSSHChallengeResponse, ClientCodeQueryWithServerFormattedResult}
+var _ClientCodeValues = []ClientCode{ClientCodeHello, ClientCodeQuery, ClientCodeData, ClientCodeCancel, ClientCodePing, ClientTablesStatusRequest, ClientCodeSSHChallengeRequest, ClientCodeSSHChallengeResponse, ClientCodeQueryWithFormattedData, ClientCodeFormattedData}
 
 var _ClientCodeNameToValueMap = map[string]ClientCode{
 	_ClientCodeName_0[0:5]:        ClientCodeHello,
@@ -70,8 +72,10 @@ var _ClientCodeNameToValueMap = map[string]ClientCode{
 	_ClientCodeLowerName_1[0:19]:  ClientCodeSSHChallengeRequest,
 	_ClientCodeName_1[19:39]:      ClientCodeSSHChallengeResponse,
 	_ClientCodeLowerName_1[19:39]: ClientCodeSSHChallengeResponse,
-	_ClientCodeName_2[0:30]:       ClientCodeQueryWithServerFormattedResult,
-	_ClientCodeLowerName_2[0:30]:  ClientCodeQueryWithServerFormattedResult,
+	_ClientCodeName_2[0:22]:       ClientCodeQueryWithFormattedData,
+	_ClientCodeLowerName_2[0:22]:  ClientCodeQueryWithFormattedData,
+	_ClientCodeName_2[22:35]:      ClientCodeFormattedData,
+	_ClientCodeLowerName_2[22:35]: ClientCodeFormattedData,
 }
 
 var _ClientCodeNames = []string{
@@ -83,7 +87,8 @@ var _ClientCodeNames = []string{
 	_ClientCodeName_0[24:49],
 	_ClientCodeName_1[0:19],
 	_ClientCodeName_1[19:39],
-	_ClientCodeName_2[0:30],
+	_ClientCodeName_2[0:22],
+	_ClientCodeName_2[22:35],
 }
 
 // ClientCodeString retrieves an enum value from the enum constants string name.
