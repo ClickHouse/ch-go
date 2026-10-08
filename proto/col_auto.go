@@ -94,6 +94,14 @@ func (c *ColAuto) Infer(t ColumnType) error {
 					return nil
 				}
 			}
+		case ColumnTypeNested:
+			v := new(ColNested)
+			if err := v.Infer(t); err != nil {
+				return errors.Wrap(err, "nested")
+			}
+			c.Data = v
+			c.DataType = t
+			return nil
 		case ColumnTypeDateTime:
 			v := new(ColDateTime)
 			if err := v.Infer(t); err != nil {
