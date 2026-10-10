@@ -35,6 +35,23 @@ func checkWriteColumn(data ColInput) func(*testing.T) {
 	}
 }
 
+func TestColInfoInput_DecodeResult(t *testing.T) {
+	t.Run("custom serialization", func(t *testing.T) {
+		var b Buffer
+		b.PutString("column")
+		b.PutString("String")
+		b.PutBool(true)
+
+		var got ColInfoInput
+		err := got.DecodeResult(
+			b.Reader(),
+			FeatureCustomSerialization.Version(),
+			Block{Columns: 1},
+		)
+		require.EqualError(t, err, "column [0] has custom serialization (not supported)")
+	})
+}
+
 func TestColumnType_Elem(t *testing.T) {
 	t.Run("Array", func(t *testing.T) {
 		v := ColumnTypeInt16.Array()
