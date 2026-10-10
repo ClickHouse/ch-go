@@ -1,14 +1,17 @@
 package chpool
 
 import (
+	"time"
+
 	"github.com/jackc/puddle/v2"
 
 	"github.com/ClickHouse/ch-go"
 )
 
 type connResource struct {
-	client  *ch.Client
-	clients []Client
+	lastHealthCheckTimestamp time.Time
+	client                   *ch.Client
+	clients                  []Client
 }
 
 func (cr *connResource) getConn(p *Pool, res *puddle.Resource[*connResource]) *Client {
