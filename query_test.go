@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/netip"
 	"strconv"
 	"strings"
@@ -27,6 +28,84 @@ func requireEqual[T any](t *testing.T, a, b proto.ColumnOf[T]) {
 	for i := 0; i < a.Rows(); i++ {
 		require.Equalf(t, a.Row(i), b.Row(i), "[%d]", i)
 	}
+}
+
+type queryClientInfoConn struct {
+	bytes.Buffer
+}
+
+func (c *queryClientInfoConn) Read([]byte) (int, error) {
+	return 0, io.EOF
+}
+
+func (c *queryClientInfoConn) Close() error {
+	return nil
+}
+
+func (c *queryClientInfoConn) LocalAddr() net.Addr {
+	return queryClientInfoAddr("127.0.0.1:12345")
+}
+
+func (c *queryClientInfoConn) RemoteAddr() net.Addr {
+	return queryClientInfoAddr("127.0.0.1:9000")
+}
+
+func (c *queryClientInfoConn) SetDeadline(time.Time) error {
+	return nil
+}
+
+func (c *queryClientInfoConn) SetReadDeadline(time.Time) error {
+	return nil
+}
+
+func (c *queryClientInfoConn) SetWriteDeadline(time.Time) error {
+	return nil
+}
+
+type queryClientInfoAddr string
+
+func (a queryClientInfoAddr) Network() string {
+	return "tcp"
+}
+
+func (a queryClientInfoAddr) String() string {
+	return string(a)
+}
+
+func TestClientSendQueryUsesClientInfo(t *testing.T) {
+	clientName := "test-client"
+	conn := &queryClientInfoConn{}
+	client := &Client{
+		lg:       zap.NewNop(),
+		conn:     conn,
+		writer:   proto.NewWriter(conn, new(proto.Buffer)),
+		hostname: "storage-5cccc8b5bf-zs9pv",
+		version: clientVersion{
+			Name:  clientName,
+			Major: 0,
+			Minor: 71,
+			Patch: 0,
+		},
+		protocolVersion: proto.Version,
+		compression:     proto.CompressionDisabled,
+	}
+
+	require.NoError(t, client.sendQuery(context.Background(), Query{
+		QueryID: "query-id",
+		Body:    "SELECT 1",
+	}))
+	_, err := client.writer.Flush()
+	require.NoError(t, err)
+
+	reader := proto.NewReader(bytes.NewReader(conn.Bytes()))
+	code, err := reader.UVarInt()
+	require.NoError(t, err)
+	require.Equal(t, proto.ClientCodeQuery, proto.ClientCode(code))
+
+	var query proto.Query
+	require.NoError(t, query.DecodeAware(reader, proto.Version))
+	require.Equal(t, "storage-5cccc8b5bf-zs9pv", query.Info.ClientHostname)
+	require.Equal(t, clientName, query.Info.ClientName)
 }
 
 func TestWithTotals(t *testing.T) {
