@@ -49,6 +49,10 @@ type ColumnOf[T any] interface {
 // return an error for unsupported encodings. The negotiated revision is supplied
 // for that purpose; implementing this interface does not raise it. Result decoding
 // of custom serializations is not supported.
+//
+// Sparse and replicated inserts require async_insert=0 on affected ClickHouse
+// servers: their async queue can append compact columns into ordinary columns
+// without materializing them. See README's Custom Native serialization section.
 type CustomSerialization interface {
 	EncodeSerialization(b *Buffer, version int) error
 }

@@ -295,6 +295,23 @@ just to enable a kind: newer revisions can require additional handshake and pack
 fields. The default advertised revision remains unchanged, and decoding custom
 result columns is not implemented.
 
+Set `async_insert=0` explicitly when inserting sparse or replicated columns:
+
+```go
+Settings: []ch.Setting{{Key: "async_insert", Value: "0", Important: true}},
+```
+
+ClickHouse's asynchronous insert queue can corrupt these representations. This
+was reproduced on 26.2.19.43 and 26.8.36.3; synchronous inserts passed with the
+same payloads and negotiated revision. In the affected server code,
+[`AsynchronousInsertQueue::processPreprocessedEntries`](https://github.com/ClickHouse/ClickHouse/blob/88589db8a2c6a63fd06a6cd0ec6fa4f3912b2c3b/src/Interpreters/AsynchronousInsertQueue.cpp#L1262-L1293)
+clones ordinary destination columns and calls `insertRangeFrom` on the incoming
+columns without materializing their compact representations. For example,
+[`ColumnVector::insertRangeFrom`](https://github.com/ClickHouse/ClickHouse/blob/88589db8a2c6a63fd06a6cd0ec6fa4f3912b2c3b/src/Columns/ColumnVector.cpp#L613-L628)
+assumes its source is another `ColumnVector`. The client does not override this
+setting automatically; set it in `Options.Settings` or the insert's
+`Query.Settings` for both ordinary and prepared custom-serialized inputs.
+
 ### Stream data
 ```go
 // Stream data to ClickHouse server in multiple data blocks.

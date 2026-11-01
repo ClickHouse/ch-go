@@ -84,7 +84,12 @@ func TestPreparedCustomSerialization(t *testing.T) {
 func TestClientCustomSerialization(t *testing.T) {
 	for _, compression := range []Compression{CompressionDisabled, CompressionLZ4, CompressionZSTD} {
 		t.Run(compression.String(), func(t *testing.T) {
-			client := ConnOpt(t, Options{Compression: compression})
+			// The async queue appends compact columns into ordinary columns without
+			// materializing them. See the server path linked in README's Custom Native serialization section.
+			client := ConnOpt(t, Options{
+				Compression: compression,
+				Settings:    []Setting{{Key: "async_insert", Value: "0", Important: true}},
+			})
 			SkipNoFeature(t, client, proto.FeatureCustomSerialization)
 			fixtures := []struct {
 				name   string
