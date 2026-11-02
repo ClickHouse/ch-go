@@ -102,7 +102,7 @@ func BenchmarkColStr_AppendArr(b *testing.B) {
 	b.Run("ShortStrings", func(b *testing.B) {
 		data := make([]string, rows)
 		for i := range data {
-			data[i] = "ClickHouse не тормозит"
+			data[i] = "ClickHouse is extremely fast now"
 		}
 		b.ReportAllocs()
 		b.ResetTimer()
@@ -132,7 +132,7 @@ func BenchmarkColBytes_AppendArr(b *testing.B) {
 
 	data := make([][]byte, rows)
 	for i := range data {
-		data[i] = []byte("ClickHouse не тормозит")
+		data[i] = []byte("ClickHouse is extremely fast now")
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
