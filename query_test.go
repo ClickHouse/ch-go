@@ -1624,8 +1624,10 @@ func TestClientQueryCancellation(t *testing.T) {
 	require.True(t, c.IsClosed())
 }
 
-type failingReadConn struct {
-	bytes.Buffer
+type failingReadConn struct{}
+
+func (c *failingReadConn) Write(p []byte) (int, error) {
+	return len(p), nil
 }
 
 func (c *failingReadConn) Read([]byte) (int, error) {
