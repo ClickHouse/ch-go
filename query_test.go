@@ -1684,8 +1684,10 @@ func TestClientCancelQueryPacket(t *testing.T) {
 	require.Equal(t, []byte{byte(proto.ClientCodeCancel)}, dialer.LastWrite())
 }
 
-type failingReadConn struct {
-	bytes.Buffer
+type failingReadConn struct{}
+
+func (c *failingReadConn) Write(p []byte) (int, error) {
+	return len(p), nil
 }
 
 func (c *failingReadConn) Read([]byte) (int, error) {
