@@ -37,7 +37,9 @@ func ConnOpt(t testing.TB, opt Options) *Client {
 
 	t.Log("Connected", client.ServerInfo())
 	t.Cleanup(func() {
-		require.NoError(t, client.Close())
+		if !client.IsClosed() {
+			require.NoError(t, client.Close())
+		}
 	})
 
 	return client

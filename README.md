@@ -85,6 +85,47 @@ q := ch.Query{
 }
 ```
 
+### Server-side query parameters
+
+ClickHouse server-side query parameters use typed placeholders in the form `{name:Type}`. The query and parameter values are sent separately, so values are not interpolated into the SQL text. They require ClickHouse 22.8 or later.
+
+Use `ch.Parameters` to build `Query.Parameters`:
+
+```go
+var (
+    userID  proto.ColUInt64
+    message proto.ColStr
+)
+err := conn.Do(ctx, ch.Query{
+    Body: "SELECT {user_id:UInt64}, {message:String}",
+    Parameters: ch.Parameters(map[string]any{
+        "user_id": 12345,
+        "message": `line 1\\nline 2`,
+    }),
+    Result: proto.Results{
+        {Data: &userID},
+        {Data: &message},
+    },
+})
+```
+
+#### String values and escape sequences
+
+`ch.Parameters` formats each value and encloses it in single quotes. ClickHouse first decodes that quoted value and then parses it using the placeholder's declared type. A backslash escape must therefore survive two ClickHouse parsing steps, in addition to Go's own string-literal processing.
+
+Common ClickHouse escapes include `\n` (newline), `\t` (tab), `\r` (carriage return), `\0` (null byte), and `\\` (a literal backslash). Write string parameters as follows:
+
+| Value received by ClickHouse | Go raw string literal | Go interpreted string literal |
+|---|---|---|
+| Newline and tab | `` `line 1\\nline 2\\tend` `` | `"line 1\\\\nline 2\\\\tend"` |
+| Literal `\n` and `\t` text | `` `line 1\\\\nline 2\\\\tend` `` | `"line 1\\\\\\\\nline 2\\\\\\\\tend"` |
+
+Do not use `` `line 1\nline 2` ``, `"line 1\\nline 2"`, or `"line 1\nline 2"` when the result should contain a newline. The first two forms lose their only backslash during quoted-value decoding; the last already contains an actual newline. In all three cases, the second parsing step sees an unescaped field delimiter and rejects the parameter as incompletely parsed.
+
+You can construct `[]proto.Parameter` directly, but then each `Value` must include the ClickHouse quotes and escaping that `ch.Parameters` normally adds. Prefer the helper unless you specifically need complete control over the wire representation.
+
+[Full example](./examples/query_parameters)
+
 ### Writing data
 
 See [examples/insert](./examples/insert).
@@ -261,6 +302,7 @@ colV.Reset()
 * No reflection or `interface{}`
 * Generics (go1.18) for `Array[T]`, `LowCardinaliy[T]`, `Map[K, V]`, `Nullable[T]`
 * [Reading or writing](#dumps) ClickHouse dumps in `Native` format
+* [Server-side query parameters](#server-side-query-parameters)
 * **Column**-oriented design that operates directly with **blocks** of data
   * [Dramatically more efficient](https://github.com/ClickHouse/ch-bench)
   * Up to 100x faster than row-first design around `sql`

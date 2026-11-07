@@ -123,16 +123,18 @@ func run(ctx context.Context) error {
 					Important: true,
 				},
 			},
-			OnLog: func(ctx context.Context, l ch.Log) error {
-				switch l.Source {
-				case "MemoryTracker": // ok
-				default:
-					return nil // skip
+			OnLogs: func(ctx context.Context, ls []ch.Log) error {
+				for _, l := range ls {
+					switch l.Source {
+					case "MemoryTracker": // ok
+					default:
+						continue // skip
+					}
+					lg.Info("Log",
+						zap.String("source", l.Source),
+						zap.String("text", l.Text),
+					)
 				}
-				lg.Info("Log",
-					zap.String("source", l.Source),
-					zap.String("text", l.Text),
-				)
 				return nil
 			},
 			OnInput: func(ctx context.Context) error {
@@ -167,16 +169,18 @@ func run(ctx context.Context) error {
 				// Skip.
 				return nil
 			},
-			OnLog: func(ctx context.Context, l ch.Log) error {
-				switch l.Source {
-				case "MemoryTracker", "executeQuery": // ok
-				default:
-					return nil // skip
+			OnLogs: func(ctx context.Context, ls []ch.Log) error {
+				for _, l := range ls {
+					switch l.Source {
+					case "MemoryTracker", "executeQuery": // ok
+					default:
+						continue // skip
+					}
+					lg.Info("Log",
+						zap.String("source", l.Source),
+						zap.String("text", l.Text),
+					)
 				}
-				lg.Info("Log",
-					zap.String("source", l.Source),
-					zap.String("text", l.Text),
-				)
 				return nil
 			},
 			Result: proto.Results{
