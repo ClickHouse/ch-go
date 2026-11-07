@@ -55,7 +55,7 @@ func (c ColInt256) EncodeColumn(b *Buffer) {
 }
 
 func (c ColInt256) WriteColumn(w *Writer) {
-	writeColumnChunks(w, len(c), 256/8, func(b *Buffer, start, end int) {
+	writeColumnChunks(w, len(c), 32, func(b *Buffer, start, end int) {
 		c[start:end].EncodeColumn(b)
 	})
 }

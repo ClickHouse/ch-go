@@ -153,6 +153,28 @@ func TestStreamingStringBatchBoundaries(t *testing.T) {
 	}
 }
 
+func TestBufferedStringAfterLargeBuffer(t *testing.T) {
+	var column ColStr
+	for i := range 3 * streamBufferSize / 8 {
+		column.Append(fmt.Sprintf("%08d", i))
+	}
+	column.AppendBytes(bytes.Repeat([]byte("L"), 2*streamBufferSize))
+	column.Append("tail")
+	prefix := bytes.Repeat([]byte("p"), 2*streamBufferSize+7)
+
+	var expected Buffer
+	expected.PutRaw(prefix)
+	column.EncodeColumn(&expected)
+
+	var dst bytes.Buffer
+	writer := NewWriter(&dst, new(Buffer))
+	writer.ChainBuffer(func(b *Buffer) { b.PutRaw(prefix) })
+	column.WriteColumn(writer)
+	_, err := writer.Flush()
+	require.NoError(t, err)
+	require.Equal(t, expected.Buf, dst.Bytes())
+}
+
 func TestStreamingStringBatchFailure(t *testing.T) {
 	var column ColStr
 	for range 2 * streamBufferSize {

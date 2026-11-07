@@ -327,7 +327,7 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 		if c.blockEncoder == nil {
 			c.blockEncoder = c.NewBlockEncoder()
 		}
-		if err := c.blockEncoder.write(ctx, blockClientWriter{ctx: ctx, client: c}, input); err != nil {
+		if err := c.blockEncoder.write(blockClientWriter{ctx: ctx, client: c}, input); err != nil {
 			return errors.Wrap(err, "stream block")
 		}
 	}

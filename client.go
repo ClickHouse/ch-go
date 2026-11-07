@@ -335,17 +335,19 @@ type CompressionLevel uint32
 
 // Options for Client. Zero value is valid.
 type Options struct {
-	Logger               *zap.Logger      // defaults to Nop.
-	Address              string           // 127.0.0.1:9000
-	Database             string           // "default"
-	User                 string           // "default"
-	Password             string           // blank string by default
-	QuotaKey             string           // blank string by default
-	Compression          Compression      // disabled by default
-	CompressionLevel     CompressionLevel // compression algorithm specific default
-	CompressionFrameSize int              // uncompressed bytes per frame; 0 defaults to 1 MiB, maximum compress.MaxFrameSize.
-	ClientName           string           // blank string by default
-	Settings             []Setting        // none by default
+	Logger           *zap.Logger      // defaults to Nop.
+	Address          string           // 127.0.0.1:9000
+	Database         string           // "default"
+	User             string           // "default"
+	Password         string           // blank string by default
+	QuotaKey         string           // blank string by default
+	Compression      Compression      // disabled by default
+	CompressionLevel CompressionLevel // compression algorithm specific default
+	// CompressionFrameSize sets the uncompressed bytes per frame; 0 defaults to 1 MiB, maximum
+	// compress.MaxFrameSize. Each client retains one frame-sized buffer after its first compressed insert.
+	CompressionFrameSize int
+	ClientName           string    // blank string by default
+	Settings             []Setting // none by default
 
 	// ReadTimeout is a timeout for reading a single packet from the server.
 	//

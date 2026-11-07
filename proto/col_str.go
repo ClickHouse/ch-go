@@ -81,46 +81,34 @@ func (c ColStr) EncodeColumn(b *Buffer) {
 	}
 }
 
-// WriteColumn writes String rows to *Writer.
+// WriteColumn writes String rows to *Writer. Short strings are copied in batches; strings longer than
+// 64 KiB are chained directly, so a buffered Writer references c.Buf until Flush.
 func (c ColStr) WriteColumn(w *Writer) {
-	if w.streaming {
-		for row := 0; row < len(c.Pos) && w.err == nil; {
-			position := c.Pos[row]
-			if length := position.End - position.Start; length > streamBufferSize {
-				w.ChainBuffer(func(b *Buffer) { b.PutUVarInt(uint64(length)) })
-				w.ChainWrite(c.Buf[position.Start:position.End])
-				row++
-				continue
-			}
-			w.ChainBuffer(func(b *Buffer) {
-				for row < len(c.Pos) {
-					position := c.Pos[row]
-					length := position.End - position.Start
-					if length > streamBufferSize {
-						break
-					}
-					b.PutUVarInt(uint64(length))
-					b.Buf = append(b.Buf, c.Buf[position.Start:position.End]...)
-					row++
-					if len(b.Buf) >= streamBufferSize {
-						break
-					}
+	for row := 0; row < len(c.Pos) && w.err == nil; {
+		var large []byte
+		w.ChainBuffer(func(b *Buffer) {
+			// Stop at the next 64 KiB boundary: a streaming Writer flushes there, while a buffered
+			// Writer never resets before Flush, so a fixed limit would stop making progress.
+			limit := (len(b.Buf)/streamBufferSize + 1) * streamBufferSize
+			var varint [binary.MaxVarintLen64]byte
+			buf, i := b.Buf, row
+			for i < len(c.Pos) && len(buf) < limit {
+				value := c.Buf[c.Pos[i].Start:c.Pos[i].End]
+				i++
+				n := binary.PutUvarint(varint[:], uint64(len(value)))
+				buf = append(buf, varint[:n]...)
+				if len(value) > streamBufferSize {
+					large = value
+					break
 				}
-			})
+				buf = append(buf, value...)
+			}
+			b.Buf, row = buf, i
+		})
+		if large != nil {
+			w.ChainWrite(large)
 		}
-		return
 	}
-
-	var buf [binary.MaxVarintLen64]byte
-	// Writing values from c.Buf directly might improve performance if [ColStr] contains a few rows of very long strings.
-	// However, most of the time it is quite opposite, so we copy data.
-	w.ChainBuffer(func(b *Buffer) {
-		for _, p := range c.Pos {
-			n := binary.PutUvarint(buf[:], uint64(p.End-p.Start))
-			b.PutRaw(buf[:n])
-			b.PutRaw(c.Buf[p.Start:p.End])
-		}
-	})
 }
 
 // ForEach calls f on each string from column.

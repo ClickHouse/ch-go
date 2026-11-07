@@ -51,10 +51,11 @@ type BlockEncoder struct {
 // Prepared input must have fully resolved types; server-side type inference is
 // not available after serialization.
 func (c *Client) NewBlockEncoder() *BlockEncoder {
-	return &BlockEncoder{
-		version: c.protocolVersion, compression: c.compression,
-		stream: compress.NewStreamWriter(nil, c.compressionLevel, c.compressionMethod, c.compressionFrameSize),
+	e := &BlockEncoder{version: c.protocolVersion, compression: c.compression}
+	if c.compression == proto.CompressionEnabled {
+		e.stream = compress.NewStreamWriter(nil, c.compressionLevel, c.compressionMethod, c.compressionFrameSize)
 	}
+	return e
 }
 
 // Encode copies input into an owned block. Input columns can be reset after this
@@ -70,9 +71,12 @@ func (e *BlockEncoder) Encode(ctx context.Context, input proto.Input) (*Prepared
 	if len(input) == 0 || input[0].Data.Rows() <= 0 {
 		return nil, errors.New("prepared input must contain rows and columns")
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	var dst bytes.Buffer
 	dst.Grow(e.lastBlockSize + e.lastBlockSize/8)
-	if err := e.write(ctx, &dst, input); err != nil {
+	if err := e.write(blockContextWriter{ctx: ctx, dst: &dst}, input); err != nil {
 		return nil, err
 	}
 	data := dst.Bytes()
@@ -83,12 +87,8 @@ func (e *BlockEncoder) Encode(ctx context.Context, input proto.Input) (*Prepared
 	return &PreparedBlock{data: data, rows: input[0].Data.Rows(), version: e.version, compression: e.compression}, nil
 }
 
-func (e *BlockEncoder) write(ctx context.Context, dst io.Writer, input proto.Input) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	var output io.Writer = blockContextWriter{ctx: ctx, dst: dst}
-	if e.compression == proto.CompressionEnabled {
+func (e *BlockEncoder) write(output io.Writer, input proto.Input) error {
+	if e.stream != nil {
 		e.stream.Reset(output)
 		defer e.stream.Reset(nil)
 		output = e.stream
@@ -101,7 +101,7 @@ func (e *BlockEncoder) write(ctx context.Context, dst io.Writer, input proto.Inp
 	if _, err := writer.Flush(); err != nil {
 		return err
 	}
-	if e.compression == proto.CompressionEnabled {
+	if e.stream != nil {
 		return e.stream.Flush()
 	}
 	return nil
@@ -167,13 +167,13 @@ func (c *Client) sendPreparedInput(ctx context.Context, next func(context.Contex
 			return err
 		}
 		block, err := next(ctx)
-		if err != nil {
-			if errors.Is(err, io.EOF) && block == nil {
-				return c.encodeBlankBlock(ctx)
-			}
-			if errors.Is(err, io.EOF) {
+		if errors.Is(err, io.EOF) {
+			if block != nil {
 				return errors.New("prepared input must not return a block with EOF")
 			}
+			return c.encodeBlankBlock(ctx)
+		}
+		if err != nil {
 			return errors.Wrap(err, "prepared input")
 		}
 		if block == nil || block.rows <= 0 || len(block.data) == 0 {

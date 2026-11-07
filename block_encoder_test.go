@@ -164,7 +164,7 @@ func TestBlockEncoderCancellationDuringWrite(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	dst := &cancelBlockWriter{cancel: cancel}
-	require.ErrorIs(t, encoder.write(ctx, dst, input), context.Canceled)
+	require.ErrorIs(t, encoder.write(blockContextWriter{ctx: ctx, dst: dst}, input), context.Canceled)
 	require.Equal(t, 1, dst.calls)
 	_, err := encoder.Encode(t.Context(), input)
 	require.NoError(t, err)
@@ -214,7 +214,7 @@ func BenchmarkBlockCompression(b *testing.B) {
 						var encode func() error
 						if streaming {
 							encoder := testBlockEncoder(method, true)
-							encode = func() error { return encoder.write(b.Context(), &sink, input) }
+							encode = func() error { return encoder.write(blockContextWriter{ctx: b.Context(), dst: &sink}, input) }
 						} else {
 							var buffer proto.Buffer
 							codec := compress.NewWriter(0, method)

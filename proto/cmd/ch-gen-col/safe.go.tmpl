@@ -123,7 +123,7 @@ func (c {{ .Type }}) WriteColumn(w *Writer) {
 	{{- if .Byte }}
 		w.ChainWrite([]byte(c))
 	{{- else }}
-		writeColumnChunks(w, len(c), {{ .Bits }}/8, func(b *Buffer, start, end int) {
+		writeColumnChunks(w, len(c), {{ .Bytes }}, func(b *Buffer, start, end int) {
 			c[start:end].EncodeColumn(b)
 		})
 	{{- end }}
