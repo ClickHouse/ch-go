@@ -33,7 +33,9 @@ func requireEqual[T any](t *testing.T, a, b proto.ColumnOf[T]) {
 func TestClientQueryIdentity(t *testing.T) {
 	hostname, err := os.Hostname()
 	require.NoError(t, err)
-	require.NotEmpty(t, hostname)
+	if hostname == "" {
+		t.Skip("nonempty local hostname required to verify hostname propagation")
+	}
 
 	pkg := pkgversion.Get()
 	version := strings.TrimPrefix(pkg.Raw, "v")

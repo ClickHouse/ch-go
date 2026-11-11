@@ -15,19 +15,6 @@ pooling for ch-go is available as [chpool](https://pkg.go.dev/github.com/ClickHo
 go get github.com/ClickHouse/ch-go@latest
 ```
 
-## Client identity
-
-Queries report the local `os.Hostname()` as `client_hostname`.
-If the hostname cannot be determined, the client logs the error at debug level and sends an empty hostname.
-
-`Options.ClientName` identifies the application, for example `app/v1`.
-The reported `client_name` is `app/v1 clickhouse/ch-go/<version> (lv:go/<version>; os:<os>)`.
-With an empty `ClientName`, it is `clickhouse/ch-go/<version> (lv:go/<version>; os:<os>)`.
-These values are visible in `system.processes` and `system.query_log`.
-
-This changes the previous custom-name format, `clickhouse/ch-go app/v1`.
-Update filters that depend on the old value or require `client_name` to start with `clickhouse/ch-go` when setting a custom application name.
-
 ## Example
 ```go
 package main
