@@ -1,0 +1,116 @@
+name: Tests cloud
+
+# Runs the integration tests against a ClickHouse Cloud service instead of a
+# local server started by cht. Each test connection creates its own database
+# (ch_go_test_*) and drops it at the end.
+#
+# Required repository secrets:
+#   CH_GO_CLOUD_HOST      service hostname, e.g. abc123.us-east-2.aws.clickhouse.cloud
+#   CH_GO_CLOUD_PASSWORD  password of the `default` user
+#
+# Least privilege: fork code runs in this job with the base repo token.
+# contents:read for checkout, pull-requests:write to remove the label.
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  push:
+    branches:
+      - main
+      # TODO: remove before merge. Runs the workflow from this PR branch for validation.
+      - kavirajk/sync-up-ci-with-clickhouse-go
+  workflow_dispatch:
+  pull_request_target:
+    branches:
+      - main
+    types: [labeled]
+
+# All runs share one Cloud service, and the cleanup step drops every
+# ch_go_test_* database. Only one run can use the service at a time.
+concurrency:
+  group: tests-cloud
+  cancel-in-progress: false
+
+jobs:
+  test:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request_target' && github.event.label.name == 'tests:run-cloud')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      # Run the Go-version jobs one at a time: they share a single ClickHouse
+      # Cloud service. fail-fast: false keeps the second job running even if
+      # the first fails.
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        go:
+          - "1.26"
+          - "1.27"
+    env:
+      CH_GO_CLOUD_HOST: ${{ secrets.CH_GO_CLOUD_HOST }}
+      CH_GO_CLOUD_PASSWORD: ${{ secrets.CH_GO_CLOUD_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # head.sha is fixed at the time of the `labeled` event, so commits pushed
+          # after a maintainer adds the label do not run.
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.ref }}
+          # Fork code runs in a trusted context (secrets, base repo token). This is
+          # intentional: a maintainer must review the PR and add `tests:run-cloud`
+          # before this job runs. See https://gh.io/securely-using-pull_request_target
+          allow-unsafe-pr-checkout: true
+          # Do not leave GITHUB_TOKEN in .git/config, where fork code can read it.
+          persist-credentials: false
+
+      - name: Install Go ${{ matrix.go }}
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Check secrets
+        run: |
+          if [ -z "$CH_GO_CLOUD_HOST" ] || [ -z "$CH_GO_CLOUD_PASSWORD" ]; then
+            echo "::error::Set the CH_GO_CLOUD_HOST and CH_GO_CLOUD_PASSWORD repository secrets."
+            exit 1
+          fi
+          # Accept a host given as a URL or with a port.
+          host="${CH_GO_CLOUD_HOST#*://}"
+          host="${host%%/*}"
+          host="${host%%:*}"
+          echo "CH_CLOUD_HOSTNAME=$host" >> "$GITHUB_ENV"
+
+      # Also wakes the service if it is idle.
+      - name: Drop databases left by earlier runs
+        run: |
+          query() {
+            curl --silent --show-error --fail-with-body --retry 10 --retry-all-errors --retry-delay 10 \
+              --user "default:$CH_GO_CLOUD_PASSWORD" \
+              --data-binary "$1" \
+              "https://$CH_CLOUD_HOSTNAME:8443/"
+          }
+          dbs=$(query "SELECT name FROM system.databases WHERE startsWith(name, 'ch_go_test_') FORMAT TSVRaw")
+          for db in $dbs; do
+            echo "Dropping $db"
+            query "DROP DATABASE IF EXISTS \`$db\` SYNC"
+          done
+
+      - name: Tests
+        env:
+          CH_HOST: ${{ env.CH_CLOUD_HOSTNAME }}:9440
+          CH_USER: default
+          CH_PASSWORD: ${{ secrets.CH_GO_CLOUD_PASSWORD }}
+          CH_TLS: "true"
+          GOTOOLCHAIN: "local"
+        run: go test -count=1 -race -timeout 30m ./...
+
+      - name: Remove tests:run-cloud label
+        if: always() && github.event_name == 'pull_request_target'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/tests%3Arun-cloud -X DELETE || true

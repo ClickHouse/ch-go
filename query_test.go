@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/ClickHouse/ch-go/cht"
 	"github.com/ClickHouse/ch-go/proto"
 )
 
@@ -264,7 +263,7 @@ func TestClient_Query(t *testing.T) {
 		conn := Conn(t)
 
 		createTable := Query{
-			Body: "CREATE TABLE test_table (v Enum8('foo' = 1, 'bar' = 2)) ENGINE = TinyLog",
+			Body: "CREATE TABLE test_table (v Enum8('foo' = 1, 'bar' = 2)) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
@@ -295,7 +294,7 @@ func TestClient_Query(t *testing.T) {
 		conn := Conn(t)
 
 		createTable := Query{
-			Body: "CREATE TABLE test_table (v Enum16('foo' = 1, 'bar' = 2)) ENGINE = TinyLog",
+			Body: "CREATE TABLE test_table (v Enum16('foo' = 1, 'bar' = 2)) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
@@ -326,7 +325,7 @@ func TestClient_Query(t *testing.T) {
 		conn := Conn(t)
 
 		createTable := Query{
-			Body: "CREATE TABLE test_table (v Tuple(String, Int64)) ENGINE = TinyLog",
+			Body: "CREATE TABLE test_table (v Tuple(String, Int64)) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
@@ -365,7 +364,7 @@ func TestClient_Query(t *testing.T) {
 		conn := Conn(t)
 
 		createTable := Query{
-			Body: "CREATE TABLE test_table (id UInt8) ENGINE = TinyLog",
+			Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
@@ -671,7 +670,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 		require.NoError(t, conn.Do(ctx, Query{
-			Body: "CREATE TABLE test_table (v Array(FixedString(10))) ENGINE = Memory",
+			Body: "CREATE TABLE test_table (v Array(FixedString(10))) ENGINE = MergeTree ORDER BY tuple()",
 		}), "create table")
 
 		v := (&proto.ColFixedStr{Size: 10}).Array()
@@ -698,7 +697,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 		require.NoError(t, conn.Do(ctx, Query{
-			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = Memory",
+			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = MergeTree ORDER BY tuple()",
 		}), "create table")
 
 		v := new(proto.ColStr).LowCardinality().Array()
@@ -727,7 +726,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 		createTable := Query{
-			Body: "CREATE TABLE test_table (v LowCardinality(String)) ENGINE = TinyLog",
+			Body: "CREATE TABLE test_table (v LowCardinality(String)) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
@@ -759,7 +758,7 @@ func TestClient_Query(t *testing.T) {
 		conn := Conn(t)
 
 		require.NoError(t, conn.Do(ctx, Query{
-			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = Memory",
+			Body: "CREATE TABLE test_table (v Array(LowCardinality(String))) ENGINE = MergeTree ORDER BY tuple()",
 		}), "create table")
 
 		data := [][]string{
@@ -840,7 +839,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 		createTable := Query{
-			Body: "CREATE TABLE test_table (v Map(String, Int64)) ENGINE = TinyLog",
+			Body: "CREATE TABLE test_table (v Map(String, Int64)) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
@@ -888,7 +887,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 		createTable := Query{
-			Body: "CREATE TABLE test_table (v Nullable(String)) ENGINE = Memory",
+			Body: "CREATE TABLE test_table (v Nullable(String)) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
@@ -931,7 +930,7 @@ func TestClient_Query(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 		createTable := Query{
-			Body: "CREATE TABLE test_table (v Decimal32(2)) ENGINE = Memory",
+			Body: "CREATE TABLE test_table (v Decimal32(2)) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
@@ -969,7 +968,7 @@ func TestClient_Query(t *testing.T) {
 			},
 		})
 		require.NoError(t, conn.Do(ctx, Query{
-			Body: "CREATE TABLE test_table (v Point) ENGINE = Memory",
+			Body: "CREATE TABLE test_table (v Point) ENGINE = MergeTree ORDER BY tuple()",
 		}), "create table")
 
 		data := new(proto.ColPoint)
@@ -1202,7 +1201,7 @@ func TestClientCompression(t *testing.T) {
 				t.Parallel()
 				client := conn(t)
 				createTable := Query{
-					Body: "CREATE TABLE test_table_big (v String) ENGINE = TinyLog",
+					Body: "CREATE TABLE test_table_big (v String) ENGINE = MergeTree ORDER BY tuple()",
 				}
 				require.NoError(t, client.Do(ctx, createTable), "create table")
 
@@ -1423,7 +1422,7 @@ func TestClient_Query_Bool(t *testing.T) {
 	}
 
 	require.NoError(t, conn.Do(ctx, Query{
-		Body: "CREATE TABLE test_table (v Bool) ENGINE = TinyLog",
+		Body: "CREATE TABLE test_table (v Bool) ENGINE = MergeTree ORDER BY tuple()",
 	}), "create table")
 
 	data := proto.ColBool{true, true, false, false, true}
@@ -1572,7 +1571,7 @@ func TestClientInsert(t *testing.T) {
     body              String,
     name              String,
     arr               Array(String)
-) ENGINE = Memory`,
+) ENGINE = MergeTree ORDER BY tuple()`,
 	}))
 
 	// Insert single data block.
@@ -1634,10 +1633,7 @@ func TestClientInsert(t *testing.T) {
 
 func TestClientQueryCancellation(t *testing.T) {
 	ctx := context.Background()
-	server := cht.New(t)
-	c, err := Dial(ctx, Options{
-		Address: server.TCP,
-	})
+	c, err := Dial(ctx, testServer(t))
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = c.Close() })
 	require.NoError(t, c.Ping(ctx))

@@ -6,19 +6,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ClickHouse/ch-go/cht"
 	"github.com/ClickHouse/ch-go/proto"
 )
 
 func TestDial_Exception(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	server := cht.New(t)
-
-	client, err := Dial(ctx, Options{
-		Address:  server.TCP,
+	client, err := Dial(ctx, withServer(Options{
 		Password: "invalid_password",
-	})
+	}, testServer(t)))
 
 	var e *Exception
 	require.Nil(t, client)
