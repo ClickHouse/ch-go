@@ -695,9 +695,11 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	g, ctx := errgroup.WithContext(ctx)
 	done := make(chan struct{})
 	var (
-		gotException atomic.Bool
-		sendErr      error
-		colInfo      chan proto.ColInfoInput
+		gotException    atomic.Bool
+		sendComplete    atomic.Bool
+		receiveFailed   atomic.Bool
+		watcherCloseErr error
+		colInfo         chan proto.ColInfoInput
 	)
 	if q.Result == nil && len(q.Input) > 0 {
 		// Handling input column type inference, e.g. enums.
@@ -720,14 +722,17 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			}
 		}
 	}
-	g.Go(func() (err error) {
-		defer func() { sendErr = err }()
+	g.Go(func() error {
 		// Sending data.
 		if err := c.sendQuery(ctx, q); err != nil {
 			return errors.Wrap(err, "send query")
 		}
 		if err := c.flush(ctx); err != nil {
 			return errors.Wrap(err, "flush")
+		}
+		if len(q.Input) == 0 {
+			sendComplete.Store(true)
+			return nil
 		}
 		var info proto.ColInfoInput
 		if colInfo != nil {
@@ -745,11 +750,15 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		if err := c.flush(ctx); err != nil {
 			return errors.Wrap(err, "flush")
 		}
+		sendComplete.Store(true)
 		return nil
 	})
-	g.Go(func() error {
+	g.Go(func() (err error) {
 		// Receiving query result, data and telemetry.
-		defer close(done)
+		defer func() {
+			receiveFailed.Store(err != nil)
+			close(done)
+		}()
 		if colInfo != nil {
 			defer close(colInfo)
 		}
@@ -793,6 +802,13 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		case <-done:
 		case <-ctx.Done():
 		}
+		// Incomplete writes cannot be canceled by writing another packet concurrently.
+		if !sendComplete.Load() {
+			if ctx.Err() != nil || receiveFailed.Load() {
+				watcherCloseErr = c.Close()
+			}
+			return nil
+		}
 		// Handling query cancellation if needed.
 		if ctx.Err() != nil && !gotException.Load() {
 			err := multierr.Append(ctx.Err(), c.cancelQuery())
@@ -800,9 +816,12 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		}
 		return nil
 	})
+
 	err = g.Wait()
-	sendFailed := sendErr != nil && !errors.Is(sendErr, context.Canceled)
-	if err != nil && (!gotException.Load() || sendFailed) && !c.IsClosed() {
+	if watcherCloseErr != nil && !errors.Is(watcherCloseErr, ErrClosed) {
+		err = multierr.Append(err, watcherCloseErr)
+	}
+	if err != nil && (!gotException.Load() || !sendComplete.Load()) && !c.IsClosed() {
 		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
 			err = multierr.Append(err, closeErr)
 		}
