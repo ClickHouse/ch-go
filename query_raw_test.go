@@ -19,7 +19,7 @@ func TestClient_Query_Raw(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
 		createTable := Query{
-			Body: "CREATE TABLE test_table (v Map(FixedString(16), Array(String))) ENGINE = TinyLog",
+			Body: "CREATE TABLE test_table (v Map(FixedString(16), Array(String))) ENGINE = MergeTree ORDER BY tuple()",
 		}
 		require.NoError(t, conn.Do(ctx, createTable), "create table")
 
