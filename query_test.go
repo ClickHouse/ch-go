@@ -1731,7 +1731,7 @@ func TestClientDoClosesDuringWrite(t *testing.T) {
 			proto.ServerCodeException.Encode(&b)
 			ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
 			ex.EncodeAware(&b, proto.Version)
-			ctx, cancel := context.WithCancel(t.Context())
+			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 			defer cancel()
 			peerDone := make(chan error, 1)
 			go func() {
