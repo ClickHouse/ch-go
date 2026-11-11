@@ -39,6 +39,11 @@ func (gen *randomIDGenerator) NewIDs(_ context.Context) (tid trace.TraceID, sid 
 }
 
 func TestClient_Do_tracing(t *testing.T) {
+	if isRemote(t) {
+		// The test reads system.opentelemetry_span_log, which the cht server
+		// config enables. A remote server can have a different config.
+		t.Skip("Skipping (needs the cht server config)")
+	}
 	ctx := context.Background()
 	exporter := tracetest.NewInMemoryExporter()
 	randSource := rand.NewSource(15)
