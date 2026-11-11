@@ -1696,28 +1696,13 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 }
 
 func TestClientDoReusesConnectionAfterException(t *testing.T) {
-	var b proto.Buffer
-	proto.ServerCodeException.Encode(&b)
-	ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
-	ex.EncodeAware(&b, proto.Version)
-	proto.ServerCodeEndOfStream.Encode(&b)
-	clientConn, peer := net.Pipe()
-	t.Cleanup(func() { _ = clientConn.Close() })
-	t.Cleanup(func() { _ = peer.Close() })
-	conn := &queryErrorConn{Conn: clientConn, reader: bytes.NewReader(b.Buf)}
-	c := &Client{
-		lg:              zap.NewNop(),
-		conn:            conn,
-		writer:          proto.NewWriter(conn, new(proto.Buffer)),
-		reader:          proto.NewReader(conn),
-		protocolVersion: proto.Version,
-		compression:     proto.CompressionDisabled,
-	}
+	ctx := context.Background()
+	c := Conn(t)
 
-	err := c.Do(context.Background(), Query{Body: "SELECT * FROM missing_table"})
+	err := c.Do(ctx, Query{Body: "SELECT * FROM missing_table"})
 	require.True(t, IsErr(err, proto.ErrUnknownTable))
 	require.False(t, c.IsClosed())
-	require.NoError(t, c.Do(context.Background(), Query{Body: "SELECT 1"}))
+	require.NoError(t, c.Do(ctx, Query{Body: "SELECT 1", Result: discardResult()}))
 }
 
 func TestClient_querySettings(t *testing.T) {
