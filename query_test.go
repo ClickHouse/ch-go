@@ -1598,17 +1598,17 @@ type queryErrorConn struct {
 }
 
 func (c *queryErrorConn) Write(p []byte) (int, error) {
-	if c.writeErr != nil {
-		if c.writeAfterCancel != nil {
-			c.writeOnce.Do(func() { close(c.writeStarted) })
-			ctx := <-c.writeAfterCancel
-			<-ctx.Done()
-		} else {
-			<-c.readStarted
-		}
-		return 0, c.writeErr
+	if c.writeErr == nil {
+		return len(p), nil
 	}
-	return len(p), nil
+	if c.writeAfterCancel != nil {
+		c.writeOnce.Do(func() { close(c.writeStarted) })
+		ctx := <-c.writeAfterCancel
+		<-ctx.Done()
+	} else {
+		<-c.readStarted
+	}
+	return 0, c.writeErr
 }
 
 func (c *queryErrorConn) Read(p []byte) (int, error) {
@@ -1652,7 +1652,11 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 		{
 			name: "write_after_server_exception", reader: bytes.NewReader(writeFailure.Buf), writeErr: io.ErrShortWrite,
 			writeAfterCancel: writeContext, writeStarted: writeStarted,
-			onProgress: func(ctx context.Context, _ proto.Progress) error { writeContext <- ctx; <-writeStarted; return nil },
+			onProgress: func(ctx context.Context, _ proto.Progress) error {
+				writeContext <- ctx
+				<-writeStarted
+				return nil
+			},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1675,7 +1679,8 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 			}
 
 			done := make(chan error, 1)
-			go func() { done <- c.Do(context.Background(), Query{Body: "SELECT 1", OnProgress: tt.onProgress}) }()
+			ctx := t.Context()
+			go func() { done <- c.Do(ctx, Query{Body: "SELECT 1", OnProgress: tt.onProgress}) }()
 			select {
 			case err := <-done:
 				if tt.wantErr != nil {
@@ -1695,12 +1700,140 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 	}
 }
 
+type notifyWriteConn struct {
+	net.Conn
+	started chan struct{}
+	once    sync.Once
+}
+
+func (c *notifyWriteConn) Write(p []byte) (int, error) {
+	c.once.Do(func() { close(c.started) })
+	return c.Conn.Write(p)
+}
+
+func TestClientDoClosesDuringWrite(t *testing.T) {
+	for _, cause := range []string{"exception", "cancellation"} {
+		t.Run(cause, func(t *testing.T) {
+			clientConn, peer := net.Pipe()
+			t.Cleanup(func() { require.NoError(t, clientConn.Close()) })
+			t.Cleanup(func() { require.NoError(t, peer.Close()) })
+			require.NoError(t, peer.SetReadDeadline(time.Now().Add(10*time.Second)))
+			conn := &notifyWriteConn{Conn: clientConn, started: make(chan struct{})}
+			c := &Client{
+				lg:              zap.NewNop(),
+				conn:            conn,
+				writer:          proto.NewWriter(conn, new(proto.Buffer)),
+				reader:          proto.NewReader(conn),
+				protocolVersion: proto.Version,
+				compression:     proto.CompressionDisabled,
+			}
+			var b proto.Buffer
+			proto.ServerCodeException.Encode(&b)
+			ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+			ex.EncodeAware(&b, proto.Version)
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+			peerDone := make(chan error, 1)
+			go func() {
+				<-conn.started
+				if cause == "cancellation" {
+					cancel()
+					peerDone <- nil
+					return
+				}
+				_, err := peer.Write(b.Buf)
+				peerDone <- err
+			}()
+
+			done := make(chan error, 1)
+			go func() { done <- c.Do(ctx, Query{Body: "SELECT * FROM missing_table"}) }()
+			select {
+			case err := <-done:
+				require.Error(t, err)
+			case <-time.After(5 * time.Second):
+				_ = c.Close()
+				<-done
+				t.Fatal("Do did not interrupt Write after", cause)
+			}
+			require.NoError(t, <-peerDone)
+			require.True(t, c.IsClosed())
+			_, err := peer.Read(make([]byte, 1))
+			require.ErrorIs(t, err, io.EOF, "incomplete query write must close the connection")
+		})
+	}
+}
+
+type blockedInputColumn struct {
+	proto.ColUInt64
+	encoded      chan struct{}
+	queryContext <-chan context.Context
+}
+
+func (c *blockedInputColumn) WriteColumn(w *proto.Writer) {
+	c.ColUInt64.WriteColumn(w)
+	close(c.encoded)
+	ctx := <-c.queryContext
+	<-ctx.Done()
+}
+
+func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
+	clientConn, peer := net.Pipe()
+	t.Cleanup(func() { require.NoError(t, clientConn.Close()) })
+	t.Cleanup(func() { require.NoError(t, peer.Close()) })
+	require.NoError(t, peer.SetReadDeadline(time.Now().Add(10*time.Second)))
+	var b proto.Buffer
+	proto.ServerCodeProgress.Encode(&b)
+	proto.Progress{}.EncodeAware(&b, proto.Version)
+	proto.ServerCodeException.Encode(&b)
+	ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+	ex.EncodeAware(&b, proto.Version)
+	conn := &queryErrorConn{Conn: clientConn, reader: bytes.NewReader(b.Buf)}
+	c := &Client{
+		lg:              zap.NewNop(),
+		conn:            conn,
+		writer:          proto.NewWriter(conn, new(proto.Buffer)),
+		reader:          proto.NewReader(conn),
+		protocolVersion: proto.Version,
+		compression:     proto.CompressionDisabled,
+	}
+	queryContext := make(chan context.Context, 1)
+	input := &blockedInputColumn{
+		ColUInt64: proto.ColUInt64{1}, encoded: make(chan struct{}), queryContext: queryContext,
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Do(ctx, Query{
+			Body: "INSERT INTO missing_table VALUES", Input: proto.Input{{Name: "v", Data: input}}, Result: discardResult(),
+			OnProgress: func(ctx context.Context, _ proto.Progress) error {
+				<-input.encoded
+				queryContext <- ctx
+				return nil
+			},
+		})
+	}()
+
+	select {
+	case err := <-done:
+		require.True(t, IsErr(err, proto.ErrUnknownTable), "buffered-input query: got %v, want UNKNOWN_TABLE", err)
+	case <-time.After(5 * time.Second):
+		cancel()
+		_ = c.Close()
+		<-done
+		t.Fatal("Do did not finish buffered input after server exception")
+	}
+	require.True(t, c.IsClosed(), "buffered input must not leak into a subsequent query")
+	_, err := peer.Read(make([]byte, 1))
+	require.ErrorIs(t, err, io.EOF)
+}
+
 func TestClientDoReusesConnectionAfterException(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := Conn(t)
 
 	err := c.Do(ctx, Query{Body: "SELECT * FROM missing_table"})
-	require.True(t, IsErr(err, proto.ErrUnknownTable))
+	require.True(t, IsErr(err, proto.ErrUnknownTable), "missing-table query: got %v, want UNKNOWN_TABLE", err)
 	require.False(t, c.IsClosed())
 	require.NoError(t, c.Do(ctx, Query{Body: "SELECT 1", Result: discardResult()}))
 }
