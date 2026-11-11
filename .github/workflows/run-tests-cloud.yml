@@ -18,6 +18,8 @@ on:
   push:
     branches:
       - main
+      # TODO: remove before merge. Runs the workflow from this PR branch for validation.
+      - kavirajk/sync-up-ci-with-clickhouse-go
   workflow_dispatch:
   pull_request_target:
     branches:
