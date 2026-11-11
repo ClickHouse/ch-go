@@ -1842,14 +1842,64 @@ func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
 	require.ErrorIs(t, err, io.EOF)
 }
 
-func TestClientDoReusesConnectionAfterException(t *testing.T) {
-	ctx := t.Context()
-	c := Conn(t)
+// delayedWriteConn pauses completion after the transport has accepted the first write.
+// A cancellation deadline releases the pending operation without undoing that write.
+type delayedWriteConn struct {
+	net.Conn
+	once        sync.Once
+	releaseOnce sync.Once
+	release     chan struct{}
+}
 
-	err := c.Do(ctx, Query{Body: "SELECT * FROM missing_table"})
-	require.True(t, IsErr(err, proto.ErrUnknownTable), "missing-table query: got %v, want UNKNOWN_TABLE", err)
-	require.False(t, c.IsClosed())
-	require.NoError(t, c.Do(ctx, Query{Body: "SELECT 1", Result: discardResult()}))
+func (c *delayedWriteConn) Write(p []byte) (int, error) {
+	n, err := c.Conn.Write(p)
+	if err == nil {
+		c.once.Do(func() { <-c.release })
+	}
+	return n, err
+}
+
+func (c *delayedWriteConn) SetWriteDeadline(deadline time.Time) error {
+	err := c.Conn.SetWriteDeadline(deadline)
+	if !deadline.IsZero() && !deadline.After(time.Now()) {
+		c.releaseOnce.Do(func() { close(c.release) })
+	}
+	return err
+}
+
+func (c *delayedWriteConn) Close() error {
+	c.releaseOnce.Do(func() { close(c.release) })
+	return c.Conn.Close()
+}
+
+func TestClientDoReusesConnectionAfterExceptionDuringWriteCompletion(t *testing.T) {
+	c := Conn(t)
+	conn := &delayedWriteConn{Conn: c.conn, release: make(chan struct{})}
+	c.conn = conn
+	c.writer = proto.NewWriter(conn, new(proto.Buffer))
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- c.Do(ctx, Query{Body: "SELECT 错误 as w"}) }()
+
+	select {
+	case err := <-done:
+		require.True(t, IsErr(err, proto.ErrSyntaxError), "query error: got %v, want SYNTAX_ERROR", err)
+	case <-time.After(5 * time.Second):
+		cancel()
+		if err := c.Close(); err != nil {
+			t.Errorf("close client during cleanup: %v", err)
+		}
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Fatal("query goroutine did not stop during cleanup")
+		}
+		t.Fatal("Do did not finish after server exception")
+	}
+
+	require.False(t, c.IsClosed(), "a successful write must allow reuse after a server exception")
+	require.NoError(t, c.Do(t.Context(), Query{Body: "SELECT 1", Result: discardResult()}))
 }
 
 func TestClient_querySettings(t *testing.T) {
