@@ -699,6 +699,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		sendComplete    atomic.Bool
 		receiveFailed   atomic.Bool
 		watcherCloseErr error
+		serverException error
 		colInfo         chan proto.ColInfoInput
 	)
 	if q.Result == nil && len(q.Input) > 0 {
@@ -790,6 +791,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 				if err := c.handlePacket(ctx, code, q); err != nil {
 					if code == proto.ServerCodeException && IsException(err) {
 						// Prevent query cancellation on exception.
+						serverException = err
 						gotException.Store(true)
 					}
 					return errors.Wrap(err, "handle packet")
@@ -818,6 +820,9 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	})
 
 	err = g.Wait()
+	if serverException != nil && !errors.Is(err, serverException) {
+		err = multierr.Append(err, serverException)
+	}
 	if watcherCloseErr != nil && !errors.Is(watcherCloseErr, ErrClosed) {
 		err = multierr.Append(err, watcherCloseErr)
 	}

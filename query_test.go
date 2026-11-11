@@ -1749,7 +1749,11 @@ func TestClientDoClosesDuringWrite(t *testing.T) {
 			go func() { done <- c.Do(ctx, Query{Body: "SELECT * FROM missing_table"}) }()
 			select {
 			case err := <-done:
-				require.Error(t, err)
+				if cause == "exception" {
+					require.True(t, IsErr(err, proto.ErrUnknownTable), "interrupted query: got %v, want UNKNOWN_TABLE", err)
+				} else {
+					require.Error(t, err)
+				}
 			case <-time.After(5 * time.Second):
 				_ = c.Close()
 				<-done
