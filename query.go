@@ -804,6 +804,10 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		case <-done:
 		case <-ctx.Done():
 		}
+		if gotException.Load() {
+			// flush interrupts pending writes on context cancellation; inspect their result after Wait.
+			return nil
+		}
 		// Incomplete writes cannot be canceled by writing another packet concurrently.
 		if !sendComplete.Load() {
 			if ctx.Err() != nil || receiveFailed.Load() {
