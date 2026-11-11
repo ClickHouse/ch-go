@@ -10,7 +10,9 @@ import (
 	"net/netip"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/google/uuid"
@@ -1584,47 +1586,125 @@ func TestClientQueryCancellation(t *testing.T) {
 	require.True(t, c.IsClosed())
 }
 
-type failingReadConn struct{}
+type queryErrorConn struct {
+	net.Conn
+	reader           io.Reader
+	writeErr         error
+	readStarted      chan struct{}
+	readOnce         sync.Once
+	writeAfterCancel <-chan context.Context
+	writeStarted     chan struct{}
+	writeOnce        sync.Once
+}
 
-func (c *failingReadConn) Write(p []byte) (int, error) {
+func (c *queryErrorConn) Write(p []byte) (int, error) {
+	if c.writeErr != nil {
+		if c.writeAfterCancel != nil {
+			c.writeOnce.Do(func() { close(c.writeStarted) })
+			ctx := <-c.writeAfterCancel
+			<-ctx.Done()
+		} else {
+			<-c.readStarted
+		}
+		return 0, c.writeErr
+	}
 	return len(p), nil
 }
 
-func (c *failingReadConn) Read([]byte) (int, error) {
-	return 0, io.ErrUnexpectedEOF
+func (c *queryErrorConn) Read(p []byte) (int, error) {
+	if c.readStarted != nil {
+		c.readOnce.Do(func() { close(c.readStarted) })
+	}
+	return c.reader.Read(p)
 }
-
-func (c *failingReadConn) Close() error {
-	return nil
-}
-
-func (c *failingReadConn) LocalAddr() net.Addr {
-	return testAddr("127.0.0.1:12345")
-}
-
-func (c *failingReadConn) RemoteAddr() net.Addr {
-	return testAddr("127.0.0.1:9000")
-}
-
-func (c *failingReadConn) SetDeadline(time.Time) error {
-	return nil
-}
-
-func (c *failingReadConn) SetReadDeadline(time.Time) error {
-	return nil
-}
-
-func (c *failingReadConn) SetWriteDeadline(time.Time) error {
-	return nil
-}
-
-type testAddr string
-
-func (a testAddr) Network() string { return "tcp" }
-func (a testAddr) String() string  { return string(a) }
 
 func TestClientDoClosesOnTransportError(t *testing.T) {
-	conn := &failingReadConn{}
+	var progress proto.Buffer
+	proto.ServerCodeProgress.Encode(&progress)
+	proto.Progress{}.EncodeAware(&progress, proto.Version)
+	proto.ServerCodeEndOfStream.Encode(&progress)
+	callbackErr := &Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+	var writeFailure proto.Buffer
+	proto.ServerCodeProgress.Encode(&writeFailure)
+	proto.Progress{}.EncodeAware(&writeFailure, proto.Version)
+	proto.ServerCodeException.Encode(&writeFailure)
+	serverException := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+	serverException.EncodeAware(&writeFailure, proto.Version)
+	writeContext := make(chan context.Context, 1)
+	writeStarted := make(chan struct{})
+
+	for _, tt := range []struct {
+		name             string
+		reader           io.Reader
+		writeErr         error
+		wantErr          error
+		onProgress       func(context.Context, proto.Progress) error
+		writeAfterCancel <-chan context.Context
+		writeStarted     chan struct{}
+	}{
+		{name: "read", reader: iotest.ErrReader(io.ErrUnexpectedEOF), wantErr: io.ErrUnexpectedEOF},
+		{name: "write", writeErr: io.ErrShortWrite, wantErr: io.ErrShortWrite},
+		{name: "protocol", reader: bytes.NewReader([]byte{0xff, 0x01})},
+		{
+			name: "callback_exception", reader: bytes.NewReader(progress.Buf), wantErr: callbackErr,
+			onProgress: func(context.Context, proto.Progress) error { return callbackErr },
+		},
+		{
+			name: "write_after_server_exception", reader: bytes.NewReader(writeFailure.Buf), writeErr: io.ErrShortWrite,
+			writeAfterCancel: writeContext, writeStarted: writeStarted,
+			onProgress: func(ctx context.Context, _ proto.Progress) error { writeContext <- ctx; <-writeStarted; return nil },
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			clientConn, peer := net.Pipe()
+			t.Cleanup(func() { _ = clientConn.Close() })
+			t.Cleanup(func() { _ = peer.Close() })
+			require.NoError(t, peer.SetReadDeadline(time.Now().Add(10*time.Second)))
+			conn := &queryErrorConn{Conn: clientConn, reader: tt.reader, writeErr: tt.writeErr, writeAfterCancel: tt.writeAfterCancel, writeStarted: tt.writeStarted}
+			if conn.reader == nil {
+				conn.reader = clientConn
+				conn.readStarted = make(chan struct{})
+			}
+			c := &Client{
+				lg:              zap.NewNop(),
+				conn:            conn,
+				writer:          proto.NewWriter(conn, new(proto.Buffer)),
+				reader:          proto.NewReader(conn),
+				protocolVersion: proto.Version,
+				compression:     proto.CompressionDisabled,
+			}
+
+			done := make(chan error, 1)
+			go func() { done <- c.Do(context.Background(), Query{Body: "SELECT 1", OnProgress: tt.onProgress}) }()
+			select {
+			case err := <-done:
+				if tt.wantErr != nil {
+					require.ErrorIs(t, err, tt.wantErr)
+				} else {
+					require.Error(t, err)
+				}
+			case <-time.After(5 * time.Second):
+				_ = c.Close()
+				<-done
+				t.Fatal("Do did not return after transport failure")
+			}
+			require.True(t, c.IsClosed())
+			_, err := peer.Read(make([]byte, 1))
+			require.ErrorIs(t, err, io.EOF, "underlying connection must be closed")
+		})
+	}
+}
+
+func TestClientDoReusesConnectionAfterException(t *testing.T) {
+	var b proto.Buffer
+	proto.ServerCodeException.Encode(&b)
+	ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+	ex.EncodeAware(&b, proto.Version)
+	proto.ServerCodeEndOfStream.Encode(&b)
+	clientConn, peer := net.Pipe()
+	t.Cleanup(func() { _ = clientConn.Close() })
+	t.Cleanup(func() { _ = peer.Close() })
+	conn := &queryErrorConn{Conn: clientConn, reader: bytes.NewReader(b.Buf)}
 	c := &Client{
 		lg:              zap.NewNop(),
 		conn:            conn,
@@ -1634,9 +1714,10 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 		compression:     proto.CompressionDisabled,
 	}
 
-	err := c.Do(context.Background(), Query{Body: "SELECT 1"})
-	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
-	require.True(t, c.IsClosed())
+	err := c.Do(context.Background(), Query{Body: "SELECT * FROM missing_table"})
+	require.True(t, IsErr(err, proto.ErrUnknownTable))
+	require.False(t, c.IsClosed())
+	require.NoError(t, c.Do(context.Background(), Query{Body: "SELECT 1"}))
 }
 
 func TestClient_querySettings(t *testing.T) {

@@ -696,6 +696,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	done := make(chan struct{})
 	var (
 		gotException atomic.Bool
+		sendErr      error
 		colInfo      chan proto.ColInfoInput
 	)
 	if q.Result == nil && len(q.Input) > 0 {
@@ -719,7 +720,8 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			}
 		}
 	}
-	g.Go(func() error {
+	g.Go(func() (err error) {
+		defer func() { sendErr = err }()
 		// Sending data.
 		if err := c.sendQuery(ctx, q); err != nil {
 			return errors.Wrap(err, "send query")
@@ -777,7 +779,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 				return nil
 			default:
 				if err := c.handlePacket(ctx, code, q); err != nil {
-					if IsException(err) {
+					if code == proto.ServerCodeException && IsException(err) {
 						// Prevent query cancellation on exception.
 						gotException.Store(true)
 					}
@@ -787,7 +789,10 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		}
 	})
 	g.Go(func() error {
-		<-done
+		select {
+		case <-done:
+		case <-ctx.Done():
+		}
 		// Handling query cancellation if needed.
 		if ctx.Err() != nil && !gotException.Load() {
 			err := multierr.Append(ctx.Err(), c.cancelQuery())
@@ -796,7 +801,8 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		return nil
 	})
 	err = g.Wait()
-	if err != nil && !gotException.Load() && !c.IsClosed() {
+	sendFailed := sendErr != nil && !errors.Is(sendErr, context.Canceled)
+	if err != nil && (!gotException.Load() || sendFailed) && !c.IsClosed() {
 		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
 			err = multierr.Append(err, closeErr)
 		}
