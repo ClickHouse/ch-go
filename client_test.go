@@ -15,7 +15,7 @@ import (
 	"github.com/ClickHouse/ch-go/cht"
 	"github.com/ClickHouse/ch-go/internal/e2e"
 	"github.com/ClickHouse/ch-go/internal/gold"
-	pkgVersion "github.com/ClickHouse/ch-go/internal/version"
+	pkgversion "github.com/ClickHouse/ch-go/internal/version"
 	"github.com/ClickHouse/ch-go/proto"
 )
 
@@ -124,17 +124,17 @@ func Conn(t testing.TB) *Client {
 func TestFormatClientName(t *testing.T) {
 	metadata := expectedClientMetadata()
 
-	require.Equal(t, "clickhouse/ch-go "+metadata, formatClientName("", pkgVersion.Value{}))
-	require.Equal(t, "clickhouse/ch-go (alpha.1) "+metadata, formatClientName("", pkgVersion.Value{Name: "alpha.1"}))
+	require.Equal(t, "clickhouse/ch-go/0.0.0 "+metadata, formatClientName("", pkgversion.Value{}))
+	require.Equal(t, "clickhouse/ch-go/0.71.0-alpha.1 "+metadata, formatClientName("", pkgversion.Value{Raw: "v0.71.0-alpha.1", Name: "alpha.1"}))
 	require.Equal(
 		t,
 		"storage/v1.85.2 clickhouse/ch-go/0.71.0 "+metadata,
-		formatClientName("storage/v1.85.2", pkgVersion.Value{Raw: "v0.71.0", Major: 0, Minor: 71, Patch: 0}),
+		formatClientName("storage/v1.85.2", pkgversion.Value{Raw: "v0.71.0", Major: 0, Minor: 71, Patch: 0}),
 	)
 	require.Equal(
 		t,
 		"kafka-consumer/v1.85.2 clickhouse/ch-go/0.71.0 "+metadata,
-		formatClientName("kafka-consumer/v1.85.2", pkgVersion.Value{Major: 0, Minor: 71, Patch: 0}),
+		formatClientName("kafka-consumer/v1.85.2", pkgversion.Value{Major: 0, Minor: 71, Patch: 0}),
 	)
 }
 

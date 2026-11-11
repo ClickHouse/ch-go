@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"net"
 	"net/netip"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
+	pkgversion "github.com/ClickHouse/ch-go/internal/version"
 	"github.com/ClickHouse/ch-go/proto"
 )
 
@@ -29,82 +30,40 @@ func requireEqual[T any](t *testing.T, a, b proto.ColumnOf[T]) {
 	}
 }
 
-type queryClientInfoConn struct {
-	bytes.Buffer
-}
+func TestClientQueryIdentity(t *testing.T) {
+	hostname, err := os.Hostname()
+	require.NoError(t, err)
+	require.NotEmpty(t, hostname)
 
-func (c *queryClientInfoConn) Read([]byte) (int, error) {
-	return 0, io.EOF
-}
-
-func (c *queryClientInfoConn) Close() error {
-	return nil
-}
-
-func (c *queryClientInfoConn) LocalAddr() net.Addr {
-	return queryClientInfoAddr("127.0.0.1:12345")
-}
-
-func (c *queryClientInfoConn) RemoteAddr() net.Addr {
-	return queryClientInfoAddr("127.0.0.1:9000")
-}
-
-func (c *queryClientInfoConn) SetDeadline(time.Time) error {
-	return nil
-}
-
-func (c *queryClientInfoConn) SetReadDeadline(time.Time) error {
-	return nil
-}
-
-func (c *queryClientInfoConn) SetWriteDeadline(time.Time) error {
-	return nil
-}
-
-type queryClientInfoAddr string
-
-func (a queryClientInfoAddr) Network() string {
-	return "tcp"
-}
-
-func (a queryClientInfoAddr) String() string {
-	return string(a)
-}
-
-func TestClientSendQueryUsesClientInfo(t *testing.T) {
-	clientName := "test-client"
-	conn := &queryClientInfoConn{}
-	client := &Client{
-		lg:       zap.NewNop(),
-		conn:     conn,
-		writer:   proto.NewWriter(conn, new(proto.Buffer)),
-		hostname: "storage-5cccc8b5bf-zs9pv",
-		version: clientVersion{
-			Name:  clientName,
-			Major: 0,
-			Minor: 71,
-			Patch: 0,
-		},
-		protocolVersion: proto.Version,
-		compression:     proto.CompressionDisabled,
+	pkg := pkgversion.Get()
+	version := strings.TrimPrefix(pkg.Raw, "v")
+	if version == "" {
+		version = fmt.Sprintf("%d.%d.%d", pkg.Major, pkg.Minor, pkg.Patch)
 	}
 
-	require.NoError(t, client.sendQuery(context.Background(), Query{
-		QueryID: "query-id",
-		Body:    "SELECT 1",
-	}))
-	_, err := client.writer.Flush()
-	require.NoError(t, err)
+	for _, name := range []string{"", "app/v1"} {
+		t.Run(fmt.Sprintf("client_name=%q", name), func(t *testing.T) {
+			client := ConnOpt(t, Options{ClientName: name})
+			var hostnames, names proto.ColStr
+			require.NoError(t, client.Do(t.Context(), Query{
+				Body: "SELECT client_hostname, client_name FROM system.processes WHERE query_id = currentQueryID()",
+				Result: proto.Results{
+					{Name: "client_hostname", Data: &hostnames},
+					{Name: "client_name", Data: &names},
+				},
+			}))
+			require.Equal(t, 1, hostnames.Rows())
+			require.Equal(t, hostname, hostnames.Row(0))
 
-	reader := proto.NewReader(bytes.NewReader(conn.Bytes()))
-	code, err := reader.UVarInt()
-	require.NoError(t, err)
-	require.Equal(t, proto.ClientCodeQuery, proto.ClientCode(code))
+			expected := "clickhouse/ch-go/" + version + " " + expectedClientMetadata()
+			if name != "" {
+				expected = name + " " + expected
+			}
 
-	var query proto.Query
-	require.NoError(t, query.DecodeAware(reader, proto.Version))
-	require.Equal(t, "storage-5cccc8b5bf-zs9pv", query.Info.ClientHostname)
-	require.Equal(t, clientName, query.Info.ClientName)
+			require.Equal(t, 1, names.Rows())
+			require.Equal(t, expected, names.Row(0))
+		})
+	}
 }
 
 func TestWithTotals(t *testing.T) {

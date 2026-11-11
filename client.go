@@ -342,8 +342,12 @@ type Options struct {
 	QuotaKey         string           // blank string by default
 	Compression      Compression      // disabled by default
 	CompressionLevel CompressionLevel // compression algorithm specific default
-	ClientName       string           // blank string by default
-	Settings         []Setting        // none by default
+	// ClientName identifies the application, for example "app/v1".
+	// It prefixes the library product/version and Go/OS metadata in the reported
+	// client_name, for example "app/v1 clickhouse/ch-go/0.71.0 (lv:go/1.27.3; os:linux)".
+	// Empty means only the library product/version and metadata are reported.
+	ClientName string
+	Settings   []Setting // none by default
 
 	// ReadTimeout is a timeout for reading a single packet from the server.
 	//
@@ -495,7 +499,11 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 	if opt.SSHSigner != nil {
 		user = " SSH KEY AUTHENTICATION " + user
 	}
-	hostname, _ := os.Hostname()
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		opt.Logger.Debug("Failed to get hostname", zap.Error(err))
+	}
 
 	c := &Client{
 		conn:     conn,
@@ -541,10 +549,7 @@ func formatClientName(clientName string, pkg pkgVersion.Value) string {
 	libraryProduct := formatLibraryProduct(pkg)
 	metadata := formatClientMetadata()
 	if clientName == "" {
-		if pkg.Name != "" {
-			return fmt.Sprintf("%s (%s) %s", proto.Name, pkg.Name, metadata)
-		}
-		return fmt.Sprintf("%s %s", proto.Name, metadata)
+		return libraryProduct + " " + metadata
 	}
 	return fmt.Sprintf("%s %s %s", clientName, libraryProduct, metadata)
 }
