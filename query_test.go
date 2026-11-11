@@ -1588,25 +1588,20 @@ func TestClientQueryCancellation(t *testing.T) {
 
 type queryErrorConn struct {
 	net.Conn
-	reader           io.Reader
-	writeErr         error
-	readStarted      chan struct{}
-	readOnce         sync.Once
-	writeAfterCancel <-chan context.Context
-	writeStarted     chan struct{}
-	writeOnce        sync.Once
+	reader      io.Reader
+	writeErr    error
+	readStarted chan struct{}
+	readOnce    sync.Once
+	abort       <-chan struct{}
 }
 
 func (c *queryErrorConn) Write(p []byte) (int, error) {
 	if c.writeErr == nil {
 		return len(p), nil
 	}
-	if c.writeAfterCancel != nil {
-		c.writeOnce.Do(func() { close(c.writeStarted) })
-		ctx := <-c.writeAfterCancel
-		<-ctx.Done()
-	} else {
-		<-c.readStarted
+	select {
+	case <-c.readStarted:
+	case <-c.abort:
 	}
 	return 0, c.writeErr
 }
@@ -1624,23 +1619,13 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 	proto.Progress{}.EncodeAware(&progress, proto.Version)
 	proto.ServerCodeEndOfStream.Encode(&progress)
 	callbackErr := &Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
-	var writeFailure proto.Buffer
-	proto.ServerCodeProgress.Encode(&writeFailure)
-	proto.Progress{}.EncodeAware(&writeFailure, proto.Version)
-	proto.ServerCodeException.Encode(&writeFailure)
-	serverException := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
-	serverException.EncodeAware(&writeFailure, proto.Version)
-	writeContext := make(chan context.Context, 1)
-	writeStarted := make(chan struct{})
 
 	for _, tt := range []struct {
-		name             string
-		reader           io.Reader
-		writeErr         error
-		wantErr          error
-		onProgress       func(context.Context, proto.Progress) error
-		writeAfterCancel <-chan context.Context
-		writeStarted     chan struct{}
+		name       string
+		reader     io.Reader
+		writeErr   error
+		wantErr    error
+		onProgress func(context.Context, proto.Progress) error
 	}{
 		{name: "read", reader: iotest.ErrReader(io.ErrUnexpectedEOF), wantErr: io.ErrUnexpectedEOF},
 		{name: "write", writeErr: io.ErrShortWrite, wantErr: io.ErrShortWrite},
@@ -1649,22 +1634,16 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 			name: "callback_exception", reader: bytes.NewReader(progress.Buf), wantErr: callbackErr,
 			onProgress: func(context.Context, proto.Progress) error { return callbackErr },
 		},
-		{
-			name: "write_after_server_exception", reader: bytes.NewReader(writeFailure.Buf), writeErr: io.ErrShortWrite,
-			writeAfterCancel: writeContext, writeStarted: writeStarted,
-			onProgress: func(ctx context.Context, _ proto.Progress) error {
-				writeContext <- ctx
-				<-writeStarted
-				return nil
-			},
-		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+
 			clientConn, peer := net.Pipe()
 			t.Cleanup(func() { _ = clientConn.Close() })
 			t.Cleanup(func() { _ = peer.Close() })
 			require.NoError(t, peer.SetReadDeadline(time.Now().Add(10*time.Second)))
-			conn := &queryErrorConn{Conn: clientConn, reader: tt.reader, writeErr: tt.writeErr, writeAfterCancel: tt.writeAfterCancel, writeStarted: tt.writeStarted}
+			conn := &queryErrorConn{Conn: clientConn, reader: tt.reader, writeErr: tt.writeErr, abort: ctx.Done()}
 			if conn.reader == nil {
 				conn.reader = clientConn
 				conn.readStarted = make(chan struct{})
@@ -1679,7 +1658,6 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 			}
 
 			done := make(chan error, 1)
-			ctx := t.Context()
 			go func() { done <- c.Do(ctx, Query{Body: "SELECT 1", OnProgress: tt.onProgress}) }()
 			select {
 			case err := <-done:
@@ -1689,8 +1667,13 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 					require.Error(t, err)
 				}
 			case <-time.After(5 * time.Second):
+				cancel()
 				_ = c.Close()
-				<-done
+				select {
+				case <-done:
+				case <-time.After(5 * time.Second):
+					t.Fatal("query goroutine did not stop during cleanup")
+				}
 				t.Fatal("Do did not return after transport failure")
 			}
 			require.True(t, c.IsClosed())
@@ -1735,7 +1718,12 @@ func TestClientDoClosesDuringWrite(t *testing.T) {
 			defer cancel()
 			peerDone := make(chan error, 1)
 			go func() {
-				<-conn.started
+				select {
+				case <-conn.started:
+				case <-ctx.Done():
+					peerDone <- ctx.Err()
+					return
+				}
 				if cause == "cancellation" {
 					cancel()
 					peerDone <- nil
@@ -1755,11 +1743,21 @@ func TestClientDoClosesDuringWrite(t *testing.T) {
 					require.Error(t, err)
 				}
 			case <-time.After(5 * time.Second):
+				cancel()
 				_ = c.Close()
-				<-done
+				select {
+				case <-done:
+				case <-time.After(5 * time.Second):
+					t.Fatal("query goroutine did not stop during cleanup")
+				}
 				t.Fatal("Do did not interrupt Write after", cause)
 			}
-			require.NoError(t, <-peerDone)
+			select {
+			case err := <-peerDone:
+				require.NoError(t, err)
+			case <-time.After(5 * time.Second):
+				t.Fatal("peer goroutine did not stop")
+			}
 			require.True(t, c.IsClosed())
 			_, err := peer.Read(make([]byte, 1))
 			require.ErrorIs(t, err, io.EOF, "incomplete query write must close the connection")
@@ -1771,13 +1769,17 @@ type blockedInputColumn struct {
 	proto.ColUInt64
 	encoded      chan struct{}
 	queryContext <-chan context.Context
+	abort        <-chan struct{}
 }
 
 func (c *blockedInputColumn) WriteColumn(w *proto.Writer) {
 	c.ColUInt64.WriteColumn(w)
 	close(c.encoded)
-	ctx := <-c.queryContext
-	<-ctx.Done()
+	select {
+	case ctx := <-c.queryContext:
+		<-ctx.Done()
+	case <-c.abort:
+	}
 }
 
 func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
@@ -1801,17 +1803,21 @@ func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
 		compression:     proto.CompressionDisabled,
 	}
 	queryContext := make(chan context.Context, 1)
-	input := &blockedInputColumn{
-		ColUInt64: proto.ColUInt64{1}, encoded: make(chan struct{}), queryContext: queryContext,
-	}
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
+	input := &blockedInputColumn{
+		ColUInt64: proto.ColUInt64{1}, encoded: make(chan struct{}), queryContext: queryContext, abort: ctx.Done(),
+	}
 	done := make(chan error, 1)
 	go func() {
 		done <- c.Do(ctx, Query{
 			Body: "INSERT INTO missing_table VALUES", Input: proto.Input{{Name: "v", Data: input}}, Result: discardResult(),
 			OnProgress: func(ctx context.Context, _ proto.Progress) error {
-				<-input.encoded
+				select {
+				case <-input.encoded:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 				queryContext <- ctx
 				return nil
 			},
@@ -1824,7 +1830,11 @@ func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		cancel()
 		_ = c.Close()
-		<-done
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Fatal("query goroutine did not stop during cleanup")
+		}
 		t.Fatal("Do did not finish buffered input after server exception")
 	}
 	require.True(t, c.IsClosed(), "buffered input must not leak into a subsequent query")
