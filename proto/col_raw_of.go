@@ -40,6 +40,7 @@ func (c ColRawOf[X]) Row(i int) X {
 
 // Reset resets data in row, preserving capacity for efficiency.
 func (c *ColRawOf[X]) Reset() {
+	clear(*c)
 	*c = (*c)[:0]
 }
 

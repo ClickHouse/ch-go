@@ -266,18 +266,19 @@ func (c *ColLowCardinality[T]) WriteColumn(w *Writer) {
 }
 
 func (c *ColLowCardinality[T]) Reset() {
-	for k := range c.kv {
-		delete(c.kv, k)
-	}
-	c.keys = c.keys[:0]
+	clear(c.Values)
+	c.Values = c.Values[:0]
+
+	c.index.Reset()
 
 	c.keys8 = c.keys8[:0]
 	c.keys16 = c.keys16[:0]
 	c.keys32 = c.keys32[:0]
 	c.keys64 = c.keys64[:0]
-	c.Values = c.Values[:0]
 
-	c.index.Reset()
+	clear(c.kv)
+
+	c.keys = c.keys[:0]
 }
 
 type cardinalityKeyValue interface {
