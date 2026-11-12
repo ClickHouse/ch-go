@@ -43,6 +43,20 @@ func TestColUUID_DecodeColumn(t *testing.T) {
 	})
 }
 
+func TestColUUID_EncodeAfterPrefix(t *testing.T) {
+	v := uuid.MustParse("00112233-4455-6677-8899-aabbccddeeff")
+	for _, prefix := range [][]byte{{1, 2, 3}, {1, 2, 3, 4, 5, 6, 7, 8}} {
+		var b Buffer
+		b.PutRaw(prefix)
+		ColUUID{v}.EncodeColumn(&b)
+		require.Equal(t, prefix, b.Buf[:len(prefix)])
+
+		var got ColUUID
+		require.NoError(t, got.DecodeColumn(NewReader(bytes.NewReader(b.Buf[len(prefix):])), 1))
+		require.Equal(t, v, got[0])
+	}
+}
+
 func BenchmarkColUUID_DecodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColUUID
