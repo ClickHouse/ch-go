@@ -16,3 +16,6 @@
 
 # Editors
 .idea/
+
+# python cache
+__pycache__/

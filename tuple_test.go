@@ -31,7 +31,7 @@ func TestNamedTuples(t *testing.T) {
 	}
 	ctx := context.Background()
 	require.NoError(t, conn.Do(ctx, Query{
-		Body: "CREATE TABLE named_tuples (`1` Tuple(`s` String, `i` Int64)) ENGINE = Memory",
+		Body: "CREATE TABLE named_tuples (`1` Tuple(`s` String, `i` Int64)) ENGINE = MergeTree ORDER BY tuple()",
 	}))
 	require.NoError(t, conn.Do(ctx, Query{
 		Body: "INSERT INTO named_tuples VALUES",
