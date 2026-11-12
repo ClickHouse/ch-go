@@ -166,6 +166,20 @@ func TestColLowCardinalityReuse(t *testing.T) {
 		require.Equal(t, "a", dec.Row(0))
 		require.Equal(t, "b", dec.Row(1))
 	})
+	t.Run("AppendAfterDecode", func(t *testing.T) {
+		// Appending to a decoded column reuses its dictionary.
+		src := new(ColStr).LowCardinality()
+		src.AppendArr([]string{"a", "b"})
+		require.NoError(t, src.Prepare())
+		var buf Buffer
+		src.EncodeColumn(&buf)
+
+		col := new(ColStr).LowCardinality()
+		require.NoError(t, col.DecodeColumn(buf.Reader(), 2))
+		col.AppendArr([]string{"b", "c"})
+		require.Equal(t, 3, col.index.Rows())
+		require.Equal(t, []string{"a", "b", "b", "c"}, []string{col.Row(0), col.Row(1), col.Row(2), col.Row(3)})
+	})
 }
 
 // encodeLowCardinalityBlock encodes a LowCardinality(String) block with a
@@ -323,7 +337,11 @@ func TestColLowCardinality_PrepareKeyBoundary256(t *testing.T) {
 			col := new(ColStr).LowCardinality()
 			col.AppendArr(makeLCStrings(1, tc.rows))
 			require.NoError(t, col.Prepare())
-			require.Equal(t, tc.key, col.key)
+			var buf Buffer
+			col.EncodeColumn(&buf)
+			meta, err := buf.Reader().Int64()
+			require.NoError(t, err)
+			require.Equal(t, tc.key, CardinalityKey(meta&cardinalityKeyMask))
 		})
 	}
 }
