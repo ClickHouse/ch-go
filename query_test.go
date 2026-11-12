@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"net/netip"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
+	pkgversion "github.com/ClickHouse/ch-go/internal/version"
 	"github.com/ClickHouse/ch-go/proto"
 )
 
@@ -25,6 +27,44 @@ func requireEqual[T any](t *testing.T, a, b proto.ColumnOf[T]) {
 	require.Equal(t, a.Rows(), b.Rows(), "rows count should match")
 	for i := 0; i < a.Rows(); i++ {
 		require.Equalf(t, a.Row(i), b.Row(i), "[%d]", i)
+	}
+}
+
+func TestClientQueryIdentity(t *testing.T) {
+	hostname, err := os.Hostname()
+	require.NoError(t, err)
+	if hostname == "" {
+		t.Skip("nonempty local hostname required to verify hostname propagation")
+	}
+
+	pkg := pkgversion.Get()
+	version := strings.TrimPrefix(pkg.Raw, "v")
+	if version == "" {
+		version = fmt.Sprintf("%d.%d.%d", pkg.Major, pkg.Minor, pkg.Patch)
+	}
+
+	for _, name := range []string{"", "app/v1"} {
+		t.Run(fmt.Sprintf("client_name=%q", name), func(t *testing.T) {
+			client := ConnOpt(t, Options{ClientName: name})
+			var hostnames, names proto.ColStr
+			require.NoError(t, client.Do(t.Context(), Query{
+				Body: "SELECT client_hostname, client_name FROM system.processes WHERE query_id = currentQueryID()",
+				Result: proto.Results{
+					{Name: "client_hostname", Data: &hostnames},
+					{Name: "client_name", Data: &names},
+				},
+			}))
+			require.Equal(t, 1, hostnames.Rows())
+			require.Equal(t, hostname, hostnames.Row(0))
+
+			expected := "clickhouse/ch-go/" + version + " " + expectedClientMetadata()
+			if name != "" {
+				expected = name + " " + expected
+			}
+
+			require.Equal(t, 1, names.Rows())
+			require.Equal(t, expected, names.Row(0))
+		})
 	}
 }
 
