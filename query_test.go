@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/netip"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/google/uuid"
@@ -1581,6 +1584,322 @@ func TestClientQueryCancellation(t *testing.T) {
 
 	// Connection should be closed after query cancellation.
 	require.True(t, c.IsClosed())
+}
+
+type queryErrorConn struct {
+	net.Conn
+	reader      io.Reader
+	writeErr    error
+	readStarted chan struct{}
+	readOnce    sync.Once
+	abort       <-chan struct{}
+}
+
+func (c *queryErrorConn) Write(p []byte) (int, error) {
+	if c.writeErr == nil {
+		return len(p), nil
+	}
+	select {
+	case <-c.readStarted:
+	case <-c.abort:
+	}
+	return 0, c.writeErr
+}
+
+func (c *queryErrorConn) Read(p []byte) (int, error) {
+	if c.readStarted != nil {
+		c.readOnce.Do(func() { close(c.readStarted) })
+	}
+	return c.reader.Read(p)
+}
+
+func TestClientDoClosesOnTransportError(t *testing.T) {
+	var progress proto.Buffer
+	proto.ServerCodeProgress.Encode(&progress)
+	proto.Progress{}.EncodeAware(&progress, proto.Version)
+	proto.ServerCodeEndOfStream.Encode(&progress)
+	callbackErr := &Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+
+	for _, tt := range []struct {
+		name       string
+		reader     io.Reader
+		writeErr   error
+		wantErr    error
+		onProgress func(context.Context, proto.Progress) error
+	}{
+		{name: "read", reader: iotest.ErrReader(io.ErrUnexpectedEOF), wantErr: io.ErrUnexpectedEOF},
+		{name: "write", writeErr: io.ErrShortWrite, wantErr: io.ErrShortWrite},
+		{name: "protocol", reader: bytes.NewReader([]byte{0xff, 0x01})},
+		{
+			name: "callback_exception", reader: bytes.NewReader(progress.Buf), wantErr: callbackErr,
+			onProgress: func(context.Context, proto.Progress) error { return callbackErr },
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+
+			clientConn, peer := net.Pipe()
+			t.Cleanup(func() { _ = clientConn.Close() })
+			t.Cleanup(func() { _ = peer.Close() })
+			require.NoError(t, peer.SetReadDeadline(time.Now().Add(10*time.Second)))
+			conn := &queryErrorConn{Conn: clientConn, reader: tt.reader, writeErr: tt.writeErr, abort: ctx.Done()}
+			if conn.reader == nil {
+				conn.reader = clientConn
+				conn.readStarted = make(chan struct{})
+			}
+			c := &Client{
+				lg:              zap.NewNop(),
+				conn:            conn,
+				writer:          proto.NewWriter(conn, new(proto.Buffer)),
+				reader:          proto.NewReader(conn),
+				protocolVersion: proto.Version,
+				compression:     proto.CompressionDisabled,
+			}
+
+			done := make(chan error, 1)
+			go func() { done <- c.Do(ctx, Query{Body: "SELECT 1", OnProgress: tt.onProgress}) }()
+			select {
+			case err := <-done:
+				if tt.wantErr != nil {
+					require.ErrorIs(t, err, tt.wantErr)
+				} else {
+					require.Error(t, err)
+				}
+			case <-time.After(5 * time.Second):
+				cancel()
+				_ = c.Close()
+				select {
+				case <-done:
+				case <-time.After(5 * time.Second):
+					t.Fatal("query goroutine did not stop during cleanup")
+				}
+				t.Fatal("Do did not return after transport failure")
+			}
+			require.True(t, c.IsClosed())
+			_, err := peer.Read(make([]byte, 1))
+			require.ErrorIs(t, err, io.EOF, "underlying connection must be closed")
+		})
+	}
+}
+
+type notifyWriteConn struct {
+	net.Conn
+	started chan struct{}
+	once    sync.Once
+}
+
+func (c *notifyWriteConn) Write(p []byte) (int, error) {
+	c.once.Do(func() { close(c.started) })
+	return c.Conn.Write(p)
+}
+
+func TestClientDoClosesDuringWrite(t *testing.T) {
+	for _, cause := range []string{"exception", "cancellation"} {
+		t.Run(cause, func(t *testing.T) {
+			clientConn, peer := net.Pipe()
+			t.Cleanup(func() { require.NoError(t, clientConn.Close()) })
+			t.Cleanup(func() { require.NoError(t, peer.Close()) })
+			require.NoError(t, peer.SetReadDeadline(time.Now().Add(10*time.Second)))
+			conn := &notifyWriteConn{Conn: clientConn, started: make(chan struct{})}
+			c := &Client{
+				lg:              zap.NewNop(),
+				conn:            conn,
+				writer:          proto.NewWriter(conn, new(proto.Buffer)),
+				reader:          proto.NewReader(conn),
+				protocolVersion: proto.Version,
+				compression:     proto.CompressionDisabled,
+			}
+			var b proto.Buffer
+			proto.ServerCodeException.Encode(&b)
+			ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+			ex.EncodeAware(&b, proto.Version)
+			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
+			defer cancel()
+			peerDone := make(chan error, 1)
+			go func() {
+				select {
+				case <-conn.started:
+				case <-ctx.Done():
+					peerDone <- ctx.Err()
+					return
+				}
+				if cause == "cancellation" {
+					cancel()
+					peerDone <- nil
+					return
+				}
+				_, err := peer.Write(b.Buf)
+				peerDone <- err
+			}()
+
+			done := make(chan error, 1)
+			go func() { done <- c.Do(ctx, Query{Body: "SELECT * FROM missing_table"}) }()
+			select {
+			case err := <-done:
+				if cause == "exception" {
+					require.True(t, IsErr(err, proto.ErrUnknownTable), "interrupted query: got %v, want UNKNOWN_TABLE", err)
+				} else {
+					require.Error(t, err)
+				}
+			case <-time.After(5 * time.Second):
+				cancel()
+				_ = c.Close()
+				select {
+				case <-done:
+				case <-time.After(5 * time.Second):
+					t.Fatal("query goroutine did not stop during cleanup")
+				}
+				t.Fatal("Do did not interrupt Write after", cause)
+			}
+			select {
+			case err := <-peerDone:
+				require.NoError(t, err)
+			case <-time.After(5 * time.Second):
+				t.Fatal("peer goroutine did not stop")
+			}
+			require.True(t, c.IsClosed())
+			_, err := peer.Read(make([]byte, 1))
+			require.ErrorIs(t, err, io.EOF, "incomplete query write must close the connection")
+		})
+	}
+}
+
+type blockedInputColumn struct {
+	proto.ColUInt64
+	encoded      chan struct{}
+	queryContext <-chan context.Context
+	abort        <-chan struct{}
+}
+
+func (c *blockedInputColumn) WriteColumn(w *proto.Writer) {
+	c.ColUInt64.WriteColumn(w)
+	close(c.encoded)
+	select {
+	case ctx := <-c.queryContext:
+		<-ctx.Done()
+	case <-c.abort:
+	}
+}
+
+func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
+	clientConn, peer := net.Pipe()
+	t.Cleanup(func() { require.NoError(t, clientConn.Close()) })
+	t.Cleanup(func() { require.NoError(t, peer.Close()) })
+	require.NoError(t, peer.SetReadDeadline(time.Now().Add(10*time.Second)))
+	var b proto.Buffer
+	proto.ServerCodeProgress.Encode(&b)
+	proto.Progress{}.EncodeAware(&b, proto.Version)
+	proto.ServerCodeException.Encode(&b)
+	ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+	ex.EncodeAware(&b, proto.Version)
+	conn := &queryErrorConn{Conn: clientConn, reader: bytes.NewReader(b.Buf)}
+	c := &Client{
+		lg:              zap.NewNop(),
+		conn:            conn,
+		writer:          proto.NewWriter(conn, new(proto.Buffer)),
+		reader:          proto.NewReader(conn),
+		protocolVersion: proto.Version,
+		compression:     proto.CompressionDisabled,
+	}
+	queryContext := make(chan context.Context, 1)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	input := &blockedInputColumn{
+		ColUInt64: proto.ColUInt64{1}, encoded: make(chan struct{}), queryContext: queryContext, abort: ctx.Done(),
+	}
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Do(ctx, Query{
+			Body: "INSERT INTO missing_table VALUES", Input: proto.Input{{Name: "v", Data: input}}, Result: discardResult(),
+			OnProgress: func(ctx context.Context, _ proto.Progress) error {
+				select {
+				case <-input.encoded:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+				queryContext <- ctx
+				return nil
+			},
+		})
+	}()
+
+	select {
+	case err := <-done:
+		require.True(t, IsErr(err, proto.ErrUnknownTable), "buffered-input query: got %v, want UNKNOWN_TABLE", err)
+	case <-time.After(5 * time.Second):
+		cancel()
+		_ = c.Close()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Fatal("query goroutine did not stop during cleanup")
+		}
+		t.Fatal("Do did not finish buffered input after server exception")
+	}
+	require.True(t, c.IsClosed(), "buffered input must not leak into a subsequent query")
+	_, err := peer.Read(make([]byte, 1))
+	require.ErrorIs(t, err, io.EOF)
+}
+
+// delayedWriteConn pauses completion after the transport has accepted the first write.
+// A cancellation deadline releases the pending operation without undoing that write.
+type delayedWriteConn struct {
+	net.Conn
+	once        sync.Once
+	releaseOnce sync.Once
+	release     chan struct{}
+}
+
+func (c *delayedWriteConn) Write(p []byte) (int, error) {
+	n, err := c.Conn.Write(p)
+	if err == nil {
+		c.once.Do(func() { <-c.release })
+	}
+	return n, err
+}
+
+func (c *delayedWriteConn) SetWriteDeadline(deadline time.Time) error {
+	err := c.Conn.SetWriteDeadline(deadline)
+	if !deadline.IsZero() && !deadline.After(time.Now()) {
+		c.releaseOnce.Do(func() { close(c.release) })
+	}
+	return err
+}
+
+func (c *delayedWriteConn) Close() error {
+	c.releaseOnce.Do(func() { close(c.release) })
+	return c.Conn.Close()
+}
+
+func TestClientDoReusesConnectionAfterExceptionDuringWriteCompletion(t *testing.T) {
+	c := Conn(t)
+	conn := &delayedWriteConn{Conn: c.conn, release: make(chan struct{})}
+	c.conn = conn
+	c.writer = proto.NewWriter(conn, new(proto.Buffer))
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- c.Do(ctx, Query{Body: "SELECT 错误 as w"}) }()
+
+	select {
+	case err := <-done:
+		require.True(t, IsErr(err, proto.ErrSyntaxError), "query error: got %v, want SYNTAX_ERROR", err)
+	case <-time.After(5 * time.Second):
+		cancel()
+		if err := c.Close(); err != nil {
+			t.Errorf("close client during cleanup: %v", err)
+		}
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Fatal("query goroutine did not stop during cleanup")
+		}
+		t.Fatal("Do did not finish after server exception")
+	}
+
+	require.False(t, c.IsClosed(), "a successful write must allow reuse after a server exception")
+	require.NoError(t, c.Do(t.Context(), Query{Body: "SELECT 1", Result: discardResult()}))
 }
 
 func TestClient_querySettings(t *testing.T) {
