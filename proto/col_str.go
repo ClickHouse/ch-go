@@ -2,6 +2,7 @@ package proto
 
 import (
 	"encoding/binary"
+	"slices"
 
 	"github.com/go-faster/errors"
 )
@@ -36,6 +37,12 @@ func (c *ColStr) AppendBytes(v []byte) {
 }
 
 func (c *ColStr) AppendArr(v []string) {
+	total := 0
+	for _, s := range v {
+		total += len(s)
+	}
+	c.Pos = slices.Grow(c.Pos, len(v))
+	c.Buf = slices.Grow(c.Buf, total)
 	for _, e := range v {
 		c.Append(e)
 	}
@@ -204,6 +211,12 @@ func (c *ColBytes) Append(v []byte) {
 
 // AppendArr append slice of byte slices to column.
 func (c *ColBytes) AppendArr(v [][]byte) {
+	total := 0
+	for _, s := range v {
+		total += len(s)
+	}
+	c.Pos = slices.Grow(c.Pos, len(v))
+	c.Buf = slices.Grow(c.Buf, total)
 	for _, s := range v {
 		c.Append(s)
 	}

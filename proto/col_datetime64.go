@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -114,7 +115,7 @@ func (c *ColDateTime64) AppendArr(v []time.Time) {
 	if !c.PrecisionSet {
 		panic("DateTime64: no precision set")
 	}
-
+	c.Data = slices.Grow(c.Data, len(v))
 	for _, item := range v {
 		c.AppendRaw(ToDateTime64(item, c.Precision))
 	}
@@ -146,6 +147,7 @@ type ColDateTime64Raw struct {
 
 func (c *ColDateTime64Raw) Append(v DateTime64) { c.AppendRaw(v) }
 func (c *ColDateTime64Raw) AppendArr(vs []DateTime64) {
+	c.Data = slices.Grow(c.Data, len(vs))
 	for _, v := range vs {
 		c.AppendRaw(v)
 	}

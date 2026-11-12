@@ -96,6 +96,52 @@ func TestColStr_EncodeColumn(t *testing.T) {
 	})
 }
 
+func BenchmarkColStr_AppendArr(b *testing.B) {
+	const rows = 1_000
+
+	b.Run("ShortStrings", func(b *testing.B) {
+		data := make([]string, rows)
+		for i := range data {
+			data[i] = "ClickHouse is extremely fast now"
+		}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			var col ColStr
+			col.AppendArr(data)
+		}
+	})
+
+	b.Run("LongStrings", func(b *testing.B) {
+		long := string(make([]byte, 4096))
+		data := make([]string, rows)
+		for i := range data {
+			data[i] = long
+		}
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			var col ColStr
+			col.AppendArr(data)
+		}
+	})
+}
+
+func BenchmarkColBytes_AppendArr(b *testing.B) {
+	const rows = 1_000
+
+	data := make([][]byte, rows)
+	for i := range data {
+		data[i] = []byte("ClickHouse is extremely fast now")
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var col ColBytes
+		col.AppendArr(data)
+	}
+}
+
 func BenchmarkColStr_DecodeColumn(b *testing.B) {
 	const rows = 1_000
 	var data ColStr
