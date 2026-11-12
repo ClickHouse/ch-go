@@ -14,6 +14,8 @@ const (
 	LevelZero         Level = 0
 	LevelLZ4HCDefault Level = 9
 	LevelLZ4HCMax     Level = 12
+	LevelZSTDDefault  Level = 3
+	LevelZSTDMax      Level = 22
 )
 
 // Writer encodes compressed blocks.
@@ -29,8 +31,12 @@ type Writer struct {
 
 // Compress buf into Data.
 func (w *Writer) Compress(buf []byte) error {
-	maxSize := lz4.CompressBlockBound(len(buf))
-	w.Data = append(w.Data[:0], make([]byte, maxSize+headerSize)...)
+	maxSize := lz4.CompressBlockBound(len(buf)) + headerSize
+	if cap(w.Data) < maxSize {
+		w.Data = make([]byte, maxSize)
+	} else {
+		w.Data = w.Data[:maxSize]
+	}
 	_ = w.Data[:headerSize]
 	w.Data[hMethod] = byte(methodTable[w.method])
 
@@ -90,8 +96,12 @@ func NewWriter(l Level, m Method) *Writer {
 		}
 		lz4hcWriter = &lz4.CompressorHC{Level: lz4.CompressionLevel(1 << (8 + levelLZ4HC))}
 	case ZSTD:
+		levelZSTD := l
+		if levelZSTD == LevelZero || levelZSTD > LevelZSTDMax {
+			levelZSTD = LevelZSTDDefault
+		}
 		zstdWriter, err = zstd.NewWriter(nil,
-			zstd.WithEncoderLevel(zstd.SpeedDefault),
+			zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(int(levelZSTD))),
 			zstd.WithEncoderConcurrency(1),
 			zstd.WithLowerEncoderMem(true),
 		)

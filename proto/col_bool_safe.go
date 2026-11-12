@@ -48,5 +48,5 @@ func (c ColBool) WriteColumn(w *Writer) {
 	if len(c) == 0 {
 		return
 	}
-	w.ChainBuffer(c.EncodeColumn)
+	writeColumnChunks(w, len(c), 1, func(b *Buffer, start, end int) { c[start:end].EncodeColumn(b) })
 }

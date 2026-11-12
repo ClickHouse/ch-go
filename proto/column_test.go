@@ -23,15 +23,17 @@ func checkWriteColumn(data ColInput) func(*testing.T) {
 		var expect Buffer
 		data.EncodeColumn(&expect)
 
-		var (
-			got bytes.Buffer
-			w   = NewWriter(&got, new(Buffer))
-		)
-		data.WriteColumn(w)
-		_, err := w.Flush()
-		require.NoError(t, err)
-
-		require.Equal(t, expect.Buf, got.Bytes())
+		for _, streaming := range []bool{false, true} {
+			var got bytes.Buffer
+			writer := NewWriter(&got, new(Buffer))
+			if streaming {
+				writer = NewStreamingWriter(&got, new(Buffer))
+			}
+			data.WriteColumn(writer)
+			_, err := writer.Flush()
+			require.NoError(t, err)
+			require.Equal(t, expect.Buf, got.Bytes(), "streaming=%v", streaming)
+		}
 	}
 }
 

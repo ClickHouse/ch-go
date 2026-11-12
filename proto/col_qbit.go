@@ -253,7 +253,9 @@ func (c *ColQBit) EncodeColumn(b *Buffer) {
 
 // WriteColumn encodes the column data and chains it to w for later writing.
 func (c *ColQBit) WriteColumn(w *Writer) {
-	w.ChainBuffer(c.EncodeColumn)
+	for _, plane := range c.bitPlanes {
+		w.ChainWrite(plane)
+	}
 }
 
 // Infer implements the Inferable interface for QBit columns.

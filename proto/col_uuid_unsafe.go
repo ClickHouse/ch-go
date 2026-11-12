@@ -54,5 +54,5 @@ func (c ColUUID) WriteColumn(w *Writer) {
 		return
 	}
 	// Can't write UUID as-is: bswap is required.
-	w.ChainBuffer(c.EncodeColumn)
+	writeColumnChunks(w, len(c), 16, func(b *Buffer, start, end int) { c[start:end].EncodeColumn(b) })
 }

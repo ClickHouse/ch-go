@@ -193,6 +193,125 @@ if err := conn.Do(ctx, ch.Query{
 }
 ```
 
+### Prepare compressed blocks independently
+
+Compressed inserts serialize incrementally into ClickHouse compression frames of
+at most 1 MiB of uncompressed data by default. This applies to ordinary `Input`/`OnInput`
+inserts as well as prepared blocks. A Native block can span many frames; frame
+boundaries do not change its row count or insert boundaries.
+
+Previously, each Native block was compressed as one frame. Each new frame is
+compressed independently, so matches cannot reference data in preceding frames.
+This can increase encoded size, particularly for periodic data and ZSTD. Smaller
+frames can also reduce codec CPU and memory use; the result depends on the data
+and codec. Streaming compression is therefore a memory/CPU/compression-ratio
+tradeoff, not a guarantee of unchanged wire size.
+
+`Options.CompressionFrameSize` sets the maximum uncompressed bytes per frame.
+Zero uses 1 MiB; explicit sizes from 1 byte through 64 MiB are accepted. The limit
+leaves room for incompressible frames within ch-go's reader limits. Framing scratch
+memory is bounded independently of Native block size, and output can be sent
+before the whole block is encoded. Larger frames trade more encoder memory and
+longer buffering for potentially better compression.
+Evaluate wire bytes, encoding CPU, and destination decompression CPU together
+when comparing this path with whole-block compression.
+
+For ordinary inserts, small compressed frames are copied into the client output
+buffer and flushed at roughly 256 KiB, reducing small socket writes and deadline
+updates. Frames already at least that size are flushed directly without another
+payload copy. Existing block/query flushes drain the final partial batch. Prepared
+blocks already own their serialized bytes and are sent directly.
+
+To select ZSTD's fastest preset, configure the connection with:
+
+```go
+options := ch.Options{
+    Compression:          ch.CompressionZSTD,
+    CompressionLevel:     1,
+    CompressionFrameSize: 4 << 20, // 4 MiB uncompressed per frame
+}
+```
+
+`CompressionLevel: 0` preserves the default ZSTD preset (level 3). Levels 1-2 map
+to fastest, 3-5 to default, 6-9 to better, and 10-22 to best compression; values
+above 22, including wrapped negative values, use the default. These are the underlying library's approximate mappings of
+ZSTD levels, not 22 distinct algorithms. Both settings apply to ordinary
+inserts and encoders created with `NewBlockEncoder`. `compress.NewStreamWriter`
+provides the same frame-size control for standalone streams. Frame size does not
+change INSERT or deduplication boundaries.
+
+To overlap encoding with an insert, create an independent encoder after connecting:
+
+```go
+encoder := conn.NewBlockEncoder()
+block, err := encoder.Encode(ctx, input)
+if err != nil {
+    return err
+}
+input.Reset() // block owns its serialized data
+
+sent := false
+err = conn.Do(ctx, ch.Query{
+    Body: "INSERT INTO test_table_insert VALUES",
+    OnPreparedInput: func(ctx context.Context) (*ch.PreparedBlock, error) {
+        if sent {
+            return nil, io.EOF
+        }
+        sent = true
+        return block, nil
+    },
+})
+```
+
+A producer can run its encoder concurrently with the connection and supply blocks
+through a bounded queue in `OnPreparedInput`. Use one encoder per producer. The
+callback must honor cancellation and return `nil, io.EOF` when finished. It cannot
+be combined with `Input` or `OnInput`. Input types must already be fully resolved;
+prepared blocks do not support inference from the server's insert header.
+
+`PreparedBlock.Capacity()` reports retained payload memory for queue accounting.
+Encoding still needs the source columns and output allocation, and an output
+buffer can grow while encoding. Applications must budget those allocations as
+well as queued blocks. Custom columns should use bounded `ChainBuffer` callbacks
+or `ChainWrite` to avoid whole-column scratch allocations. Prepared blocks can be
+reused with connections having the same negotiated protocol and compression mode;
+failed inserts are not retried automatically.
+
+### Custom Native serialization
+
+A custom input column can implement `proto.CustomSerialization` alongside
+`proto.ColInput`. Its `EncodeSerialization(*proto.Buffer, int) error` method writes
+ClickHouse's serialization-kind metadata, excluding the preceding flag. The block
+encoder sets that flag and calls the method after `Prepare`, before state and
+payload encoding, even for zero-row columns. `EncodeColumn` and `WriteColumn`
+must encode the corresponding representation while `Type` retains the logical
+column type. Nested types must supply their complete serialization metadata tree.
+
+The hook is shared by buffered Native blocks, ordinary TCP inserts, and prepared
+blocks, with or without compression. Revisions below `FeatureCustomSerialization`
+(54454) are rejected. Support for a particular kind also depends on the receiving
+server; callers must validate that separately. Do not raise `Options.ProtocolVersion`
+just to enable a kind: newer revisions can require additional handshake and packet
+fields. The default advertised revision remains unchanged, and decoding custom
+result columns is not implemented.
+
+Set `async_insert=0` explicitly when inserting sparse or replicated columns:
+
+```go
+Settings: []ch.Setting{{Key: "async_insert", Value: "0", Important: true}},
+```
+
+ClickHouse's asynchronous insert queue can corrupt these representations. This
+was reproduced on 26.2.19.43 and 26.8.36.3; synchronous inserts passed with the
+same payloads and negotiated revision. In the affected server code,
+[`AsynchronousInsertQueue::processPreprocessedEntries`](https://github.com/ClickHouse/ClickHouse/blob/88589db8a2c6a63fd06a6cd0ec6fa4f3912b2c3b/src/Interpreters/AsynchronousInsertQueue.cpp#L1262-L1293)
+clones ordinary destination columns and calls `insertRangeFrom` on the incoming
+columns without materializing their compact representations. For example,
+[`ColumnVector::insertRangeFrom`](https://github.com/ClickHouse/ClickHouse/blob/88589db8a2c6a63fd06a6cd0ec6fa4f3912b2c3b/src/Columns/ColumnVector.cpp#L613-L628)
+assumes its source is another `ColumnVector`. The client does not override this
+setting automatically; set it in `Options.Settings` or the insert's
+`Query.Settings` for both ordinary and prepared custom-serialized inputs.
+
 ### Stream data
 ```go
 // Stream data to ClickHouse server in multiple data blocks.

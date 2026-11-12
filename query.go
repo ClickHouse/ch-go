@@ -157,6 +157,13 @@ type Query struct {
 	// but query will fail if Input is set but has zero rows.
 	OnInput func(ctx context.Context) error
 
+	// OnPreparedInput supplies independently encoded blocks, e.g. from a bounded
+	// producer queue. Mutually exclusive with Input and OnInput. Return nil,
+	// io.EOF to finish; returning a block with an error is not supported. Each
+	// block is fully sent before the next call. A partially sent query is never
+	// retried automatically. See Client.NewBlockEncoder.
+	OnPreparedInput func(ctx context.Context) (*PreparedBlock, error)
+
 	// Result columns for SELECT operations.
 	Result proto.Result
 	// OnResult is called when Result is filled with result block.
@@ -289,11 +296,7 @@ func (c *Client) decodeBlock(ctx context.Context, opt decodeOptions) error {
 	return nil
 }
 
-// encodeBlock encodes data block into buf, performing compression if needed.
-//
-// If input length is zero, blank block will be encoded, which is special case
-// for "end of data".
-func (c *Client) encodeBlock(ctx context.Context, tableName string, input []proto.InputColumn) error {
+func (c *Client) encodeDataHeader(tableName string) {
 	c.writer.ChainBuffer(func(buf *proto.Buffer) {
 		proto.ClientCodeData.Encode(buf)
 		clientData := proto.ClientData{
@@ -303,50 +306,29 @@ func (c *Client) encodeBlock(ctx context.Context, tableName string, input []prot
 		}
 		clientData.EncodeAware(buf, c.protocolVersion)
 	})
+}
 
-	b := proto.Block{
-		Columns: len(input),
-	}
+// encodeBlock encodes data block into buf, performing compression if needed.
+//
+// If input length is zero, blank block will be encoded, which is special case
+// for "end of data".
+func (c *Client) encodeBlock(ctx context.Context, tableName string, input []proto.InputColumn) error {
+	c.encodeDataHeader(tableName)
+
 	if len(input) > 0 {
 		c.metricsInc(ctx, queryMetricsDelta{BlocksSent: 1})
-		b.Rows = input[0].Data.Rows()
-		b.Info = proto.BlockInfo{
-			// TODO(ernado): investigate and document
-			BucketNum: -1,
-		}
 	}
 
 	if c.compression == proto.CompressionDisabled {
-		if err := b.WriteBlock(c.writer, c.protocolVersion, input); err != nil {
+		if err := inputBlock(input).WriteBlock(c.writer, c.protocolVersion, input); err != nil {
 			return err
 		}
 	} else {
-		// TODO(tdakkota): find out if we can actually stream compressed blocks.
-
-		var rerr error
-		c.writer.ChainBuffer(func(buf *proto.Buffer) {
-			// Saving offset of compressible data.
-			start := len(buf.Buf)
-			if err := b.EncodeBlock(buf, c.protocolVersion, input); err != nil {
-				rerr = errors.Wrap(err, "encode")
-				return
-			}
-
-			// Performing compression.
-			//
-			// Note: only blocks are compressed.
-			// See "Compressible" method of server or client code for reference.
-			if c.compression == proto.CompressionEnabled {
-				data := buf.Buf[start:]
-				if err := c.compressor.Compress(data); err != nil {
-					rerr = errors.Wrap(err, "compress")
-					return
-				}
-				buf.Buf = append(buf.Buf[:start], c.compressor.Data...)
-			}
-		})
-		if rerr != nil {
-			return rerr
+		if c.blockEncoder == nil {
+			c.blockEncoder = c.NewBlockEncoder()
+		}
+		if err := c.blockEncoder.write(blockClientWriter{ctx: ctx, client: c}, input); err != nil {
+			return errors.Wrap(err, "stream block")
 		}
 	}
 
@@ -360,6 +342,9 @@ func (c *Client) encodeBlankBlock(ctx context.Context) error {
 }
 
 func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query) error {
+	if q.OnPreparedInput != nil {
+		return c.sendPreparedInput(ctx, q.OnPreparedInput)
+	}
 	if len(q.Input) == 0 {
 		return nil
 	}
@@ -614,6 +599,9 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 
 // Do performs Query on ClickHouse server.
 func (c *Client) Do(ctx context.Context, q Query) (err error) {
+	if q.OnPreparedInput != nil && (len(q.Input) > 0 || q.OnInput != nil) {
+		return errors.New("prepared input is mutually exclusive with Input and OnInput")
+	}
 	if c.IsClosed() {
 		return ErrClosed
 	}
@@ -698,7 +686,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		gotException atomic.Bool
 		colInfo      chan proto.ColInfoInput
 	)
-	if q.Result == nil && len(q.Input) > 0 {
+	if q.Result == nil && (len(q.Input) > 0 || q.OnPreparedInput != nil) {
 		// Handling input column type inference, e.g. enums.
 		result := proto.ColInfoInput{}
 		q.Result = &result

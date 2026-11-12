@@ -126,12 +126,32 @@ func AutoResult(name string) ResultColumn {
 	}
 }
 
+// EncodeStart writes the column header, including optional custom serialization
+// metadata. Call Prepare first if the column implements Preparable. It panics if a
+// CustomSerialization column cannot be encoded at version; Block.EncodeBlock and
+// Block.WriteBlock return an error instead.
 func (c InputColumn) EncodeStart(buf *Buffer, version int) {
+	if err := c.encodeStart(buf, version); err != nil {
+		panic(err)
+	}
+}
+
+func (c InputColumn) encodeStart(buf *Buffer, version int) error {
+	custom, hasCustom := c.Data.(CustomSerialization)
+	if hasCustom && !FeatureCustomSerialization.In(version) {
+		return errors.Errorf("column %q requires custom serialization (protocol %d, minimum %d)", c.Name, version, FeatureCustomSerialization.Version())
+	}
 	buf.PutString(c.Name)
 	buf.PutString(string(c.Data.Type()))
 	if FeatureCustomSerialization.In(version) {
-		buf.PutBool(false) // no custom serialization
+		buf.PutBool(hasCustom)
+		if hasCustom {
+			if err := custom.EncodeSerialization(buf, version); err != nil {
+				return errors.Wrapf(err, "column %q serialization", c.Name)
+			}
+		}
 	}
+	return nil
 }
 
 type Block struct {
@@ -166,11 +186,13 @@ func (b Block) EncodeRawBlock(buf *Buffer, version int, input []InputColumn) err
 		if r := col.Data.Rows(); r != b.Rows {
 			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
 		}
-		col.EncodeStart(buf, version)
 		if v, ok := col.Data.(Preparable); ok {
 			if err := v.Prepare(); err != nil {
 				return errors.Wrapf(err, "prepare %q", col.Name)
 			}
+		}
+		if err := col.encodeStart(buf, version); err != nil {
+			return err
 		}
 		if col.Data.Rows() == 0 {
 			continue
@@ -193,16 +215,23 @@ func (b Block) WriteBlock(w *Writer, version int, input []InputColumn) error {
 	})
 
 	for _, col := range input {
+		if err := w.err; err != nil {
+			return err
+		}
 		if r := col.Data.Rows(); r != b.Rows {
 			return errors.Errorf("%q has %d rows, expected %d", col.Name, r, b.Rows)
 		}
-		w.ChainBuffer(func(buf *Buffer) {
-			col.EncodeStart(buf, version)
-		})
 		if v, ok := col.Data.(Preparable); ok {
 			if err := v.Prepare(); err != nil {
 				return errors.Wrapf(err, "prepare %q", col.Name)
 			}
+		}
+		var headerErr error
+		w.ChainBuffer(func(buf *Buffer) {
+			headerErr = col.encodeStart(buf, version)
+		})
+		if headerErr != nil {
+			return headerErr
 		}
 		if col.Data.Rows() == 0 {
 			continue
