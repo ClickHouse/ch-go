@@ -3,7 +3,6 @@ package chpool
 import (
 	"context"
 	"runtime"
-	"sort"
 	"sync"
 	"time"
 
@@ -18,7 +17,9 @@ type Pool struct {
 	pool    *puddle.Pool[*connResource]
 	options Options
 
-	// fifoMu serializes idle-stack reordering for AcquireFIFO.
+	// fifoMu serializes AcquireFIFO acquires. In AcquireFIFO mode, every
+	// caller of pool.AcquireAllIdle must hold fifoMu. Otherwise an acquire
+	// can find the idle set empty while idle connections exist, and dial.
 	fifoMu sync.Mutex
 
 	closeOnce sync.Once
@@ -40,11 +41,10 @@ const (
 	// slowest backend. The trade-off is that all idle connections stay
 	// in rotation, so the pool does not shrink via MaxConnIdleTime
 	// while it stays under load.
-	// Each acquire also reorders and reallocates the idle set, which
-	// serializes concurrent acquires and costs O(n log n) in the number
-	// of idle connections; ordering is best-effort when acquires race,
-	// and Stat's EmptyAcquireCount and EmptyAcquireWaitTime may be
-	// inflated because the reorder briefly drains the idle set.
+	// Each acquire scans the idle set, which costs O(n) in the number of
+	// idle connections and serializes concurrent acquires. The order is
+	// best-effort: a connection released during an acquire can be
+	// returned before older ones.
 	AcquireFIFO
 )
 
@@ -149,12 +149,15 @@ func newPool(ctx context.Context, opt Options, dial bool) (*Pool, error) {
 
 // Acquire connection from pool.
 func (p *Pool) Acquire(ctx context.Context) (*Client, error) {
-	// Skip the reorder if ctx is already done: pool.Acquire will fail
-	// immediately, and draining the idle set would penalize other callers.
-	if p.options.AcquireStrategy == AcquireFIFO && ctx.Err() == nil {
-		p.rotateIdleToFIFO()
+	var (
+		res *puddle.Resource[*connResource]
+		err error
+	)
+	if p.options.AcquireStrategy == AcquireFIFO {
+		res, err = p.acquireFIFO(ctx)
+	} else {
+		res, err = p.pool.Acquire(ctx)
 	}
-	res, err := p.pool.Acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -162,33 +165,49 @@ func (p *Pool) Acquire(ctx context.Context) (*Client, error) {
 	return res.Value().getConn(p, res), nil
 }
 
-// rotateIdleToFIFO reorders puddle's idle stack so that the least recently
-// used connection is on top and is returned by the next pool.Acquire.
-// Puddle always acquires in LIFO order and does not expose an ordering
-// option, so the stack is reordered before each acquire instead.
-func (p *Pool) rotateIdleToFIFO() {
-	// Serialize reorders: two concurrent rotations would otherwise split
-	// the idle set between them and re-push it interleaved instead of
-	// globally ordered. A goroutine that already finished its own rotate
-	// can still observe a momentarily drained idle list and dial a new
-	// connection when the pool is below MaxConns, so FIFO ordering is
-	// best-effort under concurrency and self-corrects on the next acquire.
-	// The health check's AcquireAllIdle intentionally does not take fifoMu;
-	// the worst case is one partial health cycle.
-	p.fifoMu.Lock()
-	defer p.fifoMu.Unlock()
-
-	idle := p.pool.AcquireAllIdle()
-	// Sort newest first so the oldest connection is pushed last and ends
-	// up on top of the idle stack. ReleaseUnused keeps LastUsedNanotime
-	// intact, so MaxConnIdleTime enforcement is unaffected. Stable sort
-	// keeps puddle's newest-first stack order for equal timestamps.
-	sort.SliceStable(idle, func(i, j int) bool {
-		return idle[i].LastUsedNanotime() > idle[j].LastUsedNanotime()
-	})
-	for _, res := range idle {
-		res.ReleaseUnused()
+// acquireFIFO acquires the least recently used idle connection.
+//
+// Puddle keeps idle connections in a LIFO stack and has no option to change
+// the order. So acquireFIFO takes all idle connections, puts the oldest one
+// back last so that it is on top of the stack, and then pops it with
+// pool.Acquire. pool.Acquire keeps Stat correct; AcquireAllIdle does not
+// change Stat.
+//
+// fifoMu is held until pool.Acquire returns. All other callers of
+// AcquireAllIdle also hold fifoMu, so no one can empty the idle set before
+// pool.Acquire pops it. Idle connections do not hold a pool slot, so
+// pool.Acquire does not dial or wait for a slot.
+func (p *Pool) acquireFIFO(ctx context.Context) (*puddle.Resource[*connResource], error) {
+	// Do not take the idle set if ctx is done: pool.Acquire fails at once.
+	if ctx.Err() != nil {
+		return p.pool.Acquire(ctx)
 	}
+
+	p.fifoMu.Lock()
+	idle := p.pool.AcquireAllIdle()
+	if len(idle) == 0 {
+		p.fifoMu.Unlock()
+		// No idle connection: dial or wait for a release. Do this
+		// without fifoMu, because it can take a long time.
+		return p.pool.Acquire(ctx)
+	}
+	oldest := 0
+	for i, res := range idle {
+		if res.LastUsedNanotime() < idle[oldest].LastUsedNanotime() {
+			oldest = i
+		}
+	}
+	// ReleaseUnused keeps LastUsedNanotime, so MaxConnIdleTime
+	// enforcement is not changed.
+	for i, res := range idle {
+		if i != oldest {
+			res.ReleaseUnused()
+		}
+	}
+	idle[oldest].ReleaseUnused()
+	res, err := p.pool.Acquire(ctx)
+	p.fifoMu.Unlock()
+	return res, err
 }
 
 func (p *Pool) Do(ctx context.Context, q ch.Query) (err error) {
@@ -227,6 +246,12 @@ func (p *Pool) backgroundHealthCheck() {
 }
 
 func (p *Pool) checkIdleConnsHealth() {
+	if p.options.AcquireStrategy == AcquireFIFO {
+		// See fifoMu. Destroy closes connections in the background,
+		// so fifoMu is not held during network I/O.
+		p.fifoMu.Lock()
+		defer p.fifoMu.Unlock()
+	}
 	resources := p.pool.AcquireAllIdle()
 
 	now := time.Now()

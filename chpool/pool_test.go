@@ -2,6 +2,9 @@ package chpool
 
 import (
 	"context"
+	"net"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -250,4 +253,159 @@ func TestPool_AcquireStrategyLoadSpread(t *testing.T) {
 			require.GreaterOrEqual(t, n, minShare, "connection %p starved: %v", c, usage)
 		}
 	})
+}
+
+// TestPool_AcquireStrategyNoExtraDial checks that Acquire does not dial a new
+// connection while idle connections are available when acquires run
+// concurrently. Every new dial fails, so an extra dial shows as an Acquire
+// error. It also checks that each Acquire is counted in Stat.
+//
+// For FIFO, the health check also runs in a loop, because FIFO and the health
+// check both drain the idle set. For LIFO, a health check that runs at the
+// same time as Acquire can cause an extra dial too; that is not tested here.
+func TestPool_AcquireStrategyNoExtraDial(t *testing.T) {
+	t.Parallel()
+
+	const (
+		idle       = 4
+		maxConns   = 10
+		workers    = 2 // Less than idle, so an idle connection is always available.
+		iterations = 5000
+	)
+
+	run := func(t *testing.T, strategy AcquireStrategy, healthCheck bool) {
+		p := PoolConnOpt(t, Options{
+			MaxConns:          maxConns,
+			AcquireStrategy:   strategy,
+			HealthCheckPeriod: time.Hour,
+			// Keep the health check from destroying connections, so
+			// that the idle count stays fixed.
+			MaxConnIdleTime: time.Hour,
+			MaxConnLifetime: time.Hour,
+		})
+
+		warm := make([]*Client, 0, idle)
+		for i := 0; i < idle; i++ {
+			c, err := p.Acquire(context.Background())
+			require.NoError(t, err)
+			warm = append(warm, c)
+		}
+		for _, c := range warm {
+			c.Release()
+		}
+		require.EqualValues(t, idle, p.Stat().IdleResources())
+
+		// Make each new dial fail quickly. The constructor reads
+		// p.options when it dials. The test writes p.options before
+		// the workers start.
+		ln, err := net.Listen("tcp", "127.0.0.1:0")
+		require.NoError(t, err)
+		closedAddr := ln.Addr().String()
+		require.NoError(t, ln.Close())
+		p.options.ClientOptions.Address = closedAddr
+		p.options.ClientOptions.DialTimeout = 100 * time.Millisecond
+
+		acquiresBefore := p.Stat().AcquireCount()
+
+		var (
+			wg       sync.WaitGroup
+			failures atomic.Int64
+			firstErr atomic.Value
+			stop     = make(chan struct{})
+		)
+		if healthCheck {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for {
+					select {
+					case <-stop:
+						return
+					default:
+						p.checkIdleConnsHealth()
+					}
+				}
+			}()
+		}
+		var workersWG sync.WaitGroup
+		for w := 0; w < workers; w++ {
+			workersWG.Add(1)
+			go func() {
+				defer workersWG.Done()
+				for i := 0; i < iterations; i++ {
+					c, err := p.Acquire(context.Background())
+					if err != nil {
+						failures.Add(1)
+						firstErr.CompareAndSwap(nil, err)
+						continue
+					}
+					c.Release()
+				}
+			}()
+		}
+		workersWG.Wait()
+		close(stop)
+		wg.Wait()
+
+		stat := p.Stat()
+		t.Logf("failures=%d total=%d idle=%d acquires=%d emptyAcquires=%d",
+			failures.Load(), stat.TotalResources(), stat.IdleResources(),
+			stat.AcquireCount()-acquiresBefore, stat.EmptyAcquireCount())
+		require.Zero(t, failures.Load(),
+			"Acquire dialed, but %d idle connections were available for %d workers: %v",
+			idle, workers, firstErr.Load())
+		require.EqualValues(t, idle, stat.TotalResources())
+		require.EqualValues(t, workers*iterations, stat.AcquireCount()-acquiresBefore,
+			"Stat must count every Acquire")
+	}
+
+	t.Run("LIFO", func(t *testing.T) {
+		t.Parallel()
+		run(t, AcquireLIFO, false)
+	})
+	t.Run("FIFO", func(t *testing.T) {
+		t.Parallel()
+		run(t, AcquireFIFO, true)
+	})
+}
+
+func BenchmarkPool_Acquire(b *testing.B) {
+	for _, bc := range []struct {
+		name     string
+		strategy AcquireStrategy
+	}{
+		{name: "LIFO", strategy: AcquireLIFO},
+		{name: "FIFO", strategy: AcquireFIFO},
+	} {
+		b.Run(bc.name, func(b *testing.B) {
+			p := PoolConnOpt(b, Options{
+				MaxConns:          16,
+				AcquireStrategy:   bc.strategy,
+				HealthCheckPeriod: time.Hour,
+			})
+			// Create all connections before the measurement.
+			warm := make([]*Client, 0, 16)
+			for i := 0; i < 16; i++ {
+				c, err := p.Acquire(context.Background())
+				require.NoError(b, err)
+				warm = append(warm, c)
+			}
+			for _, c := range warm {
+				c.Release()
+			}
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					c, err := p.Acquire(context.Background())
+					if err != nil {
+						b.Error(err)
+						return
+					}
+					c.Release()
+				}
+			})
+		})
+	}
 }
