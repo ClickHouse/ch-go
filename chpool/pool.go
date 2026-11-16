@@ -31,8 +31,12 @@ type Pool struct {
 type AcquireStrategy uint8
 
 const (
-	// AcquireLIFO returns the most recently released connection,
-	// keeping a small set of connections warm. This is the default.
+	// AcquireLIFO returns the most recently released connection. Under
+	// light load, queries reuse a small set of connections and the other
+	// connections age out via MaxConnIdleTime. The trade-off is that load
+	// does not spread across connections, so if a load balancer sends
+	// connections to different replicas, a few replicas get most queries.
+	// This is the default.
 	AcquireLIFO AcquireStrategy = iota
 	// AcquireFIFO returns the least recently released connection,
 	// rotating through all idle connections. Use it when connections
