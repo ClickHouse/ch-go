@@ -17,10 +17,13 @@ type Pool struct {
 	pool    *puddle.Pool[*connResource]
 	options Options
 
-	// fifoMu serializes AcquireFIFO acquires. In AcquireFIFO mode, every
-	// caller of pool.AcquireAllIdle must hold fifoMu. Otherwise an acquire
-	// can find the idle set empty while idle connections exist, and dial.
-	fifoMu sync.Mutex
+	// fifoLock is a lock that serializes AcquireFIFO acquires: send to
+	// take it, receive to release it. It is a channel and not a
+	// sync.Mutex, so that a wait for it can stop when ctx is done or the
+	// pool closes. In AcquireFIFO mode, every caller of
+	// pool.AcquireAllIdle must hold fifoLock. Otherwise an acquire can
+	// find the idle set empty while idle connections exist, and dial.
+	fifoLock chan struct{}
 
 	closeOnce sync.Once
 	closeChan chan struct{}
@@ -106,6 +109,7 @@ func newPool(ctx context.Context, opt Options, dial bool) (*Pool, error) {
 	p := &Pool{
 		options:   opt,
 		closeChan: make(chan struct{}),
+		fifoLock:  make(chan struct{}, 1),
 	}
 	puddleConfig := &puddle.Config[*connResource]{
 		Constructor: func(ctx context.Context) (*connResource, error) {
@@ -177,22 +181,25 @@ func (p *Pool) Acquire(ctx context.Context) (*Client, error) {
 // pool.Acquire. pool.Acquire keeps Stat correct; AcquireAllIdle does not
 // change Stat.
 //
-// fifoMu is held until pool.Acquire returns. All other callers of
-// AcquireAllIdle also hold fifoMu, so no one can empty the idle set before
-// pool.Acquire pops it. Idle connections do not hold a pool slot, so
-// pool.Acquire does not dial or wait for a slot.
+// fifoLock is held until pool.Acquire returns. All other callers of
+// AcquireAllIdle also hold fifoLock, so they cannot empty the idle set before
+// pool.Acquire pops it. But a caller on the empty-idle path below calls
+// pool.Acquire without fifoLock, and it can take the connection that was put
+// back on top. Then pool.Acquire waits for a release, or dials, while it holds
+// fifoLock. This is rare. Because of it, a wait for fifoLock stops when ctx
+// is done.
 func (p *Pool) acquireFIFO(ctx context.Context) (*puddle.Resource[*connResource], error) {
-	// Do not take the idle set if ctx is done: pool.Acquire fails at once.
-	if ctx.Err() != nil {
+	// If ctx is done before or during the wait for the lock, pool.Acquire
+	// fails at once and counts the canceled acquire in Stat.
+	if ctx.Err() != nil || !p.lockFIFO(ctx.Done()) {
 		return p.pool.Acquire(ctx)
 	}
 
-	p.fifoMu.Lock()
 	idle := p.pool.AcquireAllIdle()
 	if len(idle) == 0 {
-		p.fifoMu.Unlock()
+		p.unlockFIFO()
 		// No idle connection: dial or wait for a release. Do this
-		// without fifoMu, because it can take a long time.
+		// without fifoLock, because it can take a long time.
 		return p.pool.Acquire(ctx)
 	}
 	oldest := 0
@@ -210,8 +217,24 @@ func (p *Pool) acquireFIFO(ctx context.Context) (*puddle.Resource[*connResource]
 	}
 	idle[oldest].ReleaseUnused()
 	res, err := p.pool.Acquire(ctx)
-	p.fifoMu.Unlock()
+	p.unlockFIFO()
 	return res, err
+}
+
+// lockFIFO takes fifoLock. It returns false, without the lock, if done is
+// closed first.
+func (p *Pool) lockFIFO(done <-chan struct{}) bool {
+	select {
+	case p.fifoLock <- struct{}{}:
+		return true
+	case <-done:
+		return false
+	}
+}
+
+// unlockFIFO releases fifoLock.
+func (p *Pool) unlockFIFO() {
+	<-p.fifoLock
 }
 
 func (p *Pool) Do(ctx context.Context, q ch.Query) (err error) {
@@ -251,10 +274,14 @@ func (p *Pool) backgroundHealthCheck() {
 
 func (p *Pool) checkIdleConnsHealth() {
 	if p.options.AcquireStrategy == AcquireFIFO {
-		// See fifoMu. Destroy closes connections in the background,
-		// so fifoMu is not held during network I/O.
-		p.fifoMu.Lock()
-		defer p.fifoMu.Unlock()
+		// See fifoLock. Destroy closes connections in the background,
+		// so fifoLock is not held during network I/O. Stop the wait
+		// when the pool closes, so that Close does not wait for an
+		// acquire that holds fifoLock.
+		if !p.lockFIFO(p.closeChan) {
+			return
+		}
+		defer p.unlockFIFO()
 	}
 	resources := p.pool.AcquireAllIdle()
 

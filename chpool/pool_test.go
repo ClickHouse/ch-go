@@ -409,3 +409,68 @@ func BenchmarkPool_Acquire(b *testing.B) {
 		})
 	}
 }
+
+// TestPool_AcquireFIFOLockStops checks that a caller that waits for the FIFO
+// lock stops when its ctx is done, and that Close does not wait for the lock.
+// An acquire can hold the lock while pool.Acquire waits for a release, so a
+// wait for the lock must not ignore ctx or block Close.
+func TestPool_AcquireFIFOLockStops(t *testing.T) {
+	t.Parallel()
+
+	const wait = 5 * time.Second
+
+	t.Run("Acquire", func(t *testing.T) {
+		t.Parallel()
+		p := PoolConnOpt(t, Options{
+			AcquireStrategy:   AcquireFIFO,
+			HealthCheckPeriod: time.Hour,
+		})
+		lockFIFOForTest(t, p)
+
+		done := make(chan error, 1)
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			defer cancel()
+			c, err := p.Acquire(ctx)
+			if err == nil {
+				c.Release()
+			}
+			done <- err
+		}()
+		select {
+		case err := <-done:
+			require.ErrorIs(t, err, context.DeadlineExceeded)
+		case <-time.After(wait):
+			t.Fatal("Acquire did not stop when its ctx was done")
+		}
+	})
+
+	t.Run("Close", func(t *testing.T) {
+		t.Parallel()
+		p := PoolConnOpt(t, Options{
+			AcquireStrategy:   AcquireFIFO,
+			HealthCheckPeriod: 10 * time.Millisecond,
+		})
+		lockFIFOForTest(t, p)
+		// Let the health check start to wait for the lock.
+		time.Sleep(50 * time.Millisecond)
+
+		done := make(chan struct{})
+		go func() {
+			p.Close()
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(wait):
+			t.Fatal("Close waited for the FIFO lock")
+		}
+	})
+}
+
+// lockFIFOForTest holds the FIFO lock until the test ends.
+func lockFIFOForTest(t *testing.T, p *Pool) {
+	t.Helper()
+	require.True(t, p.lockFIFO(nil))
+	t.Cleanup(p.unlockFIFO)
+}
