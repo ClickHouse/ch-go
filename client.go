@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,6 +37,7 @@ type Client struct {
 	info     proto.ClientHello
 	server   proto.ServerHello
 	version  clientVersion
+	hostname string
 	quotaKey string
 
 	mux    sync.Mutex
@@ -339,8 +342,12 @@ type Options struct {
 	QuotaKey         string           // blank string by default
 	Compression      Compression      // disabled by default
 	CompressionLevel CompressionLevel // compression algorithm specific default
-	ClientName       string           // blank string by default
-	Settings         []Setting        // none by default
+	// ClientName identifies the application, for example "app/v1".
+	// It prefixes the library product/version and Go/OS metadata in the reported
+	// client_name, for example "app/v1 clickhouse/ch-go/0.71.0 (lv:go/1.27.3; os:linux)".
+	// Empty means only the library product/version and metadata are reported.
+	ClientName string
+	Settings   []Setting // none by default
 
 	// ReadTimeout is a timeout for reading a single packet from the server.
 	//
@@ -447,15 +454,8 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *proto.Buffer) (*Client, error) {
 	opt.setDefaults()
 
-	clientName := proto.Name
 	pkg := pkgVersion.Get()
-	if opt.ClientName == "" {
-		if pkg.Name != "" {
-			clientName = fmt.Sprintf("%s (%s)", clientName, pkg.Name)
-		}
-	} else {
-		clientName = fmt.Sprintf("%s %s", clientName, opt.ClientName)
-	}
+	clientName := formatClientName(opt.ClientName, pkg)
 	ver := clientVersion{
 		Name:  clientName,
 		Major: pkg.Major,
@@ -500,6 +500,11 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 		user = " SSH KEY AUTHENTICATION " + user
 	}
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		opt.Logger.Debug("Failed to get hostname", zap.Error(err))
+	}
+
 	c := &Client{
 		conn:     conn,
 		writer:   proto.NewWriter(conn, buf),
@@ -510,6 +515,7 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 		tracer:   opt.tracer,
 		meter:    opt.meter,
 		quotaKey: opt.QuotaKey,
+		hostname: hostname,
 
 		readTimeout: opt.ReadTimeout,
 
@@ -537,6 +543,26 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 	}
 
 	return c, nil
+}
+
+func formatClientName(clientName string, pkg pkgVersion.Value) string {
+	libraryProduct := formatLibraryProduct(pkg)
+	metadata := formatClientMetadata()
+	if clientName == "" {
+		return libraryProduct + " " + metadata
+	}
+	return fmt.Sprintf("%s %s %s", clientName, libraryProduct, metadata)
+}
+
+func formatLibraryProduct(pkg pkgVersion.Value) string {
+	if pkg.Raw != "" {
+		return proto.Name + "/" + strings.TrimPrefix(pkg.Raw, "v")
+	}
+	return fmt.Sprintf("%s/%d.%d.%d", proto.Name, pkg.Major, pkg.Minor, pkg.Patch)
+}
+
+func formatClientMetadata() string {
+	return fmt.Sprintf("(lv:go/%s; os:%s)", strings.TrimPrefix(runtime.Version(), "go"), runtime.GOOS)
 }
 
 // A Dialer dials using a context.
