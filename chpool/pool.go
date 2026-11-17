@@ -8,6 +8,7 @@ import (
 
 	"github.com/ClickHouse/ch-go"
 
+	"github.com/go-faster/errors"
 	"github.com/jackc/puddle/v2"
 )
 
@@ -16,10 +17,43 @@ type Pool struct {
 	pool    *puddle.Pool[*connResource]
 	options Options
 
+	// fifoLock is a lock that serializes AcquireFIFO acquires: send to
+	// take it, receive to release it. It is a channel and not a
+	// sync.Mutex, so that a wait for it can stop when ctx is done or the
+	// pool closes. In AcquireFIFO mode, every caller of
+	// pool.AcquireAllIdle must hold fifoLock. Otherwise an acquire can
+	// find the idle set empty while idle connections exist, and dial.
+	fifoLock chan struct{}
+
 	closeOnce sync.Once
 	closeChan chan struct{}
 	wg        sync.WaitGroup
 }
+
+// AcquireStrategy controls which idle connection Acquire returns.
+type AcquireStrategy uint8
+
+const (
+	// AcquireLIFO returns the most recently released connection. Under
+	// light load, queries reuse a small set of connections and the other
+	// connections age out via MaxConnIdleTime. The trade-off is that load
+	// does not spread across connections, so if a load balancer sends
+	// connections to different replicas, a few replicas get most queries.
+	// This is the default.
+	AcquireLIFO AcquireStrategy = iota
+	// AcquireFIFO returns the least recently released connection,
+	// rotating through all idle connections. Use it when connections
+	// land on heterogeneous backends behind a load balancer: it
+	// spreads queries evenly instead of concentrating load on the
+	// slowest backend. The trade-off is that all idle connections stay
+	// in rotation, so the pool does not shrink via MaxConnIdleTime
+	// while it stays under load.
+	// Each acquire scans the idle set, which costs O(n) in the number of
+	// idle connections and serializes concurrent acquires. The order is
+	// best-effort: a connection released during an acquire can be
+	// returned before older ones.
+	AcquireFIFO
+)
 
 // Options for Pool.
 type Options struct {
@@ -29,6 +63,9 @@ type Options struct {
 	MaxConns          int32
 	MinConns          int32
 	HealthCheckPeriod time.Duration
+	// AcquireStrategy controls which idle connection Acquire returns.
+	// The default is AcquireLIFO.
+	AcquireStrategy AcquireStrategy
 }
 
 // Defaults for pool.
@@ -66,9 +103,13 @@ func New(ctx context.Context, opt Options) (*Pool, error) {
 
 func newPool(ctx context.Context, opt Options, dial bool) (*Pool, error) {
 	opt.setDefaults()
+	if opt.AcquireStrategy > AcquireFIFO {
+		return nil, errors.Errorf("invalid AcquireStrategy %d", opt.AcquireStrategy)
+	}
 	p := &Pool{
 		options:   opt,
 		closeChan: make(chan struct{}),
+		fifoLock:  make(chan struct{}, 1),
 	}
 	puddleConfig := &puddle.Config[*connResource]{
 		Constructor: func(ctx context.Context) (*connResource, error) {
@@ -116,12 +157,84 @@ func newPool(ctx context.Context, opt Options, dial bool) (*Pool, error) {
 
 // Acquire connection from pool.
 func (p *Pool) Acquire(ctx context.Context) (*Client, error) {
-	res, err := p.pool.Acquire(ctx)
+	var (
+		res *puddle.Resource[*connResource]
+		err error
+	)
+	if p.options.AcquireStrategy == AcquireFIFO {
+		res, err = p.acquireFIFO(ctx)
+	} else {
+		res, err = p.pool.Acquire(ctx)
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	return res.Value().getConn(p, res), nil
+}
+
+// acquireFIFO acquires the least recently used idle connection.
+//
+// Puddle keeps idle connections in a LIFO stack and has no option to change
+// the order. So acquireFIFO takes all idle connections, puts the oldest one
+// back last so that it is on top of the stack, and then pops it with
+// pool.Acquire. pool.Acquire keeps Stat correct; AcquireAllIdle does not
+// change Stat.
+//
+// fifoLock is held until pool.Acquire returns. All other callers of
+// AcquireAllIdle also hold fifoLock, so they cannot empty the idle set before
+// pool.Acquire pops it. But a caller on the empty-idle path below calls
+// pool.Acquire without fifoLock, and it can take the connection that was put
+// back on top. Then pool.Acquire waits for a release, or dials, while it holds
+// fifoLock. This is rare. Because of it, a wait for fifoLock stops when ctx
+// is done.
+func (p *Pool) acquireFIFO(ctx context.Context) (*puddle.Resource[*connResource], error) {
+	// If ctx is done before or during the wait for the lock, pool.Acquire
+	// fails at once and counts the canceled acquire in Stat.
+	if ctx.Err() != nil || !p.lockFIFO(ctx.Done()) {
+		return p.pool.Acquire(ctx)
+	}
+
+	idle := p.pool.AcquireAllIdle()
+	if len(idle) == 0 {
+		p.unlockFIFO()
+		// No idle connection: dial or wait for a release. Do this
+		// without fifoLock, because it can take a long time.
+		return p.pool.Acquire(ctx)
+	}
+	oldest := 0
+	for i, res := range idle {
+		if res.LastUsedNanotime() < idle[oldest].LastUsedNanotime() {
+			oldest = i
+		}
+	}
+	// ReleaseUnused keeps LastUsedNanotime, so MaxConnIdleTime
+	// enforcement is not changed.
+	for i, res := range idle {
+		if i != oldest {
+			res.ReleaseUnused()
+		}
+	}
+	idle[oldest].ReleaseUnused()
+	res, err := p.pool.Acquire(ctx)
+	p.unlockFIFO()
+	return res, err
+}
+
+// lockFIFO takes fifoLock. It returns false, without the lock, if done is
+// closed first.
+func (p *Pool) lockFIFO(done <-chan struct{}) bool {
+	select {
+	case p.fifoLock <- struct{}{}:
+		return true
+	case <-done:
+		return false
+	}
+}
+
+// unlockFIFO releases fifoLock.
+func (p *Pool) unlockFIFO() {
+	<-p.fifoLock
 }
 
 func (p *Pool) Do(ctx context.Context, q ch.Query) (err error) {
@@ -160,6 +273,16 @@ func (p *Pool) backgroundHealthCheck() {
 }
 
 func (p *Pool) checkIdleConnsHealth() {
+	if p.options.AcquireStrategy == AcquireFIFO {
+		// See fifoLock. Destroy closes connections in the background,
+		// so fifoLock is not held during network I/O. Stop the wait
+		// when the pool closes, so that Close does not wait for an
+		// acquire that holds fifoLock.
+		if !p.lockFIFO(p.closeChan) {
+			return
+		}
+		defer p.unlockFIFO()
+	}
 	resources := p.pool.AcquireAllIdle()
 
 	now := time.Now()
