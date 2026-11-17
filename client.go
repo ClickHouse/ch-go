@@ -50,10 +50,11 @@ type Client struct {
 	// TCP Binary protocol version.
 	protocolVersion int
 
-	// compressor performs block compression,
-	// see encodeBlock.
-	compressor  *compress.Writer
-	compression proto.Compression
+	blockEncoder         *BlockEncoder
+	compression          proto.Compression
+	compressionMethod    compress.Method
+	compressionLevel     compress.Level
+	compressionFrameSize int
 
 	settings []Setting
 
@@ -324,9 +325,12 @@ const (
 	CompressionLZ4HC
 )
 
-// CompressionLevel setting. A level == 0 is invalid and resolves to the default.
+// CompressionLevel selects the codec-specific level. Zero uses the codec default.
 //
-// Supported by: LZ4HC.
+// Supported by LZ4HC (default 9, maximum 12) and ZSTD (default 3, maximum 22).
+// ZSTD levels map to encoder presets: 1-2 fastest, 3-5 default, 6-9 better,
+// and 10-22 best compression. LZ4HC levels above the maximum are clamped; ZSTD
+// levels above the maximum, including wrapped negative values, use the default.
 type CompressionLevel uint32
 
 // Options for Client. Zero value is valid.
@@ -339,8 +343,11 @@ type Options struct {
 	QuotaKey         string           // blank string by default
 	Compression      Compression      // disabled by default
 	CompressionLevel CompressionLevel // compression algorithm specific default
-	ClientName       string           // blank string by default
-	Settings         []Setting        // none by default
+	// CompressionFrameSize sets the uncompressed bytes per frame; 0 defaults to 1 MiB, maximum
+	// compress.MaxFrameSize. Each client retains one frame-sized buffer after its first compressed insert.
+	CompressionFrameSize int
+	ClientName           string    // blank string by default
+	Settings             []Setting // none by default
 
 	// ReadTimeout is a timeout for reading a single packet from the server.
 	//
@@ -382,6 +389,13 @@ const (
 
 // NoTimeout is a value for Options.ReadTimeout that disables timeout.
 const NoTimeout = time.Duration(-1)
+
+func (o Options) validateCompressionFrameSize() error {
+	if o.CompressionFrameSize < 0 || o.CompressionFrameSize > compress.MaxFrameSize {
+		return errors.Errorf("compression frame size must be between 0 and %d bytes", compress.MaxFrameSize)
+	}
+	return nil
+}
 
 func (o *Options) setDefaults() {
 	if o.ProtocolVersion == 0 {
@@ -445,6 +459,9 @@ func Connect(ctx context.Context, conn net.Conn, opt Options) (*Client, error) {
 // ConnectWithBuffer performs handshake with ClickHouse server and initializes
 // application level connection using the provided buffer.
 func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *proto.Buffer) (*Client, error) {
+	if err := opt.validateCompressionFrameSize(); err != nil {
+		return nil, err
+	}
 	opt.setDefaults()
 
 	clientName := proto.Name
@@ -513,8 +530,10 @@ func ConnectWithBuffer(ctx context.Context, conn net.Conn, opt Options, buf *pro
 
 		readTimeout: opt.ReadTimeout,
 
-		compression: compression,
-		compressor:  compress.NewWriter(compress.Level(opt.CompressionLevel), compressionMethod),
+		compression:          compression,
+		compressionMethod:    compressionMethod,
+		compressionLevel:     compress.Level(opt.CompressionLevel),
+		compressionFrameSize: opt.CompressionFrameSize,
 
 		version:         ver,
 		protocolVersion: opt.ProtocolVersion,
@@ -553,6 +572,9 @@ func Dial(ctx context.Context, opt Options) (c *Client, err error) {
 // DialWithBuffer dials requested address and establishes TCP connection to ClickHouse
 // server, performing handshake using the provided buffer.
 func DialWithBuffer(ctx context.Context, opt Options, buf *proto.Buffer) (c *Client, err error) {
+	if err := opt.validateCompressionFrameSize(); err != nil {
+		return nil, err
+	}
 	opt.setDefaults()
 
 	if opt.OpenTelemetryInstrumentation {

@@ -136,5 +136,9 @@ func (c ColTime64) EncodeColumn(b *Buffer) {
 }
 
 func (c ColTime64) WriteColumn(w *Writer) {
-	w.ChainBuffer(c.EncodeColumn)
+	writeColumnChunks(w, len(c.Data), 8, func(b *Buffer, start, end int) {
+		part := c
+		part.Data = c.Data[start:end]
+		part.EncodeColumn(b)
+	})
 }

@@ -56,5 +56,7 @@ func (c ColFloat64) EncodeColumn(b *Buffer) {
 }
 
 func (c ColFloat64) WriteColumn(w *Writer) {
-	w.ChainBuffer(c.EncodeColumn)
+	writeColumnChunks(w, len(c), 8, func(b *Buffer, start, end int) {
+		c[start:end].EncodeColumn(b)
+	})
 }

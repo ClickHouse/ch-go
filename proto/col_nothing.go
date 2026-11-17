@@ -73,5 +73,7 @@ func (c ColNothing) EncodeColumn(b *Buffer) {
 }
 
 func (c ColNothing) WriteColumn(w *Writer) {
-	w.ChainBuffer(c.EncodeColumn)
+	writeColumnChunks(w, int(c), 1, func(b *Buffer, start, end int) {
+		ColNothing(end - start).EncodeColumn(b)
+	})
 }

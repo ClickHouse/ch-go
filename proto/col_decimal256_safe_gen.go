@@ -55,5 +55,7 @@ func (c ColDecimal256) EncodeColumn(b *Buffer) {
 }
 
 func (c ColDecimal256) WriteColumn(w *Writer) {
-	w.ChainBuffer(c.EncodeColumn)
+	writeColumnChunks(w, len(c), 32, func(b *Buffer, start, end int) {
+		c[start:end].EncodeColumn(b)
+	})
 }

@@ -37,6 +37,26 @@ type ColumnOf[T any] interface {
 	Row(i int) T
 }
 
+// CustomSerialization is an optional ColInput interface for Native insert columns
+// whose payload uses a custom representation, such as sparse or replicated data.
+// EncodeSerialization writes only ClickHouse's serialization-kind metadata; the
+// block encoder writes the preceding custom-serialization flag. It is called
+// after Prepare, including for empty columns, and before EncodeState and column
+// data. The payload must match the metadata and the logical type returned by Type.
+//
+// The block encoder rejects this interface below FeatureCustomSerialization.
+// Implementations must validate any further protocol or server requirements and
+// return an error for unsupported encodings. The negotiated revision is supplied
+// for that purpose; implementing this interface does not raise it. Result decoding
+// of custom serializations is not supported.
+//
+// Sparse and replicated inserts require async_insert=0 on affected ClickHouse
+// servers: their async queue can append compact columns into ordinary columns
+// without materializing them. See README's Custom Native serialization section.
+type CustomSerialization interface {
+	EncodeSerialization(b *Buffer, version int) error
+}
+
 type StateEncoder interface {
 	EncodeState(b *Buffer)
 }
