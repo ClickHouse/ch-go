@@ -15,7 +15,7 @@ func TestExtract(t *testing.T) {
 	}{
 		{
 			Name:   "Empty",
-			Output: Value{Name: "dev", Raw: "0.0.1-dev"},
+			Output: Value{Patch: 1, Name: "dev", Raw: "0.0.1-dev"},
 		},
 		{
 			Name: "Main",
@@ -35,7 +35,7 @@ func TestExtract(t *testing.T) {
 					Version: "bad",
 				},
 			},
-			Output: Value{Name: "dev", Raw: "0.0.1-dev"},
+			Output: Value{Patch: 1, Name: "dev", Raw: "0.0.1-dev"},
 		},
 		{
 			Name: "Dependency",
@@ -54,4 +54,8 @@ func TestExtract(t *testing.T) {
 			require.Equal(t, tc.Output, Extract(&tc.Input))
 		})
 	}
+}
+
+func TestFromBuildInfoUnavailable(t *testing.T) {
+	require.Equal(t, Value{Patch: 1, Name: "dev", Raw: "0.0.1-dev"}, fromBuildInfo(nil, false))
 }

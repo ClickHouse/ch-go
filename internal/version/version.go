@@ -46,11 +46,24 @@ func Extract(info *debug.BuildInfo) Value {
 		}
 		return ver
 	}
+	return devVersion()
+}
+
+func devVersion() Value {
 	return Value{
-		// Zero-versioned dev version.
-		Name: "dev",
-		Raw:  "0.0.1-dev",
+		Major: 0,
+		Minor: 0,
+		Patch: 1,
+		Name:  "dev",
+		Raw:   "0.0.1-dev",
 	}
+}
+
+func fromBuildInfo(info *debug.BuildInfo, ok bool) Value {
+	if !ok {
+		return devVersion()
+	}
+	return Extract(info)
 }
 
 // Get optimistically gets current module version.
@@ -59,10 +72,7 @@ func Extract(info *debug.BuildInfo) Value {
 func Get() Value {
 	once.Do(func() {
 		info, ok := debug.ReadBuildInfo()
-		if !ok {
-			return
-		}
-		once.version = Extract(info)
+		once.version = fromBuildInfo(info, ok)
 	})
 
 	return once.version
