@@ -35,6 +35,21 @@ Set no priority when one of these is true:
 
 ## 1. Reach
 
+**Reach** tells how many applications can hit the defect. It comes from the
+public API that leads to the code with the defect: an API that almost every
+application calls has a high reach, an API that few applications use has a low
+reach. There are four tiers, highest first:
+
+- **Core:** almost every application calls this API.
+- **Common:** many applications use it, but not all.
+- **Narrow:** few applications use it (rare types, experimental APIs, special
+  setups).
+- **Satellite:** applications do not import it (examples, tests, docs, tools).
+
+To find the tier, find the most-used public API that reaches the defect, and
+look it up in the table below. Use the API, not the file that contains the
+defect.
+
 ch-go has two kinds of users: applications that call ch-go directly, and
 `clickhouse-go`, which uses the ch-go column types and buffers (`proto`) and
 the compression (`compress`) for all its users. The reach is the tier of the
@@ -113,13 +128,30 @@ Apply them in this order:
    such a path. If none is shown, rate the defect by the
    failure that it shows. A report that discloses a vulnerability goes to a
    private channel, not to a public issue.
-2. **Regression in the latest published release:** up one level. This can give
+2. **Panic.** The library panics: a Go `panic` in ch-go code, not in the
+   caller's code, and not in `cht`, `internal/`, `examples/`, or the tests.
+   The level is at least `High`, at any reach. Library code must not panic on
+   input from the network or from the caller (`AGENTS.md`), and a panic stops
+   the whole process unless the caller recovers it.
+3. **Ingestion.** The defect is on the insert path (`Client.Do` with
+   `Query.Input` or `OnInput`, block encoding, the `Col*` encoders), and the
+   client sends data that is lost, corrupted, or different from the given
+   value, with no error. This includes a missing column value, and a column
+   that gets a default value in place of the given value: up one level. This
+   can give `Urgent`. Wrong data in a table stays wrong after the fix; a defect
+   on the read path does not change the stored data.
+4. **Regression in the latest published release:** up one level. This can give
    `Urgent`. It is a regression only when the latest release shows the problem
    and the release before it does not. The tags are `vX.Y.Z` (for example
    `v0.76.0`).
-3. **Customer request in Linear.** The issue links (`linear.app`) a Linear
+5. **Customer request in Linear.** The issue links (`linear.app`) a Linear
    issue for a customer request: up one level, but never to `Urgent` (`High`
    stays `High`).
+
+A defect on the read path (`Query.Result`, `OnResult`, the `Col*` decoders)
+that does not panic gets neither of rules 2 and 3. So at the same reach and
+severity, a read defect ranks below a panic and below an ingestion defect. For
+code that clickhouse-go calls, the clickhouse-go rules have the same two rules.
 
 ## 5. Confidence
 
