@@ -1,0 +1,152 @@
+---
+name: issue-priority
+description: >
+  Decide the priority of a `ClickHouse/ch-go` issue: `Urgent`, `High`,
+  `Medium`, or `Low`, for the org issue field **Priority**. Use this skill when
+  the task is to "prioritize", "set the priority of", "rate", or "triage" an
+  issue, or to explain why an issue has a given priority. It defines the reach
+  tiers of the packages, the impact classes, the severity rows, the base-level
+  matrix, the modifiers, and the confidence.
+---
+
+# Issue priority
+
+This skill is the single source of truth for the **Priority** of
+`ClickHouse/ch-go` issues. People and automated triage use the same rules.
+
+The value goes into the org issue field **Priority** (`Urgent`, `High`,
+`Medium`, `Low`). The field is visible to org members only. An automated tool
+sets the value once, never changes a value that is already set, and keeps the
+level and its reason out of public comments.
+
+## When to set no priority
+
+Set no priority when one of these is true:
+
+- A maintainer can close the issue with no further action: it is already fixed
+  on `main`, a duplicate, works as intended, already supported, answered, or
+  obsolete.
+- Only a deprecated public API reaches the defect (a `Deprecated:` paragraph in
+  the Go doc comment, or docs that call the API deprecated; for example
+  `Query.OnProfileEvent` and `Query.OnLog`). Fixes to deprecated code are not
+  released.
+- The issue is a question, or it is about CI, the release process, or a
+  discussion.
+
+## 1. Reach
+
+ch-go has two kinds of users: applications that call ch-go directly, and
+`clickhouse-go`, which uses the ch-go column types and buffers (`proto`) and
+the compression (`compress`) for all its users. The reach is the tier of the
+most-used public path that reaches the defect, not the tier of the file that
+contains it.
+
+For code that clickhouse-go calls, the reach is the higher of two tiers: the
+tier in the table below, and the tier that the clickhouse-go priority rules
+([`.claude/skills/issue-priority/SKILL.md`](https://github.com/ClickHouse/clickhouse-go/blob/main/.claude/skills/issue-priority/SKILL.md))
+give the clickhouse-go path that reaches the defect. For example, a
+`proto.ColDateTime64` decode defect that clickhouse-go reaches through
+`Rows.Scan` is Core. To find the calls, search a clickhouse-go checkout:
+`grep -rn 'ClickHouse/ch-go/' --include=*.go`. clickhouse-go uses
+`proto.Buffer`, `proto.Reader`, `proto.Block`, the server packets, the
+`Col*` types of its scalar column types, and `compress`. It has its own
+`Array`, `Map`, `Nullable`, `LowCardinality`, and `Tuple` code, so a defect in
+`ColArr`, `ColMap`, `ColNullable`, `ColLowCardinality`, or `ColTuple` reaches
+only direct ch-go users.
+
+| Tier      | Public paths |
+| --------- | ------------ |
+| Core      | `ch.Dial` and `Client.Do` with `Query.Body`, `Query.Input`, `Query.Result`, `OnInput`, and `OnResult` (`proto.Input`, `proto.Results`); `Client.Ping`, `Client.Close`; the handshake, username and password authentication, TLS, timeouts, and context cancellation; errors (`*ch.Exception`, `ch.IsErr`, `ch.AsException`); block encoding and decoding (`proto.Block`, `proto.Buffer`, `proto.Reader`); compression (`compress`: LZ4, ZSTD); these column types: integers up to 64 bits, `ColFloat32`, `ColFloat64`, `ColBool`, `ColStr`, `ColFixedStr`, `ColDate`, `ColDate32`, `ColDateTime`, `ColDateTime64`, `ColDecimal32` to `ColDecimal256`, `ColUUID`, `ColEnum`, `ColEnum8`, `ColEnum16`, `ColNullable`, `ColLowCardinality`, `ColArr`, `ColMap`, `ColTuple` |
+| Common    | `chpool`; `proto.ColAuto` and `proto.Results.Auto`; query parameters (`Query.Parameters`); `Query.Settings`, `Query.QueryID`, `Query.QuotaKey`; the callbacks `OnProgress`, `OnProfile`, `OnProfileEvents`, `OnLogs`; external data (`Query.ExternalData`, `Query.ExternalTable`); `ColRaw`; the column types `ColIPv4`, `ColIPv6`, `ColInt128`, `ColInt256`, `ColUInt128`, `ColUInt256` |
+| Narrow    | the other column types: `ColPoint`, `ColInterval`, `ColTime`, `ColTime64`, `ColBFloat16`, `ColQBit`, `ColNothing`, `ColJSONStr`, `ColLowCardinalityRaw`; SSH key authentication (`ssh`, `Options.SSHSigner`); OpenTelemetry (`otelch`, `Options.TracerProvider`, `Options.MeterProvider`); a custom dialer (`Options.Dialer`); inter-server queries (`Query.Secret`, `Query.InitialUser`); `Options.ProtocolVersion` |
+| Satellite | `cht` (the test helper that starts a local server), `internal/` (`gold`, `e2e`, `ztest`, `cmd/`), `examples/`, `_golden/`, `README.md`, the agent skills and agents in `.claude/` |
+
+## 2. Severity
+
+First name the **impacts** of the issue. The impact classes are the same in
+every ClickHouse client repository. An issue has none, one, or more of them:
+
+| Impact         | Use when |
+| -------------- | -------- |
+| Security       | a **vulnerability**: a defect makes the protection weaker: it exposes credentials or data, lets a value change the meaning of a query, skips or weakens a TLS or identity check, or lets a remote party stop the client. Also **authentication**: an authentication method that does not work or is missing |
+| Data integrity | data that the caller wrote, or a result that the caller reads, is missing, incomplete, or different from the value given or stored, and the client reports no error; this includes a failed operation that the client reports as a success |
+| Stability      | the process stops in a way that the caller cannot handle as a normal error, a call does not return, or a resource leaks until none is left |
+| Performance    | the result is correct, but the operation is too slow, or uses too much memory or CPU |
+
+Give an impact only when the issue or a reproduction shows it. Most issues have
+none.
+
+Then use the first severity row that fits. With more than one impact, the
+highest row applies:
+
+| Severity                | Use when |
+| ----------------------- | -------- |
+| Wrong data or security  | impact **Data integrity**: the client returns or stores wrong or incomplete data with no error, or reports success for a query that failed; or impact **Security** with a vulnerability: a security defect |
+| Broken, no workaround   | the feature fails (an error, a hang, a panic, a leak that ends in a crash or in exhausted connections), and the caller has no reasonable workaround; also a wrong or incomplete error with no workaround: the failure is reported, but its type, code, or message is wrong or lost. The impact **Stability** (a hang, a panic, such a leak) uses this row when the caller has no reasonable workaround |
+| Workaround exists       | the feature fails, but the caller can avoid the failure with a small change in their own code (name the workaround in the reason); also impact **Performance**: a result that is correct but slow or uses too much memory |
+| Cosmetic, docs, feature | wrong log or message text, documentation, a feature request |
+
+An issue that has the impact Security with no vulnerability (an authentication
+method that does not work or is missing) does not use the first row. Rate an
+authentication method that does not work by its failure ("Broken, no
+workaround" or "Workaround exists"), and a request for a missing method as a
+feature request.
+
+## 3. Base level
+
+| Severity ↓ / Reach →    | Core   | Common | Narrow | Satellite |
+| ----------------------- | ------ | ------ | ------ | --------- |
+| Wrong data or security  | Urgent | Urgent | High   | Medium    |
+| Broken, no workaround   | High   | High   | Medium | Low       |
+| Workaround exists       | Medium | Medium | Low    | Low       |
+| Cosmetic, docs, feature | Low    | Low    | Low    | Low       |
+
+## 4. Modifiers
+
+Apply them in this order:
+
+1. **Security with a shown path from untrusted input.** The issue or a
+   reproduction shows how a value that an application takes from its users
+   reaches the defect: `Urgent` at any reach. Skip the other modifiers. A
+   defect in the encoding of query parameters (`query_params.go`) that lets a
+   parameter value change the meaning of the query is a candidate: look for
+   such a path. If none is shown, rate the defect by the
+   failure that it shows. A report that discloses a vulnerability goes to a
+   private channel, not to a public issue.
+2. **Regression in the latest published release:** up one level. This can give
+   `Urgent`. It is a regression only when the latest release shows the problem
+   and the release before it does not. The tags are `vX.Y.Z` (for example
+   `v0.76.0`).
+3. **Customer request in Linear.** The issue links (`linear.app`) a Linear
+   issue for a customer request: up one level, but never to `Urgent` (`High`
+   stays `High`).
+
+## 5. Confidence
+
+A missing reproduction lowers the confidence, not the level. Record the
+confidence with the value when the tool that sets it supports it:
+
+| Confidence | Use when |
+| ---------- | -------- |
+| `HIGH`     | a run shows the problem (or, for a feature, code inspection confirms its absence on `main`) |
+| `MEDIUM`   | code inspection shows a defect, but no reproduction was run (for example, it needs ClickHouse Cloud) |
+| `LOW`      | the report lacks what a reproduction needs, or a run did not show the problem |
+
+## 6. Reason
+
+Write one line with the value:
+
+`<tier> (<path>) · <impacts, or "no impact"> · <severity> · <modifiers, or "no modifier"> → <level>.`
+
+Name the workaround when the severity is "Workaround exists". When the
+confidence is `LOW`, say what is missing. When the tier comes from a
+clickhouse-go path, name that path (for example
+`Core (clickhouse-go Rows.Scan of DateTime64)`).
+
+## 7. Fixes that clickhouse-go needs
+
+A fix in code that clickhouse-go calls reaches clickhouse-go users only after a
+ch-go release and a dependency update in clickhouse-go (`go.mod`). When the
+tier comes from a clickhouse-go path, the fix PR says that clickhouse-go needs
+that update. A change to an exported `proto` symbol can break clickhouse-go
+(`AGENTS.md`). The priority stays as the table gives it.
