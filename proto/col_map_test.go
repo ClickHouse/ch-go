@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -169,5 +170,40 @@ func TestColMap_RowKV(t *testing.T) {
 			Keys: &ColStr{}, Values: &ColStr{},
 		}
 		requireNoShortRead(t, buf.Buf, colAware(dec, rows))
+	})
+}
+
+func TestColMap_Infer(t *testing.T) {
+	t.Run("DateTime64WithLocation", func(t *testing.T) {
+		values := new(ColDateTime64)
+		v := NewMap[string, time.Time](new(ColStr), values)
+		require.NoError(t, v.Infer("Map(String, DateTime64(3, 'UTC'))"))
+		require.Equal(t, ColumnType("DateTime64(3, 'UTC')"), values.Type())
+	})
+	t.Run("NestedMap", func(t *testing.T) {
+		values := new(ColDateTime64)
+		v := NewMap[string, map[string]time.Time](new(ColStr),
+			NewMap[string, time.Time](new(ColStr), values),
+		)
+		require.NoError(t, v.Infer("Map(String, Map(String, DateTime64(9)))"))
+		require.Equal(t, ColumnType("DateTime64(9)"), values.Type())
+	})
+	t.Run("EnumKey", func(t *testing.T) {
+		keys := new(ColEnum)
+		v := NewMap[string, string](keys, new(ColStr))
+		require.NoError(t, v.Infer("Map(Enum8('a' = 1, 'b' = 2), String)"))
+		require.Equal(t, ColumnType("Enum8('a' = 1, 'b' = 2)"), keys.Type())
+	})
+	t.Run("Invalid", func(t *testing.T) {
+		for _, typ := range []ColumnType{
+			"",
+			"String",
+			"Map()",
+			"Map(String)",
+			"Map(String, String, String)",
+		} {
+			v := NewMap[string, string](new(ColStr), new(ColStr))
+			require.EqualError(t, v.Infer(typ), "invalid map type", "%q", typ)
+		}
 	})
 }

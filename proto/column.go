@@ -195,6 +195,45 @@ func (c ColumnType) Elem() ColumnType {
 	return c[start+1 : end]
 }
 
+// elems returns the elements of a composite type, like [K, V] for Map(K, V).
+//
+// Only top-level commas separate elements: commas inside nested types
+// and inside quoted strings (enum names, time zones) are part of an element.
+func (c ColumnType) elems() []ColumnType {
+	v := string(c.Elem())
+	if v == "" {
+		return nil
+	}
+	var (
+		elems []ColumnType
+		start int
+		depth int
+		quote byte
+	)
+	for i := 0; i < len(v); i++ {
+		ch := v[i]
+		switch {
+		case quote != 0:
+			switch ch {
+			case '\\':
+				i++ // Skip escaped character.
+			case quote:
+				quote = 0
+			}
+		case ch == '\'' || ch == '`':
+			quote = ch
+		case ch == '(':
+			depth++
+		case ch == ')':
+			depth--
+		case ch == ',' && depth == 0:
+			elems = append(elems, ColumnType(strings.TrimSpace(v[start:i])))
+			start = i + 1
+		}
+	}
+	return append(elems, ColumnType(strings.TrimSpace(v[start:])))
+}
+
 // IsArray reports whether ColumnType is composite.
 func (c ColumnType) IsArray() bool {
 	return strings.HasPrefix(string(c), string(ColumnTypeArray))

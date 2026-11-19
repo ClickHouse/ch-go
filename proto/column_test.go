@@ -52,6 +52,35 @@ func TestColInfoInput_DecodeResult(t *testing.T) {
 	})
 }
 
+func TestColumnType_elems(t *testing.T) {
+	for _, tt := range []struct {
+		Type  ColumnType
+		Elems []ColumnType
+	}{
+		{Type: "String"},
+		{Type: "Map()"},
+		{Type: "Array(Int16)", Elems: []ColumnType{"Int16"}},
+		{Type: "Map(String,String)", Elems: []ColumnType{"String", "String"}},
+		{Type: "Map(String, DateTime64(3, 'UTC'))", Elems: []ColumnType{"String", "DateTime64(3, 'UTC')"}},
+		{Type: "Map(String, Map(String, String))", Elems: []ColumnType{"String", "Map(String, String)"}},
+		{
+			Type:  "Map(Enum8('a' = 1, 'b' = 2), Array(Map(String, String)))",
+			Elems: []ColumnType{"Enum8('a' = 1, 'b' = 2)", "Array(Map(String, String))"},
+		},
+		{
+			// Quoted commas, parentheses and escaped quotes are not separators.
+			Type:  `Map(Enum8('a,(' = 1, 'b\',)' = 2), String)`,
+			Elems: []ColumnType{`Enum8('a,(' = 1, 'b\',)' = 2)`, "String"},
+		},
+		{
+			Type:  "Tuple(`a,b` String, c Decimal(10, 2), Int8)",
+			Elems: []ColumnType{"`a,b` String", "c Decimal(10, 2)", "Int8"},
+		},
+	} {
+		assert.Equal(t, tt.Elems, tt.Type.elems(), "%s", tt.Type)
+	}
+}
+
 func TestColumnType_Elem(t *testing.T) {
 	t.Run("Array", func(t *testing.T) {
 		v := ColumnTypeInt16.Array()
