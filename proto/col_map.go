@@ -1,8 +1,6 @@
 package proto
 
 import (
-	"strings"
-
 	"github.com/go-faster/errors"
 )
 
@@ -191,19 +189,17 @@ func (c ColMap[K, V]) Prepare() error {
 
 // Infer ensures Inferable column propagation.
 func (c *ColMap[K, V]) Infer(t ColumnType) error {
-	keytype, valtype, hascomma := strings.Cut(string(t.Elem()), ",")
-	if !hascomma || strings.ContainsRune(valtype, ',') {
+	elems := t.elems()
+	if len(elems) != 2 {
 		return errors.New("invalid map type")
 	}
 	if v, ok := c.Keys.(Inferable); ok {
-		ct := ColumnType(strings.TrimSpace(keytype))
-		if err := v.Infer(ct); err != nil {
+		if err := v.Infer(elems[0]); err != nil {
 			return errors.Wrap(err, "infer data")
 		}
 	}
 	if v, ok := c.Values.(Inferable); ok {
-		ct := ColumnType(strings.TrimSpace(valtype))
-		if err := v.Infer(ct); err != nil {
+		if err := v.Infer(elems[1]); err != nil {
 			return errors.Wrap(err, "infer data")
 		}
 	}
