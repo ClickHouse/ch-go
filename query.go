@@ -33,7 +33,7 @@ func (c *Client) cancelQuery() error {
 
 	// Not using c.buf to prevent data race.
 	b := proto.Buffer{
-		Buf: make([]byte, 1),
+		Buf: make([]byte, 0, 1),
 	}
 	proto.ClientCodeCancel.Encode(&b)
 

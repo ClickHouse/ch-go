@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/netip"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1592,6 +1594,38 @@ func TestClientInsert(t *testing.T) {
 	}))
 }
 
+type recordingDialer struct {
+	dialer    net.Dialer
+	mux       sync.Mutex
+	lastWrite []byte
+}
+
+func (d *recordingDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	conn, err := d.dialer.DialContext(ctx, network, address)
+	if err != nil {
+		return nil, err
+	}
+	return &recordingConn{Conn: conn, dialer: d}, nil
+}
+
+func (d *recordingDialer) LastWrite() []byte {
+	d.mux.Lock()
+	defer d.mux.Unlock()
+	return append([]byte(nil), d.lastWrite...)
+}
+
+type recordingConn struct {
+	net.Conn
+	dialer *recordingDialer
+}
+
+func (c *recordingConn) Write(p []byte) (int, error) {
+	c.dialer.mux.Lock()
+	c.dialer.lastWrite = append(c.dialer.lastWrite[:0], p...)
+	c.dialer.mux.Unlock()
+	return c.Conn.Write(p)
+}
+
 func TestClientQueryCancellation(t *testing.T) {
 	ctx := context.Background()
 	c, err := Dial(ctx, testServer(t))
@@ -1621,6 +1655,33 @@ func TestClientQueryCancellation(t *testing.T) {
 
 	// Connection should be closed after query cancellation.
 	require.True(t, c.IsClosed())
+}
+
+func TestClientCancelQueryPacket(t *testing.T) {
+	ctx := context.Background()
+	opt := testServer(t)
+	if opt.TLS != nil {
+		t.Skip("cannot inspect the cancel packet on a TLS connection")
+	}
+	dialer := &recordingDialer{}
+	opt.Dialer = dialer
+	c, err := Dial(ctx, opt)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = c.Close() })
+	require.NoError(t, c.Ping(ctx))
+
+	queryID := "ch-go-cancel-" + uuid.NewString()
+	qctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+	defer cancel()
+
+	var res proto.ColUInt8
+	require.Error(t, c.Do(qctx, Query{
+		Body:    "SELECT sleep(2)",
+		QueryID: queryID,
+		Result:  proto.Results{{Name: "sleep(2)", Data: &res}},
+	}))
+	require.True(t, c.IsClosed())
+	require.Equal(t, []byte{byte(proto.ClientCodeCancel)}, dialer.LastWrite())
 }
 
 func TestClient_querySettings(t *testing.T) {
