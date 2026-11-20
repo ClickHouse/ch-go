@@ -1660,6 +1660,9 @@ func TestClientQueryCancellation(t *testing.T) {
 func TestClientCancelQueryPacket(t *testing.T) {
 	ctx := context.Background()
 	opt := testServer(t)
+	if opt.TLS != nil {
+		t.Skip("cannot inspect the cancel packet on a TLS connection")
+	}
 	dialer := &recordingDialer{}
 	opt.Dialer = dialer
 	c, err := Dial(ctx, opt)
