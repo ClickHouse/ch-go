@@ -41,15 +41,24 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 		return errors.Wrap(err, "context")
 	}
 
+	decodedException := false
+	defer func() {
+		if err == nil || decodedException {
+			return
+		}
+		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
+			err = multierr.Append(err, closeErr)
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil && !errors.Is(err, ctxErr) {
+			err = multierr.Append(err, ctxErr)
+		}
+	}()
+
 	c.writer.ChainBuffer(func(b *proto.Buffer) {
 		b.Encode(proto.ClientCodePing)
 	})
 	if err := c.flush(ctx); err != nil {
-		err = errors.Wrap(err, "flush")
-		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
-			err = multierr.Append(err, closeErr)
-		}
-		return err
+		return errors.Wrap(err, "flush")
 	}
 	p, err := c.packet(ctx)
 	if err != nil {
@@ -63,6 +72,7 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 		if err != nil {
 			return errors.Wrap(err, "decode exception")
 		}
+		decodedException = true
 		return errors.Wrap(e, "exception")
 	default:
 		return errors.Errorf("unexpected packet %s", p)
