@@ -6,6 +6,7 @@ import (
 	"github.com/go-faster/errors"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/multierr"
 
 	"github.com/ClickHouse/ch-go/otelch"
 	"github.com/ClickHouse/ch-go/proto"
@@ -36,11 +37,19 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 			span.End()
 		}()
 	}
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context")
+	}
+
 	c.writer.ChainBuffer(func(b *proto.Buffer) {
 		b.Encode(proto.ClientCodePing)
 	})
 	if err := c.flush(ctx); err != nil {
-		return errors.Wrap(err, "flush")
+		err = errors.Wrap(err, "flush")
+		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
+			err = multierr.Append(err, closeErr)
+		}
+		return err
 	}
 	p, err := c.packet(ctx)
 	if err != nil {
