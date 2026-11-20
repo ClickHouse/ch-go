@@ -692,14 +692,14 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			span.End()
 		}()
 	}
+	callerCtx := ctx
 	g, ctx := errgroup.WithContext(ctx)
 	done := make(chan struct{})
 	var (
 		gotException    atomic.Bool
 		sendComplete    atomic.Bool
-		receiveFailed   atomic.Bool
 		watcherCloseErr error
-		serverException error
+		receiveErr      error
 		colInfo         chan proto.ColInfoInput
 	)
 	if q.Result == nil && len(q.Input) > 0 {
@@ -757,7 +757,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	g.Go(func() (err error) {
 		// Receiving query result, data and telemetry.
 		defer func() {
-			receiveFailed.Store(err != nil)
+			receiveErr = err
 			close(done)
 		}()
 		if colInfo != nil {
@@ -791,7 +791,6 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 				if err := c.handlePacket(ctx, code, q); err != nil {
 					if code == proto.ServerCodeException && IsException(err) {
 						// Prevent query cancellation on exception.
-						serverException = err
 						gotException.Store(true)
 					}
 					return errors.Wrap(err, "handle packet")
@@ -800,9 +799,12 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		}
 	})
 	g.Go(func() error {
+		var abort bool
 		select {
 		case <-done:
+			abort = receiveErr != nil || ctx.Err() != nil
 		case <-ctx.Done():
+			abort = true
 		}
 		if gotException.Load() {
 			// flush interrupts pending writes on context cancellation; inspect their result after Wait.
@@ -810,7 +812,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		}
 		// Incomplete writes cannot be canceled by writing another packet concurrently.
 		if !sendComplete.Load() {
-			if ctx.Err() != nil || receiveFailed.Load() {
+			if abort {
 				watcherCloseErr = c.Close()
 			}
 			return nil
@@ -824,8 +826,9 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	})
 
 	err = g.Wait()
-	if serverException != nil && !errors.Is(err, serverException) {
-		err = multierr.Append(err, serverException)
+	// The watcher can unblock a write before errgroup records the read failure.
+	if receiveErr != nil && receiveErr != ctx.Err() && !errors.Is(err, receiveErr) {
+		err = multierr.Append(err, receiveErr)
 	}
 	if watcherCloseErr != nil && !errors.Is(watcherCloseErr, ErrClosed) {
 		err = multierr.Append(err, watcherCloseErr)
@@ -833,6 +836,11 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	if err != nil && (!gotException.Load() || !sendComplete.Load()) && !c.IsClosed() {
 		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
 			err = multierr.Append(err, closeErr)
+		}
+	}
+	if err != nil {
+		if ctxErr := callerCtx.Err(); ctxErr != nil && !errors.Is(err, ctxErr) {
+			err = multierr.Append(err, ctxErr)
 		}
 	}
 	return err

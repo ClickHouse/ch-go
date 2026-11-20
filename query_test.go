@@ -1654,26 +1654,15 @@ func (c *queryErrorConn) Read(p []byte) (int, error) {
 }
 
 func TestClientDoClosesOnTransportError(t *testing.T) {
-	var progress proto.Buffer
-	proto.ServerCodeProgress.Encode(&progress)
-	proto.Progress{}.EncodeAware(&progress, proto.Version)
-	proto.ServerCodeEndOfStream.Encode(&progress)
-	callbackErr := &Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
-
 	for _, tt := range []struct {
-		name       string
-		reader     io.Reader
-		writeErr   error
-		wantErr    error
-		onProgress func(context.Context, proto.Progress) error
+		name     string
+		reader   io.Reader
+		writeErr error
+		wantErr  error
 	}{
 		{name: "read", reader: iotest.ErrReader(io.ErrUnexpectedEOF), wantErr: io.ErrUnexpectedEOF},
 		{name: "write", writeErr: io.ErrShortWrite, wantErr: io.ErrShortWrite},
 		{name: "protocol", reader: bytes.NewReader([]byte{0xff, 0x01})},
-		{
-			name: "callback_exception", reader: bytes.NewReader(progress.Buf), wantErr: callbackErr,
-			onProgress: func(context.Context, proto.Progress) error { return callbackErr },
-		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(t.Context())
@@ -1698,7 +1687,7 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 			}
 
 			done := make(chan error, 1)
-			go func() { done <- c.Do(ctx, Query{Body: "SELECT 1", OnProgress: tt.onProgress}) }()
+			go func() { done <- c.Do(ctx, Query{Body: "SELECT 1"}) }()
 			select {
 			case err := <-done:
 				if tt.wantErr != nil {
@@ -1735,7 +1724,7 @@ func (c *notifyWriteConn) Write(p []byte) (int, error) {
 }
 
 func TestClientDoClosesDuringWrite(t *testing.T) {
-	for _, cause := range []string{"exception", "cancellation"} {
+	for _, cause := range []string{"exception", "callback", "cancellation"} {
 		t.Run(cause, func(t *testing.T) {
 			clientConn, peer := net.Pipe()
 			t.Cleanup(func() { require.NoError(t, clientConn.Close()) })
@@ -1751,9 +1740,18 @@ func TestClientDoClosesDuringWrite(t *testing.T) {
 				compression:     proto.CompressionDisabled,
 			}
 			var b proto.Buffer
-			proto.ServerCodeException.Encode(&b)
-			ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
-			ex.EncodeAware(&b, proto.Version)
+			callbackErr := &Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+			query := Query{Body: "SELECT * FROM missing_table"}
+			switch cause {
+			case "exception":
+				proto.ServerCodeException.Encode(&b)
+				ex := proto.Exception{Code: proto.ErrUnknownTable, Name: "UNKNOWN_TABLE"}
+				ex.EncodeAware(&b, proto.Version)
+			case "callback":
+				proto.ServerCodeProgress.Encode(&b)
+				proto.Progress{}.EncodeAware(&b, proto.Version)
+				query.OnProgress = func(context.Context, proto.Progress) error { return callbackErr }
+			}
 			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 			defer cancel()
 			peerDone := make(chan error, 1)
@@ -1774,13 +1772,16 @@ func TestClientDoClosesDuringWrite(t *testing.T) {
 			}()
 
 			done := make(chan error, 1)
-			go func() { done <- c.Do(ctx, Query{Body: "SELECT * FROM missing_table"}) }()
+			go func() { done <- c.Do(ctx, query) }()
 			select {
 			case err := <-done:
-				if cause == "exception" {
+				switch cause {
+				case "exception":
 					require.True(t, IsErr(err, proto.ErrUnknownTable), "interrupted query: got %v, want UNKNOWN_TABLE", err)
-				} else {
-					require.Error(t, err)
+				case "callback":
+					require.ErrorIs(t, err, callbackErr)
+				case "cancellation":
+					require.ErrorIs(t, err, context.Canceled)
 				}
 			case <-time.After(5 * time.Second):
 				cancel()
@@ -1817,7 +1818,10 @@ func (c *blockedInputColumn) WriteColumn(w *proto.Writer) {
 	close(c.encoded)
 	select {
 	case ctx := <-c.queryContext:
-		<-ctx.Done()
+		select {
+		case <-ctx.Done():
+		case <-c.abort:
+		}
 	case <-c.abort:
 	}
 }
