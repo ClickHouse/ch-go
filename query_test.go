@@ -1898,6 +1898,34 @@ func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
 	require.ErrorIs(t, err, io.EOF)
 }
 
+func TestClientDoClosesWhenColumnInfoIsMissing(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		body string
+	}{
+		{name: "rejected_insert", body: "INSERT INTO missing_table (v) VALUES"},
+		{name: "ended_without_input", body: "SET max_threads = 1"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Conn(t)
+			values := proto.ColUInt64{1}
+
+			err := c.Do(t.Context(), Query{
+				Body:  tt.body,
+				Input: proto.Input{{Name: "v", Data: &values}},
+			})
+
+			require.Error(t, err)
+			if tt.name == "rejected_insert" {
+				require.True(t, IsErr(err, proto.ErrUnknownTable), "insert error: got %v, want UNKNOWN_TABLE", err)
+			} else {
+				require.ErrorContains(t, err, "query ended before input was sent")
+			}
+			require.True(t, c.IsClosed(), "an incomplete input stream must not be reused")
+		})
+	}
+}
+
 // delayedWriteConn pauses completion after the transport has accepted the first write.
 // A cancellation deadline releases the pending operation without undoing that write.
 type delayedWriteConn struct {

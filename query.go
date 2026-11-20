@@ -743,7 +743,10 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-			case v := <-colInfo:
+			case v, ok := <-colInfo:
+				if !ok {
+					return nil
+				}
 				info = v
 			}
 		}
@@ -829,6 +832,10 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	})
 
 	err = g.Wait()
+	if err == nil && !sendComplete.Load() {
+		err = errors.New("query ended before input was sent")
+	}
+
 	// The watcher can unblock a write before errgroup records the read failure.
 	if receiveErr != nil && receiveErr != ctx.Err() && !errors.Is(err, receiveErr) {
 		err = multierr.Append(err, receiveErr)
@@ -837,7 +844,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		err = multierr.Append(err, watcherCloseErr)
 	}
 
-	if err != nil && (!decodedException.Load() || !sendComplete.Load()) && !c.IsClosed() {
+	if err != nil && (!decodedException.Load() || !sendComplete.Load()) {
 		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
 			err = multierr.Append(err, closeErr)
 		}
