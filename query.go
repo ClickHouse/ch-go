@@ -820,6 +820,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		if !sendComplete.Load() {
 			if abort {
 				watcherCloseErr = c.Close()
+				return callerCtx.Err()
 			}
 			return nil
 		}
