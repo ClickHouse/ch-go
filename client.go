@@ -293,19 +293,19 @@ func (c *Client) flush(ctx context.Context) (err error) {
 	}
 
 	// Interrupt a blocked write without closing a connection whose write already succeeded.
-	canceled := make(chan struct{})
+	callbackDone := make(chan struct{})
 	var cancelErr error
 	stop := context.AfterFunc(ctx, func() {
 		cancelErr = c.conn.SetWriteDeadline(time.Now())
 		if cancelErr != nil && !c.IsClosed() {
 			cancelErr = multierr.Append(cancelErr, c.Close())
 		}
-		close(canceled)
+		close(callbackDone)
 	})
 	defer func() {
 		interrupted := !stop()
 		if interrupted {
-			<-canceled
+			<-callbackDone
 			err = multierr.Append(err, cancelErr)
 		}
 		// Join the cancellation callback before resetting its deadline or allowing reuse.

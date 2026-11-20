@@ -16,6 +16,7 @@ import (
 	"testing/iotest"
 	"time"
 
+	"github.com/go-faster/errors"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1669,8 +1670,8 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 			defer cancel()
 
 			clientConn, peer := net.Pipe()
-			t.Cleanup(func() { _ = clientConn.Close() })
-			t.Cleanup(func() { _ = peer.Close() })
+			t.Cleanup(func() { require.NoError(t, clientConn.Close()) })
+			t.Cleanup(func() { require.NoError(t, peer.Close()) })
 			require.NoError(t, peer.SetReadDeadline(time.Now().Add(10*time.Second)))
 			conn := &queryErrorConn{Conn: clientConn, reader: tt.reader, writeErr: tt.writeErr, abort: ctx.Done()}
 			if conn.reader == nil {
@@ -1697,7 +1698,9 @@ func TestClientDoClosesOnTransportError(t *testing.T) {
 				}
 			case <-time.After(5 * time.Second):
 				cancel()
-				_ = c.Close()
+				if err := c.Close(); err != nil && !errors.Is(err, ErrClosed) {
+					t.Errorf("close client during cleanup: %v", err)
+				}
 				select {
 				case <-done:
 				case <-time.After(5 * time.Second):
@@ -1785,7 +1788,9 @@ func TestClientDoClosesDuringWrite(t *testing.T) {
 				}
 			case <-time.After(5 * time.Second):
 				cancel()
-				_ = c.Close()
+				if err := c.Close(); err != nil && !errors.Is(err, ErrClosed) {
+					t.Errorf("close client during cleanup: %v", err)
+				}
 				select {
 				case <-done:
 				case <-time.After(5 * time.Second):
@@ -1850,12 +1855,17 @@ func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	input := &blockedInputColumn{
-		ColUInt64: proto.ColUInt64{1}, encoded: make(chan struct{}), queryContext: queryContext, abort: ctx.Done(),
+		ColUInt64:    proto.ColUInt64{1},
+		encoded:      make(chan struct{}),
+		queryContext: queryContext,
+		abort:        ctx.Done(),
 	}
 	done := make(chan error, 1)
 	go func() {
 		done <- c.Do(ctx, Query{
-			Body: "INSERT INTO missing_table VALUES", Input: proto.Input{{Name: "v", Data: input}}, Result: discardResult(),
+			Body:   "INSERT INTO missing_table VALUES",
+			Input:  proto.Input{{Name: "v", Data: input}},
+			Result: discardResult(),
 			OnProgress: func(ctx context.Context, _ proto.Progress) error {
 				select {
 				case <-input.encoded:
@@ -1873,7 +1883,9 @@ func TestClientDoClosesOnExceptionWithBufferedInput(t *testing.T) {
 		require.True(t, IsErr(err, proto.ErrUnknownTable), "buffered-input query: got %v, want UNKNOWN_TABLE", err)
 	case <-time.After(5 * time.Second):
 		cancel()
-		_ = c.Close()
+		if err := c.Close(); err != nil && !errors.Is(err, ErrClosed) {
+			t.Errorf("close client during cleanup: %v", err)
+		}
 		select {
 		case <-done:
 		case <-time.After(5 * time.Second):

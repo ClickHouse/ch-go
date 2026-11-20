@@ -12,7 +12,8 @@ import (
 	"github.com/ClickHouse/ch-go/proto"
 )
 
-// Ping server.
+// Ping checks whether the server responds. A failed exchange closes the client
+// unless the server returned a complete exception.
 //
 // Do not call concurrently with Do.
 func (c *Client) Ping(ctx context.Context) (err error) {
@@ -60,6 +61,7 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
 	}
+
 	p, err := c.packet(ctx)
 	if err != nil {
 		return errors.Wrap(err, "read")

@@ -612,7 +612,8 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 	}
 }
 
-// Do performs Query on ClickHouse server.
+// Do performs Query on ClickHouse server. A failed exchange closes the
+// client unless the send completed and the server returned a complete exception.
 func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	if c.IsClosed() {
 		return ErrClosed
@@ -696,11 +697,11 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	g, ctx := errgroup.WithContext(ctx)
 	done := make(chan struct{})
 	var (
-		gotException    atomic.Bool
-		sendComplete    atomic.Bool
-		watcherCloseErr error
-		receiveErr      error
-		colInfo         chan proto.ColInfoInput
+		decodedException atomic.Bool
+		sendComplete     atomic.Bool
+		watcherCloseErr  error
+		receiveErr       error
+		colInfo          chan proto.ColInfoInput
 	)
 	if q.Result == nil && len(q.Input) > 0 {
 		// Handling input column type inference, e.g. enums.
@@ -731,6 +732,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		if err := c.flush(ctx); err != nil {
 			return errors.Wrap(err, "flush")
 		}
+
 		if len(q.Input) == 0 {
 			sendComplete.Store(true)
 			return nil
@@ -791,7 +793,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 				if err := c.handlePacket(ctx, code, q); err != nil {
 					if code == proto.ServerCodeException && IsException(err) {
 						// Prevent query cancellation on exception.
-						gotException.Store(true)
+						decodedException.Store(true)
 					}
 					return errors.Wrap(err, "handle packet")
 				}
@@ -806,7 +808,8 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		case <-ctx.Done():
 			abort = true
 		}
-		if gotException.Load() {
+
+		if decodedException.Load() {
 			// flush interrupts pending writes on context cancellation; inspect their result after Wait.
 			return nil
 		}
@@ -818,7 +821,7 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			return nil
 		}
 		// Handling query cancellation if needed.
-		if ctx.Err() != nil && !gotException.Load() {
+		if ctx.Err() != nil && !decodedException.Load() {
 			err := multierr.Append(ctx.Err(), c.cancelQuery())
 			return errors.Wrap(err, "canceled")
 		}
@@ -833,15 +836,17 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	if watcherCloseErr != nil && !errors.Is(watcherCloseErr, ErrClosed) {
 		err = multierr.Append(err, watcherCloseErr)
 	}
-	if err != nil && (!gotException.Load() || !sendComplete.Load()) && !c.IsClosed() {
+
+	if err != nil && (!decodedException.Load() || !sendComplete.Load()) && !c.IsClosed() {
 		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
 			err = multierr.Append(err, closeErr)
 		}
 	}
-	if err != nil {
-		if ctxErr := callerCtx.Err(); ctxErr != nil && !errors.Is(err, ctxErr) {
-			err = multierr.Append(err, ctxErr)
-		}
+	if err == nil {
+		return nil
+	}
+	if ctxErr := callerCtx.Err(); ctxErr != nil && !errors.Is(err, ctxErr) {
+		err = multierr.Append(err, ctxErr)
 	}
 	return err
 }
