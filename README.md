@@ -344,6 +344,7 @@ colV.Reset()
 * Nullable(T)
 * Point
 * Nothing, Interval
+* AggregateFunction (only the states of `quantileDD` and `quantilesDD`)
 
 ## Enums
 
@@ -390,6 +391,27 @@ q := ch.Query{
 }
 // Do ...
 arr.Row(0) // ["foo", "bar", "baz"]
+```
+
+### AggregateFunction
+
+Generic for `AggregateFunction(...)`. The type parameter is the state of one row.
+
+ClickHouse writes each state with the layout of its aggregate function, and with no length prefix.
+The column needs a state type for each aggregate function. `proto.DDSketch` is the state of
+`quantileDD` and `quantilesDD`.
+
+```go
+// The full type name, as the server prints it.
+sketches := proto.NewAggregateFunction[proto.DDSketch]("AggregateFunction(quantilesDD(0.01, 0.5, 0.99), Float64)")
+sketches.Append(proto.DDSketch{
+  Gamma:    1.02, // (1 + a) / (1 - a) for the relative accuracy a
+  Positive: []proto.DDSketchBin{{Index: 115, Count: 2}, {Index: 116, Count: 1}},
+})
+q := ch.Query{
+  Body:  "INSERT INTO sketches VALUES",
+  Input: proto.Input{{Name: "sketch", Data: sketches}},
+}
 ```
 
 ## Dumps
@@ -495,6 +517,7 @@ func TestLocalNativeDump(t *testing.T) {
   - [ ] JSON
   - [ ] SimpleAggregateFunction
   - [ ] AggregateFunction
+    - [x] quantileDD, quantilesDD
   - [x] Nothing
   - [x] Interval
   - [ ] Nested

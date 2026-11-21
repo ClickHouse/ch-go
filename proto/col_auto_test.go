@@ -59,11 +59,29 @@ func TestColAuto_Infer(t *testing.T) {
 		"Decimal256(4)",
 		"Array(Nullable(Int8))",
 		"Nullable(DateTime64(3))",
+		"AggregateFunction(quantileDD(0.01, 0.5), UInt64)",
+		"AggregateFunction(quantilesDD(0.01, 0.5, 0.99), Float64)",
 	} {
 		r := AutoResult("foo")
 		require.NoError(t, r.Data.(Inferable).Infer(columnType))
 		require.Equal(t, columnType, r.Data.Type())
 		r.Data.Reset()
 		require.Equal(t, 0, r.Data.Rows())
+	}
+}
+
+func TestColAuto_Infer_AggregateFunction(t *testing.T) {
+	for _, columnType := range []ColumnType{
+		// The state has a flag byte before the sketch.
+		"AggregateFunction(quantilesDD(0.01, 0.5), Nullable(Float64))",
+		// The states of other functions have other layouts.
+		"AggregateFunction(sum, UInt64)",
+		"AggregateFunction(quantilesTDigest(0.5), Float64)",
+		"AggregateFunction(1, sumMap, Array(UInt8), Array(UInt8))",
+	} {
+		r := AutoResult("foo")
+		require.EqualError(t, r.Data.(Inferable).Infer(columnType),
+			`automatic column inference not supported for "`+string(columnType)+`"`,
+		)
 	}
 }
