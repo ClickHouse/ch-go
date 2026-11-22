@@ -81,6 +81,27 @@ func TestColumnType_elems(t *testing.T) {
 	}
 }
 
+func TestColumnType_splitName(t *testing.T) {
+	for _, tt := range []struct {
+		Elem ColumnType
+		Name string
+		Type ColumnType
+	}{
+		{Elem: "String", Type: "String"},
+		{Elem: "Enum8('a b' = 1)", Type: "Enum8('a b' = 1)"},
+		{Elem: "Decimal(10, 2)", Type: "Decimal(10, 2)"},
+		{Elem: "a String", Name: "a", Type: "String"},
+		{Elem: "a Enum8('x' = 1)", Name: "a", Type: "Enum8('x' = 1)"},
+		{Elem: "a\n    Nullable(String)", Name: "a", Type: "Nullable(String)"},
+		{Elem: "`a b` Decimal(10, 2)", Name: "`a b`", Type: "Decimal(10, 2)"},
+		{Elem: "`a\\`(b` Int8", Name: "`a\\`(b`", Type: "Int8"},
+	} {
+		name, typ := tt.Elem.splitName()
+		assert.Equal(t, tt.Name, name, "%q", tt.Elem)
+		assert.Equal(t, tt.Type, typ, "%q", tt.Elem)
+	}
+}
+
 func TestColumnType_Elem(t *testing.T) {
 	t.Run("Array", func(t *testing.T) {
 		v := ColumnTypeInt16.Array()
@@ -110,6 +131,21 @@ func TestColumnType_Elem(t *testing.T) {
 				{A: "Enum8", B: "Enum8('increment' = 1, 'gauge' = 2)"},
 				{A: "Decimal256", B: "Decimal(76, 38)"},
 				{A: "Nullable(Decimal256)", B: "Nullable(Decimal(76, 38))"},
+				// Map and Tuple elements get the same result as at the top level.
+				{A: "Map(String, Enum8('a' = 1))", B: "Map(String, Int8)"},
+				{A: "Map(Enum8('a' = 1, 'b' = 2), String)", B: "Map(Int8, String)"},
+				{A: "Map(String, Enum16('a' = 1))", B: "Map(String, Int16)"},
+				{A: "Map(String, Enum8('a, b' = 1))", B: "Map(String, Int8)"},
+				{A: "Map(String, Decimal(10, 2))", B: "Map(String, Decimal64)"},
+				{A: "Map(String, Array(Enum8('a' = 1)))", B: "Map(String, Array(Int8))"},
+				{A: "Map(String, Nullable(Enum8('a' = 1)))", B: "Map(String, Nullable(Int8))"},
+				{A: "Map(String, Tuple(Enum8('a' = 1), String))", B: "Map(String, Tuple(Int8, String))"},
+				{A: "Array(Map(String, Enum8('a' = 1)))", B: "Array(Map(String, Int8))"},
+				{A: "Tuple(Enum8('a' = 1), String)", B: "Tuple(Int8, String)"},
+				{A: "Tuple(Decimal(10, 2), String)", B: "Tuple(Decimal64, String)"},
+				{A: "Tuple(a Enum8('x' = 1), b String)", B: "Tuple(a Int8, b String)"},
+				{A: "Tuple(\n    a Enum8('x' = 1),\n    b String)", B: "Tuple(a Int8, b String)"},
+				{A: "Tuple(`a b` Decimal(10, 2))", B: "Tuple(`a b` Decimal64)"},
 			} {
 				assert.False(t, tt.A.Conflicts(tt.B),
 					"%s ~ %s", tt.A, tt.B,
@@ -129,6 +165,15 @@ func TestColumnType_Elem(t *testing.T) {
 				{A: ColumnTypeArray.Sub(ColumnTypeInt32), B: ColumnTypeArray.Sub(ColumnTypeInt64)},
 				{A: "Map(String,String)", B: "Map(String,Int32)"},
 				{A: "Enum16('increment' = 1, 'gauge' = 2)", B: "Int8"},
+				{A: "Map(String, String)", B: "Map(String, Int8)"},
+				{A: "Map(String, Enum16('a' = 1))", B: "Map(String, Int8)"},
+				{A: "Map(String, Decimal(10, 2))", B: "Map(String, Decimal32)"},
+				{A: "Array(Map(String, String))", B: "Array(Map(String, Int8))"},
+				{A: "Map(String, Int8)", B: "Tuple(String, Int8)"},
+				{A: "Tuple(Int8, String)", B: "Tuple(Int8)"},
+				{A: "Tuple(Int8, String)", B: "Tuple(String, Int8)"},
+				{A: "Tuple(a Int8, b String)", B: "Tuple(a Int8, c String)"},
+				{A: "Tuple(a Int8, b String)", B: "Tuple(Int8, String)"},
 			} {
 				assert.True(t, tt.A.Conflicts(tt.B),
 					"%s !~ %s", tt.A, tt.B,

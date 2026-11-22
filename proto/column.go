@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/go-faster/errors"
 )
@@ -142,11 +143,56 @@ func (c ColumnType) Conflicts(b ColumnType) bool {
 	switch cBase {
 	case ColumnTypeArray, ColumnTypeNullable, ColumnTypeLowCardinality:
 		return c.Elem().Conflicts(b.Elem())
+	case ColumnTypeMap, ColumnTypeTuple:
+		return c.elemsConflict(b)
 	case ColumnTypeDateTime, ColumnTypeDateTime64:
 		// TODO(ernado): improve check
 		return false
 	}
 	return true
+}
+
+// elemsConflict compares Map or Tuple elements pair by pair.
+func (c ColumnType) elemsConflict(b ColumnType) bool {
+	cElems, bElems := c.elems(), b.elems()
+	if len(cElems) != len(bElems) {
+		return true
+	}
+	for i := range cElems {
+		cName, cType := cElems[i].splitName()
+		bName, bType := bElems[i].splitName()
+		if cName != bName || cType.Conflicts(bType) {
+			return true
+		}
+	}
+	return false
+}
+
+// splitName splits a named tuple element like "a Enum8('x' = 1)"
+// into name and type. The name is empty if the element has no name.
+func (c ColumnType) splitName() (string, ColumnType) {
+	v := string(c)
+	if strings.HasPrefix(v, "`") {
+		for i := 1; i < len(v); i++ {
+			switch v[i] {
+			case '\\':
+				i++ // Skip escaped character.
+			case '`':
+				return v[:i+1], ColumnType(strings.TrimSpace(v[i+1:]))
+			}
+		}
+		return "", c
+	}
+	// A type has no spaces before its first parenthesis, so a space there ends the name.
+	head := v
+	if start := strings.IndexByte(v, '('); start >= 0 {
+		head = v[:start]
+	}
+	end := strings.IndexFunc(head, unicode.IsSpace)
+	if end < 0 {
+		return "", c
+	}
+	return v[:end], ColumnType(strings.TrimSpace(v[end:]))
 }
 
 func (c ColumnType) normalizeCommas() ColumnType {
