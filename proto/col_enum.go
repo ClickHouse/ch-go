@@ -52,34 +52,183 @@ func (e *ColEnum) AppendArr(vs []string) {
 }
 
 func (e *ColEnum) parse(t ColumnType) error {
-	if e.rawToStr == nil {
-		e.rawToStr = map[int]string{}
-	}
-	if e.strToRaw == nil {
-		e.strToRaw = map[string]int{}
+	bitSize := 16
+	if t.Base() == ColumnTypeEnum8 {
+		bitSize = 8
 	}
 
-	elements := t.Elem().String()
-	for _, elem := range strings.Split(elements, ",") {
-		def := strings.TrimSpace(elem)
-		// 'hello' = 1
-		left, right, hascomma := strings.Cut(def, "=")
-		if !hascomma {
-			return errors.Errorf("bad enum definition %q", def)
-		}
-		left = strings.TrimSpace(left)   // 'hello'
-		right = strings.TrimSpace(right) // 1
-		idx, err := strconv.Atoi(right)
-		if err != nil {
-			return errors.Errorf("bad right side of definition %q", right)
-		}
-		left = strings.TrimFunc(left, func(c rune) bool {
-			return c == '\''
-		})
-		e.strToRaw[left] = idx
-		e.rawToStr[idx] = left
+	defs, err := parseEnumDefs(t.Elem().String(), bitSize)
+	if err != nil {
+		return err
+	}
+
+	e.rawToStr = make(map[int]string, len(defs))
+	e.strToRaw = make(map[string]int, len(defs))
+	for _, elem := range defs {
+		e.strToRaw[elem.name] = elem.val
+		e.rawToStr[elem.val] = elem.name
 	}
 	return nil
+}
+
+type enumElem struct {
+	name string
+	val  int
+}
+
+func skipEnumSpaces(s string, i int) int {
+	for i < len(s) {
+		switch s[i] {
+		case ' ', '\t', '\n', '\r':
+			i++
+		default:
+			return i
+		}
+	}
+	return i
+}
+
+func parseHexDigit(b byte) (byte, bool) {
+	switch {
+	case b >= '0' && b <= '9':
+		return b - '0', true
+	case b >= 'a' && b <= 'f':
+		return b - 'a' + 10, true
+	case b >= 'A' && b <= 'F':
+		return b - 'A' + 10, true
+	default:
+		return 0, false
+	}
+}
+
+func decodeEnumEscape(s string, i int) (byte, int, error) {
+	if i >= len(s) {
+		return 0, i, errors.Errorf("unterminated escape sequence in enum definition %q", s)
+	}
+	ch := s[i]
+	switch ch {
+	case 'a':
+		return '\a', i + 1, nil
+	case 'b':
+		return '\b', i + 1, nil
+	case 'e':
+		return 0x1b, i + 1, nil
+	case 'f':
+		return '\f', i + 1, nil
+	case 'n':
+		return '\n', i + 1, nil
+	case 'r':
+		return '\r', i + 1, nil
+	case 't':
+		return '\t', i + 1, nil
+	case 'v':
+		return '\v', i + 1, nil
+	case '0':
+		return 0, i + 1, nil
+	case '\\', '\'':
+		return ch, i + 1, nil
+	case 'x', 'X':
+		if i+2 < len(s) {
+			hi, okHi := parseHexDigit(s[i+1])
+			lo, okLo := parseHexDigit(s[i+2])
+			if okHi && okLo {
+				return (hi << 4) | lo, i + 3, nil
+			}
+		}
+		return 0, i, errors.Errorf("invalid hex escape in enum definition %q", s)
+	default:
+		return ch, i + 1, nil
+	}
+}
+
+func parseEnumName(s string, i int) (string, int, error) {
+	if i >= len(s) || s[i] != '\'' {
+		return "", i, errors.Errorf("bad enum definition %q", s)
+	}
+	i++ // consume opening quote
+
+	var b strings.Builder
+	for i < len(s) {
+		ch := s[i]
+		if ch == '\'' {
+			if i+1 < len(s) && s[i+1] == '\'' {
+				b.WriteByte('\'')
+				i += 2
+				continue
+			}
+			return b.String(), i + 1, nil
+		}
+		if ch == '\\' {
+			decoded, next, decErr := decodeEnumEscape(s, i+1)
+			if decErr != nil {
+				return "", next, decErr
+			}
+			b.WriteByte(decoded)
+			i = next
+			continue
+		}
+		b.WriteByte(ch)
+		i++
+	}
+	return "", i, errors.Errorf("unterminated enum name in %q", s)
+}
+
+func parseEnumInt(s string, i, bitSize int) (int, int, error) {
+	start := i
+	if i < len(s) && (s[i] == '-' || s[i] == '+') {
+		i++
+	}
+	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+		i++
+	}
+	if i == start {
+		return 0, i, errors.Errorf("bad right side of definition %q", s[start:])
+	}
+	raw := s[start:i]
+	val, err := strconv.ParseInt(raw, 10, bitSize)
+	if err != nil {
+		return 0, i, errors.Errorf("bad right side of definition %q", raw)
+	}
+	return int(val), i, nil
+}
+
+func parseEnumDefs(elements string, bitSize int) ([]enumElem, error) {
+	i := skipEnumSpaces(elements, 0)
+	if i >= len(elements) {
+		return nil, errors.Errorf("bad enum definition %q", elements)
+	}
+
+	var out []enumElem
+	for {
+		name, next, err := parseEnumName(elements, i)
+		if err != nil {
+			return nil, err
+		}
+		i = skipEnumSpaces(elements, next)
+		if i >= len(elements) || elements[i] != '=' {
+			return nil, errors.Errorf("bad enum definition %q", elements)
+		}
+		i = skipEnumSpaces(elements, i+1)
+
+		val, valNext, err := parseEnumInt(elements, i, bitSize)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, enumElem{name: name, val: val})
+
+		i = skipEnumSpaces(elements, valNext)
+		if i >= len(elements) {
+			break
+		}
+		if elements[i] != ',' {
+			return nil, errors.Errorf("bad enum definition %q", elements)
+		}
+		i = skipEnumSpaces(elements, i+1)
+		if i >= len(elements) {
+			return nil, errors.Errorf("bad enum definition %q", elements)
+		}
+	}
+	return out, nil
 }
 
 func (e *ColEnum) Infer(t ColumnType) error {
