@@ -101,7 +101,7 @@ func parseHexDigit(b byte) (byte, bool) {
 	}
 }
 
-func decodeEnumEscape(s string, i int) (byte, int, error) {
+func decodeEnumEscape(s string, i int) (decoded byte, next int, err error) {
 	if i >= len(s) {
 		return 0, i, errors.Errorf("unterminated escape sequence in enum definition %q", s)
 	}
@@ -141,7 +141,7 @@ func decodeEnumEscape(s string, i int) (byte, int, error) {
 	}
 }
 
-func parseEnumName(s string, i int) (string, int, error) {
+func parseEnumName(s string, i int) (name string, next int, err error) {
 	if i >= len(s) || s[i] != '\'' {
 		return "", i, errors.Errorf("bad enum definition %q", s)
 	}
@@ -159,12 +159,12 @@ func parseEnumName(s string, i int) (string, int, error) {
 			return b.String(), i + 1, nil
 		}
 		if ch == '\\' {
-			decoded, next, decErr := decodeEnumEscape(s, i+1)
+			unescaped, nextIdx, decErr := decodeEnumEscape(s, i+1)
 			if decErr != nil {
-				return "", next, decErr
+				return "", nextIdx, decErr
 			}
-			b.WriteByte(decoded)
-			i = next
+			b.WriteByte(unescaped)
+			i = nextIdx
 			continue
 		}
 		b.WriteByte(ch)
@@ -173,7 +173,7 @@ func parseEnumName(s string, i int) (string, int, error) {
 	return "", i, errors.Errorf("unterminated enum name in %q", s)
 }
 
-func parseEnumInt(s string, i, bitSize int) (int, int, error) {
+func parseEnumInt(s string, i, bitSize int) (val int, next int, err error) {
 	start := i
 	if i < len(s) && (s[i] == '-' || s[i] == '+') {
 		i++
@@ -185,11 +185,11 @@ func parseEnumInt(s string, i, bitSize int) (int, int, error) {
 		return 0, i, errors.Errorf("bad right side of definition %q", s[start:])
 	}
 	raw := s[start:i]
-	val, err := strconv.ParseInt(raw, 10, bitSize)
-	if err != nil {
+	parsed, parseErr := strconv.ParseInt(raw, 10, bitSize)
+	if parseErr != nil {
 		return 0, i, errors.Errorf("bad right side of definition %q", raw)
 	}
-	return int(val), i, nil
+	return int(parsed), i, nil
 }
 
 func parseEnumDefs(elements string, bitSize int) ([]enumElem, error) {
