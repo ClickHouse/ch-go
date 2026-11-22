@@ -173,7 +173,7 @@ func parseEnumName(s string, i int) (name string, next int, err error) {
 	return "", i, errors.Errorf("unterminated enum name in %q", s)
 }
 
-func parseEnumInt(s string, i, bitSize int) (val int, next int, err error) {
+func parseEnumInt(s string, i, bitSize int) (val, next int, err error) {
 	start := i
 	if i < len(s) && (s[i] == '-' || s[i] == '+') {
 		i++
