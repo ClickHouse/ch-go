@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -60,6 +61,30 @@ func TestToDate32(t *testing.T) {
 			Value: time.Date(2006, 12, 31, 22, 4, 41, 0, time.FixedZone("UTC-6:30", -6*secInHour-30*secInMinute)),
 		},
 		{
+			name:  "1969-12-31T00:00:00Z",
+			Value: time.Date(1969, 12, 31, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:  "1969-12-31T12:00:00Z",
+			Value: time.Date(1969, 12, 31, 12, 0, 0, 0, time.UTC),
+		},
+		{
+			name:  "1969-12-31T23:59:59Z",
+			Value: time.Date(1969, 12, 31, 23, 59, 59, 999999999, time.UTC),
+		},
+		{
+			name:  "1969-12-31T22:04:41-06:30",
+			Value: time.Date(1969, 12, 31, 22, 4, 41, 0, time.FixedZone("UTC-6:30", -6*secInHour-30*secInMinute)),
+		},
+		{
+			name:  "1925-01-01T06:44:15+03:00",
+			Value: time.Date(1925, 1, 1, 6, 44, 15, 0, time.FixedZone("UTC+3", 3*secInHour)),
+		},
+		{
+			name:  "1970-01-01T00:30:00+02:00",
+			Value: time.Date(1970, 1, 1, 0, 30, 0, 0, time.FixedZone("UTC+2", 2*secInHour)),
+		},
+		{
 			name:     "zero value",
 			Value:    time.Time{},
 			expected: new(Date32),
@@ -77,6 +102,27 @@ func TestToDate32(t *testing.T) {
 			assert.Equal(t, expected.String(), d.String())
 			assert.Equal(t, expected, d)
 		})
+	}
+}
+
+func TestColDate32_PreEpoch(t *testing.T) {
+	t.Parallel()
+	inputs := []time.Time{
+		time.Date(1969, 12, 31, 12, 0, 0, 0, time.UTC),
+		time.Date(1925, 5, 10, 15, 30, 0, 0, time.FixedZone("UTC+3", 3*3600)),
+	}
+	var col ColDate32
+	col.Append(inputs[0])
+	col.AppendArr(inputs[1:])
+
+	var buf Buffer
+	col.EncodeColumn(&buf)
+
+	var dec ColDate32
+	require.NoError(t, dec.DecodeColumn(NewReader(bytes.NewReader(buf.Buf)), len(inputs)))
+	require.Equal(t, len(inputs), dec.Rows())
+	for i, in := range inputs {
+		require.Equal(t, in.Format(DateLayout), dec.Row(i).Format(DateLayout))
 	}
 }
 
