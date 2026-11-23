@@ -79,7 +79,7 @@ func TestCompress(t *testing.T) {
 
 func TestReaderWriterBufferReuse(t *testing.T) {
 	// Exercise resize paths: large -> small -> large, and repeated reuse.
-	sizes := []int{0, 1, 3, 1024, 64*1024, 7, 300*1024, 16}
+	sizes := []int{0, 1, 3, 1024, 64 * 1024, 7, 300 * 1024, 16}
 	for _, m := range MethodValues() {
 		m := m
 		t.Run(m.String(), func(t *testing.T) {
