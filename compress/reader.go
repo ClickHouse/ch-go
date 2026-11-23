@@ -39,6 +39,7 @@ func resize(b []byte, n int) []byte {
 // readBlock reads next compressed data into raw and decompresses into data.
 func (r *Reader) readBlock() error {
 	r.pos = 0
+	r.data = r.data[:0]
 
 	_ = r.header[headerSize-1]
 	if _, err := io.ReadFull(r.reader, r.header); err != nil {
