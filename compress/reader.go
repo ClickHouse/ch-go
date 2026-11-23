@@ -29,6 +29,13 @@ func FormatU128(v city.U128) string {
 	return fmt.Sprintf("%x", buf)
 }
 
+func resize(b []byte, n int) []byte {
+	if cap(b) < n {
+		return make([]byte, n)
+	}
+	return b[:n]
+}
+
 // readBlock reads next compressed data into raw and decompresses into data.
 func (r *Reader) readBlock() error {
 	r.pos = 0
@@ -49,9 +56,9 @@ func (r *Reader) readBlock() error {
 		return errors.Errorf("raw size should be %d < %d < %d", 0, rawSize, maxBlockSize)
 	}
 
-	r.data = append(r.data[:0], make([]byte, dataSize)...)
-	r.raw = append(r.raw[:0], r.header...)
-	r.raw = append(r.raw, make([]byte, rawSize)...)
+	r.data = resize(r.data, dataSize)
+	r.raw = resize(r.raw, rawSize+headerSize)
+	copy(r.raw, r.header)
 	_ = r.raw[:rawSize+headerSize-1]
 
 	if _, err := io.ReadFull(r.reader, r.raw[headerSize:]); err != nil {
@@ -105,7 +112,10 @@ func (r *Reader) readBlock() error {
 		}
 		r.data = data
 	case encodedNone:
-		copy(r.data, r.raw[headerSize:])
+		n := copy(r.data, r.raw[headerSize:])
+		for i := n; i < len(r.data); i++ {
+			r.data[i] = 0
+		}
 	default:
 		return errors.Errorf("compression 0x%02x not implemented", m)
 	}
