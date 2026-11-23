@@ -77,6 +77,32 @@ func TestCompress(t *testing.T) {
 	}
 }
 
+func TestReaderWriterBufferReuse(t *testing.T) {
+	// Exercise resize paths: large -> small -> large, and repeated reuse.
+	sizes := []int{0, 1, 3, 1024, 64*1024, 7, 300*1024, 16}
+	for _, m := range MethodValues() {
+		m := m
+		t.Run(m.String(), func(t *testing.T) {
+			w := NewWriter(LevelZero, m)
+			r := NewReader(bytes.NewReader(nil))
+			for _, n := range sizes {
+				data := make([]byte, n)
+				for i := range data {
+					data[i] = byte(i*31 + n)
+				}
+				require.NoError(t, w.Compress(data))
+				got := make([]byte, n)
+				br := bytes.NewReader(w.Data)
+				r.reader = br
+				r.pos = int64(len(r.data)) // force readBlock
+				_, err := io.ReadFull(r, got)
+				require.NoError(t, err)
+				require.Equal(t, data, got)
+			}
+		})
+	}
+}
+
 func BenchmarkWriter_Compress(b *testing.B) {
 	// Highly compressible data.
 	data := bytes.Repeat([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, 1800)
