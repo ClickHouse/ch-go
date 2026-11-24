@@ -612,8 +612,9 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 	}
 }
 
-// Do performs Query on ClickHouse server. A failed exchange closes the
-// client unless the send completed and the server returned a complete exception.
+// Do executes a query on the ClickHouse server.
+// A failed exchange closes the client. The connection can be reused after a
+// server exception if the entire request was sent and the exception was decoded.
 func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	if c.IsClosed() {
 		return ErrClosed
