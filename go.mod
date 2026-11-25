@@ -10,9 +10,9 @@ require (
 	github.com/go-faster/errors v0.8.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.9.0
-	github.com/jackc/puddle/v2 v2.2.3
-	github.com/klauspost/compress v1.20.4
-	github.com/pierrec/lz4/v4 v4.1.33
+	github.com/jackc/puddle/v2 v2.2.4
+	github.com/klauspost/compress v1.20.5
+	github.com/pierrec/lz4/v4 v4.1.34
 	github.com/segmentio/asm v1.2.1
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/otel v1.47.0

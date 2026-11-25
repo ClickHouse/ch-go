@@ -29,7 +29,12 @@ func ToDate32(t time.Time) Date32 {
 		return 0
 	}
 	_, offset := t.Zone()
-	return Date32((t.Unix() + int64(offset)) / secInDay)
+	secs := t.Unix() + int64(offset)
+	days := secs / secInDay
+	if secs%secInDay < 0 {
+		days--
+	}
+	return Date32(days)
 }
 
 // NewDate32 returns the Date32 corresponding to year, month and day in UTC.
