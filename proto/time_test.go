@@ -200,6 +200,26 @@ func TestIntoTime64WithPrecision(t *testing.T) {
 	}
 }
 
+func TestTime64FractionalPrecision(t *testing.T) {
+	const d = time.Second + 234567891*time.Nanosecond
+	// Each entry is the integer stored for d at the corresponding precision.
+	ticks := [...]Time64{1, 12, 123, 1234, 12345, 123456, 1234567, 12345678, 123456789, 1234567891}
+	unit := time.Second
+	for p, want := range ticks {
+		for _, sign := range []Time64{1, -1} {
+			input := time.Duration(sign) * d
+			raw := sign * want
+			if got := IntoTime64WithPrecision(input, Precision(p)); got != raw {
+				t.Errorf("precision %d: encode(%v) = %d, want %d", p, input, int64(got), int64(raw))
+			}
+			if got, expected := raw.ToDurationWithPrecision(Precision(p)), time.Duration(raw)*unit; got != expected {
+				t.Errorf("precision %d: decode(%d) = %v, want %v", p, int64(raw), got, expected)
+			}
+		}
+		unit /= 10
+	}
+}
+
 func TestIntoTime64(t *testing.T) {
 	// IntoTime64 always treat duration with PrecisionMax (which is nanoseconds)
 
