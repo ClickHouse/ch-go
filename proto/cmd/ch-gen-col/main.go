@@ -65,6 +65,9 @@ func (v Variant) ColumnType() string {
 	if v.Kind == KindFixedStr {
 		return fmt.Sprintf(`ColumnTypeFixedString.With("%d")`, v.Bytes())
 	}
+	if v.Kind == KindTime32 {
+		return "ColumnTypeTime"
+	}
 	return "ColumnType" + v.Name()
 }
 

@@ -33,7 +33,7 @@ func (c ColTime32) Rows() int {
 }
 
 func (c ColTime32) Type() ColumnType {
-	return ColumnTypeTime32
+	return ColumnTypeTime
 }
 
 func (c *ColTime32) Infer(t ColumnType) error {
