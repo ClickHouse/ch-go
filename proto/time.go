@@ -20,7 +20,13 @@ func (t Time32) String() string {
 	hours := int(d.Hours())
 	minutes := int(d.Minutes()) % 60
 	secs := int(d.Seconds()) % 60
-	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, secs)
+
+	var sign string
+	if t < 0 {
+		// Print the sign once, not on each component.
+		sign, hours, minutes, secs = "-", -hours, -minutes, -secs
+	}
+	return fmt.Sprintf("%s%02d:%02d:%02d", sign, hours, minutes, secs)
 }
 
 // String implements formatting Time64 to string of form Hour:Minutes:Seconds.NanoSeconds.
@@ -32,9 +38,15 @@ func (t Time64) String() string {
 	secs := int(d.Seconds()) % 60
 	nanos := d.Nanoseconds() % 1e9
 
+	var sign string
+	if t < 0 {
+		// Print the sign once, not on each component.
+		sign, hours, minutes, secs, nanos = "-", -hours, -minutes, -secs, -nanos
+	}
+
 	// NOTE(kavi): do we need multiple formatting depending on precision (3, 6, 9) instead of
 	// always 9?
-	return fmt.Sprintf("%02d:%02d:%02d.%09d", hours, minutes, secs, nanos)
+	return fmt.Sprintf("%s%02d:%02d:%02d.%09d", sign, hours, minutes, secs, nanos)
 }
 
 // ParseTime32 parses string of form "12:34:56" to valid Time32 type.
@@ -59,7 +71,16 @@ func ParseTime32(s string) (Time32, error) {
 		return 0, err
 	}
 
+	// A leading "-" applies to the whole value, including "-00".
+	negative := strings.HasPrefix(parts[0], "-")
+	if negative {
+		hours, minutes, seconds = abs(hours), abs(minutes), abs(seconds)
+	}
+
 	totalSeconds := int32(hours*3600 + minutes*60 + seconds)
+	if negative {
+		totalSeconds = -totalSeconds
+	}
 	return Time32(totalSeconds), nil
 }
 
@@ -90,6 +111,12 @@ func ParseTime64(s string) (Time64, error) {
 		return 0, err
 	}
 
+	// A leading "-" applies to the whole value, including "-00".
+	negative := strings.HasPrefix(parts[0], "-")
+	if negative {
+		hours, minutes, seconds = abs(hours), abs(minutes), abs(seconds)
+	}
+
 	// Calculate total seconds since midnight
 	totalSeconds := int64(hours*3600 + minutes*60 + seconds)
 
@@ -110,7 +137,18 @@ func ParseTime64(s string) (Time64, error) {
 	}
 
 	// Store as decimal with nanosecond scale
-	return Time64(totalSeconds*1e9 + fractional), nil
+	res := totalSeconds*1e9 + fractional
+	if negative {
+		res = -res
+	}
+	return Time64(res), nil
+}
+
+func abs(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
 }
 
 // IntoTime32 converts time.Druation into Time32 up to seconds precision.

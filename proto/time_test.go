@@ -3,6 +3,8 @@ package proto
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestTime32_String(t *testing.T) {
@@ -462,4 +464,32 @@ func BenchmarkFromTime64(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = IntoTime64(t)
 	}
+}
+
+func TestTime_Negative(t *testing.T) {
+	for _, tt := range []struct {
+		input string
+		value Time32
+	}{
+		{"-01:02:03", -3723},
+		{"-00:30:00", -1800},
+		{"-00:00:01", -1},
+		{"-999:59:59", -3599999},
+	} {
+		v, err := ParseTime32(tt.input)
+		require.NoError(t, err)
+		require.Equal(t, tt.value, v, tt.input)
+		require.Equal(t, tt.input, tt.value.String())
+
+		v64, err := ParseTime64(tt.input + ".456")
+		require.NoError(t, err)
+		want := Time64(tt.value)*1e9 - 456e6
+		require.Equal(t, want, v64, tt.input)
+		require.Equal(t, tt.input+".456000000", want.String())
+	}
+
+	// Form that String() returned for negative values before.
+	v, err := ParseTime32("-1:-2:-3")
+	require.NoError(t, err)
+	require.Equal(t, Time32(-3723), v)
 }
