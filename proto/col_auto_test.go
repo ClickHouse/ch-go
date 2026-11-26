@@ -13,6 +13,11 @@ func TestColAuto_Infer(t *testing.T) {
 		ColumnTypeArray.Sub(ColumnTypeLowCardinality.Sub(ColumnTypeString)),
 		ColumnTypeDate,
 		ColumnTypeDate32,
+		ColumnTypeTime,
+		ColumnTypeArray.Sub(ColumnTypeTime),
+		ColumnTypeNullable.Sub(ColumnTypeTime),
+		ColumnTypeLowCardinality.Sub(ColumnTypeTime),
+		"Array(Nullable(Time))",
 		ColumnTypeInt8,
 		ColumnTypeInt16,
 		ColumnTypeArray.Sub(ColumnTypeInt16),
@@ -66,4 +71,7 @@ func TestColAuto_Infer(t *testing.T) {
 		r.Data.Reset()
 		require.Equal(t, 0, r.Data.Rows())
 	}
+
+	var auto ColAuto
+	require.Error(t, auto.Infer("Time32"))
 }

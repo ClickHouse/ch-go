@@ -233,7 +233,8 @@ const (
 	ColumnTypeIPv6           ColumnType = "IPv6"
 	ColumnTypeDateTime       ColumnType = "DateTime"
 	ColumnTypeDateTime64     ColumnType = "DateTime64"
-	ColumnTypeTime32         ColumnType = "Time32"
+	ColumnTypeTime           ColumnType = "Time"
+	ColumnTypeTime32         ColumnType = "Time" // Deprecated: Use ColumnTypeTime instead
 	ColumnTypeTime64         ColumnType = "Time64"
 	ColumnTypeDate           ColumnType = "Date"
 	ColumnTypeDate32         ColumnType = "Date32"

@@ -71,6 +71,9 @@ func TestColumnType_Elem(t *testing.T) {
 				{}, // blank
 				{A: ColumnTypeInt32, B: ColumnTypeInt32},
 				{A: ColumnTypeDateTime, B: ColumnTypeDateTime},
+				{A: ColumnTypeTime, B: ColumnTypeTime},
+				{A: ColumnTypeArray.Sub(ColumnTypeTime), B: ColumnTypeArray.Sub(ColumnTypeTime)},
+				{A: ColumnTypeNullable.Sub(ColumnTypeTime), B: ColumnTypeNullable.Sub(ColumnTypeTime)},
 				{A: ColumnTypeArray.Sub(ColumnTypeInt32), B: ColumnTypeArray.Sub(ColumnTypeInt32)},
 				{A: ColumnTypeDateTime.With("Europe/Moscow"), B: ColumnTypeDateTime.With("UTC")},
 				{A: ColumnTypeDateTime.With("Europe/Moscow"), B: ColumnTypeDateTime},
@@ -97,6 +100,8 @@ func TestColumnType_Elem(t *testing.T) {
 				{A: ColumnTypeInt64}, // blank
 				{A: ColumnTypeInt32, B: ColumnTypeInt64},
 				{A: ColumnTypeDateTime, B: ColumnTypeInt32},
+				{A: ColumnTypeTime, B: "Time32"},
+				{A: ColumnTypeTime, B: ColumnTypeTime64.With("3")},
 				{A: ColumnTypeArray.Sub(ColumnTypeInt32), B: ColumnTypeArray.Sub(ColumnTypeInt64)},
 				{A: "Map(String,String)", B: "Map(String,Int32)"},
 				{A: "Enum16('increment' = 1, 'gauge' = 2)", B: "Int8"},
