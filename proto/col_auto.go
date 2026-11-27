@@ -161,6 +161,20 @@ func (c *ColAuto) Infer(t ColumnType) error {
 			c.Data = v
 			c.DataType = t
 			return nil
+		case ColumnTypeAggregateFunction:
+			// AggregateFunction(name(parameters), argument types).
+			elem := string(t.Elem())
+			name := elem
+			if i := strings.IndexAny(elem, "(,"); i >= 0 {
+				name = elem[:i]
+			}
+			// A Nullable argument adds a flag byte before the sketch, and
+			// DDSketch does not read it.
+			if (name == "quantileDD" || name == "quantilesDD") && !strings.Contains(elem, "Nullable(") {
+				c.Data = NewAggregateFunction[DDSketch](t)
+				c.DataType = t
+				return nil
+			}
 		}
 		return errors.Errorf("automatic column inference not supported for %q", t)
 	}
