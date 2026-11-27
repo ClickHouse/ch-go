@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"slices"
 	"strconv"
 
 	"github.com/go-faster/errors"
@@ -67,6 +68,9 @@ func (c *ColFixedStr) Append(b []byte) {
 }
 
 func (c *ColFixedStr) AppendArr(vs [][]byte) {
+	if c.Size > 0 {
+		c.Buf = slices.Grow(c.Buf, len(vs)*c.Size)
+	}
 	for _, v := range vs {
 		c.Append(v)
 	}

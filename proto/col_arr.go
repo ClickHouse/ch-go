@@ -1,6 +1,8 @@
 package proto
 
 import (
+	"slices"
+
 	"github.com/go-faster/errors"
 )
 
@@ -156,6 +158,7 @@ func (c *ColArr[T]) Append(v []T) {
 
 // AppendArr appends new slice of rows to column.
 func (c *ColArr[T]) AppendArr(vs [][]T) {
+	c.Offsets = slices.Grow(c.Offsets, len(vs))
 	for _, v := range vs {
 		c.Data.AppendArr(v)
 		c.Offsets = append(c.Offsets, uint64(c.Data.Rows()))
