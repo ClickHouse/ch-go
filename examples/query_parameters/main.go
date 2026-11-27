@@ -27,8 +27,8 @@ func main() {
 		literalBackslash   proto.ColStr
 	)
 
-	// ch.Parameters adds single quotes around each value. Backslash escapes
-	// therefore need to survive both quoted-value and parameter-value parsing.
+	// ch.Parameters quotes each value and escapes \ and ' for the Field dump.
+	// Pass Escaped-format text; \n / \t are interpreted after readQuoted.
 	err = conn.Do(ctx, ch.Query{
 		Body: `SELECT
 			{user_id:UInt64},
@@ -37,9 +37,9 @@ func main() {
 			{literal_backslash:String}`,
 		Parameters: ch.Parameters(map[string]any{
 			"user_id":             12345,
-			"escaped_raw":         `line 1\\nline 2\\tend`,
-			"escaped_interpreted": "line 1\\\\nline 2\\\\tend",
-			"literal_backslash":   `line 1\\\\nline 2`,
+			"escaped_raw":         `line 1\nline 2\tend`,
+			"escaped_interpreted": "line 1\\nline 2\\tend",
+			"literal_backslash":   `line 1\\nline 2`,
 		}),
 		Result: proto.Results{
 			{Data: &userID},
