@@ -30,7 +30,7 @@ type Writer struct {
 // Compress buf into Data.
 func (w *Writer) Compress(buf []byte) error {
 	maxSize := lz4.CompressBlockBound(len(buf))
-	w.Data = append(w.Data[:0], make([]byte, maxSize+headerSize)...)
+	w.Data = resize(w.Data, maxSize+headerSize)
 	_ = w.Data[:headerSize]
 	w.Data[hMethod] = byte(methodTable[w.method])
 
