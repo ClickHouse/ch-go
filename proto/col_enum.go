@@ -140,6 +140,8 @@ func (e *ColEnum) DecodeColumn(r *Reader, rows int) error {
 
 func (e *ColEnum) Reset() {
 	e.raw().Reset()
+
+	clear(e.Values)
 	e.Values = e.Values[:0]
 }
 
