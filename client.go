@@ -18,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	cryptossh "golang.org/x/crypto/ssh"
 
@@ -280,17 +281,41 @@ func (c *Client) flushBuf(ctx context.Context, b *proto.Buffer) error {
 	return nil
 }
 
-func (c *Client) flush(ctx context.Context) error {
+func (c *Client) flush(ctx context.Context) (err error) {
 	if err := ctx.Err(); err != nil {
 		return errors.Wrap(err, "context")
 	}
-	if deadline, ok := ctx.Deadline(); ok {
+	deadline, hasDeadline := ctx.Deadline()
+	if hasDeadline {
 		if err := c.conn.SetWriteDeadline(deadline); err != nil {
 			return errors.Wrap(err, "set write deadline")
 		}
-		// Reset deadline.
-		defer func() { _ = c.conn.SetWriteDeadline(time.Time{}) }()
 	}
+
+	// Interrupt a blocked write without closing a connection whose write already succeeded.
+	callbackDone := make(chan struct{})
+	var cancelErr error
+	stop := context.AfterFunc(ctx, func() {
+		cancelErr = c.conn.SetWriteDeadline(time.Now())
+		if cancelErr != nil && !c.IsClosed() {
+			cancelErr = multierr.Append(cancelErr, c.Close())
+		}
+		close(callbackDone)
+	})
+	defer func() {
+		interrupted := !stop()
+		if interrupted {
+			<-callbackDone
+			err = multierr.Append(err, cancelErr)
+		}
+		// Join the cancellation callback before resetting its deadline or allowing reuse.
+		if hasDeadline || interrupted {
+			if resetErr := c.conn.SetWriteDeadline(time.Time{}); resetErr != nil {
+				err = multierr.Append(err, errors.Wrap(resetErr, "reset write deadline"))
+			}
+		}
+	}()
+
 	n, err := c.writer.Flush()
 	if err != nil {
 		return err

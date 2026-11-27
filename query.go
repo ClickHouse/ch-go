@@ -612,7 +612,9 @@ func (c *Client) handlePacket(ctx context.Context, p proto.ServerCode, q Query) 
 	}
 }
 
-// Do performs Query on ClickHouse server.
+// Do executes a query on the ClickHouse server.
+// A failed exchange closes the client. The connection can be reused after a
+// server exception if the entire request was sent and the exception was decoded.
 func (c *Client) Do(ctx context.Context, q Query) (err error) {
 	if c.IsClosed() {
 		return ErrClosed
@@ -692,11 +694,15 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 			span.End()
 		}()
 	}
+	callerCtx := ctx
 	g, ctx := errgroup.WithContext(ctx)
 	done := make(chan struct{})
 	var (
-		gotException atomic.Bool
-		colInfo      chan proto.ColInfoInput
+		decodedException atomic.Bool
+		sendComplete     atomic.Bool
+		watcherCloseErr  error
+		receiveErr       error
+		colInfo          chan proto.ColInfoInput
 	)
 	if q.Result == nil && len(q.Input) > 0 {
 		// Handling input column type inference, e.g. enums.
@@ -727,13 +733,21 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		if err := c.flush(ctx); err != nil {
 			return errors.Wrap(err, "flush")
 		}
+
+		if len(q.Input) == 0 {
+			sendComplete.Store(true)
+			return nil
+		}
 		var info proto.ColInfoInput
 		if colInfo != nil {
 			c.lg.Debug("Waiting for column info")
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-			case v := <-colInfo:
+			case v, ok := <-colInfo:
+				if !ok {
+					return nil
+				}
 				info = v
 			}
 		}
@@ -743,11 +757,15 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		if err := c.flush(ctx); err != nil {
 			return errors.Wrap(err, "flush")
 		}
+		sendComplete.Store(true)
 		return nil
 	})
-	g.Go(func() error {
+	g.Go(func() (err error) {
 		// Receiving query result, data and telemetry.
-		defer close(done)
+		defer func() {
+			receiveErr = err
+			close(done)
+		}()
 		if colInfo != nil {
 			defer close(colInfo)
 		}
@@ -777,9 +795,9 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 				return nil
 			default:
 				if err := c.handlePacket(ctx, code, q); err != nil {
-					if IsException(err) {
+					if code == proto.ServerCodeException && IsException(err) {
 						// Prevent query cancellation on exception.
-						gotException.Store(true)
+						decodedException.Store(true)
 					}
 					return errors.Wrap(err, "handle packet")
 				}
@@ -787,13 +805,57 @@ func (c *Client) Do(ctx context.Context, q Query) (err error) {
 		}
 	})
 	g.Go(func() error {
-		<-done
+		var abort bool
+		select {
+		case <-done:
+			abort = receiveErr != nil || ctx.Err() != nil
+		case <-ctx.Done():
+			abort = true
+		}
+
+		if decodedException.Load() {
+			// flush interrupts pending writes on context cancellation; inspect their result after Wait.
+			return nil
+		}
+		// Incomplete writes cannot be canceled by writing another packet concurrently.
+		if !sendComplete.Load() {
+			if abort {
+				watcherCloseErr = c.Close()
+				return callerCtx.Err()
+			}
+			return nil
+		}
 		// Handling query cancellation if needed.
-		if ctx.Err() != nil && !gotException.Load() {
+		if ctx.Err() != nil && !decodedException.Load() {
 			err := multierr.Append(ctx.Err(), c.cancelQuery())
 			return errors.Wrap(err, "canceled")
 		}
 		return nil
 	})
-	return g.Wait()
+
+	err = g.Wait()
+	if err == nil && !sendComplete.Load() {
+		err = errors.New("query ended before input was sent")
+	}
+
+	// The watcher can unblock a write before errgroup records the read failure.
+	if receiveErr != nil && receiveErr != ctx.Err() && !errors.Is(err, receiveErr) {
+		err = multierr.Append(err, receiveErr)
+	}
+	if watcherCloseErr != nil && !errors.Is(watcherCloseErr, ErrClosed) {
+		err = multierr.Append(err, watcherCloseErr)
+	}
+
+	if err != nil && (!decodedException.Load() || !sendComplete.Load()) {
+		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
+			err = multierr.Append(err, closeErr)
+		}
+	}
+	if err == nil {
+		return nil
+	}
+	if ctxErr := callerCtx.Err(); ctxErr != nil && !errors.Is(err, ctxErr) {
+		err = multierr.Append(err, ctxErr)
+	}
+	return err
 }

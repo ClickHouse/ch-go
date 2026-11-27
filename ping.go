@@ -6,12 +6,14 @@ import (
 	"github.com/go-faster/errors"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/multierr"
 
 	"github.com/ClickHouse/ch-go/otelch"
 	"github.com/ClickHouse/ch-go/proto"
 )
 
-// Ping server.
+// Ping checks whether the server responds. A failed exchange closes the client
+// unless the server returned a complete exception.
 //
 // Do not call concurrently with Do.
 func (c *Client) Ping(ctx context.Context) (err error) {
@@ -36,12 +38,30 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 			span.End()
 		}()
 	}
+	if err := ctx.Err(); err != nil {
+		return errors.Wrap(err, "context")
+	}
+
+	decodedException := false
+	defer func() {
+		if err == nil || decodedException {
+			return
+		}
+		if closeErr := c.Close(); closeErr != nil && !errors.Is(closeErr, ErrClosed) {
+			err = multierr.Append(err, closeErr)
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil && !errors.Is(err, ctxErr) {
+			err = multierr.Append(err, ctxErr)
+		}
+	}()
+
 	c.writer.ChainBuffer(func(b *proto.Buffer) {
 		b.Encode(proto.ClientCodePing)
 	})
 	if err := c.flush(ctx); err != nil {
 		return errors.Wrap(err, "flush")
 	}
+
 	p, err := c.packet(ctx)
 	if err != nil {
 		return errors.Wrap(err, "read")
@@ -54,6 +74,7 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 		if err != nil {
 			return errors.Wrap(err, "decode exception")
 		}
+		decodedException = true
 		return errors.Wrap(e, "exception")
 	default:
 		return errors.Errorf("unexpected packet %s", p)
