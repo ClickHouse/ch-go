@@ -372,6 +372,35 @@ func TestClient_Query(t *testing.T) {
 		require.NoError(t, conn.Do(ctx, selectData), "select")
 		require.Equal(t, blocks*size, gotTotal)
 	})
+	t.Run("InsertStreamFirstBlockEOF", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "CREATE TABLE test_table (id UInt8) ENGINE = MergeTree ORDER BY tuple()",
+		}), "create table")
+
+		var data proto.ColUInt8
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "id", Data: &data},
+			},
+			OnInput: func(ctx context.Context) error {
+				data = append(data[:0], 1, 2, 3)
+				return io.EOF
+			},
+		}), "insert")
+
+		var gotData proto.ColUInt8
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT id FROM test_table ORDER BY id",
+			Result: proto.Results{
+				{Name: "id", Data: &gotData},
+			},
+		}), "select")
+		require.Equal(t, proto.ColUInt8{1, 2, 3}, gotData)
+	})
 	t.Run("InsertArr", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)

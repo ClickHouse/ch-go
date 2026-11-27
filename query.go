@@ -396,10 +396,14 @@ func (c *Client) sendInput(ctx context.Context, info proto.ColInfoInput, q Query
 	if f != nil && rows == 0 {
 		// Fetching initial input if no rows provided.
 		if err := f(ctx); err != nil {
-			if errors.Is(err, io.EOF) {
+			if !errors.Is(err, io.EOF) {
+				return errors.Wrap(err, "input")
+			}
+			if q.Input[0].Data.Rows() == 0 {
 				goto End // initial input was blank
 			}
-			return errors.Wrap(err, "input")
+			// Write the rows appended with io.EOF as the only block.
+			f = nil
 		}
 	}
 	// Streaming input to ClickHouse server.
