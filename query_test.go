@@ -846,6 +846,61 @@ func TestClient_Query(t *testing.T) {
 			require.Equal(t, data.Row(i), gotData.Row(i))
 		}
 	})
+	t.Run("InsertMapOfStringMap", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v Map(String, Map(String, String))) ENGINE = MergeTree ORDER BY tuple()",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		newData := func() *proto.ColMap[string, map[string]string] {
+			return proto.NewMap[string, map[string]string](new(proto.ColStr),
+				proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr)),
+			)
+		}
+		data := newData()
+		data.AppendArr([]map[string]map[string]string{
+			{"foo": {"a": "b"}},
+			{"bar": {}, "baz": {"c": "d"}},
+		})
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		gotData := newData()
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: gotData},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, selectData), "select")
+		require.Equal(t, data.Rows(), gotData.Rows())
+		for i := 0; i < data.Rows(); i++ {
+			require.Equal(t, data.Row(i), gotData.Row(i))
+		}
+	})
+	t.Run("SelectMapOfStringDateTime64", func(t *testing.T) {
+		t.Parallel()
+		data := proto.NewMap[string, time.Time](new(proto.ColStr), new(proto.ColDateTime64))
+		selectData := Query{
+			Body: "SELECT map('k', toDateTime64('2024-01-02 03:04:05.678', 3, 'UTC')) AS v",
+			Result: proto.Results{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectData), "select")
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, map[string]time.Time{
+			"k": time.Date(2024, 1, 2, 3, 4, 5, 678_000_000, time.UTC),
+		}, data.Row(0))
+	})
 	t.Run("InsertNullableString", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
