@@ -846,6 +846,124 @@ func TestClient_Query(t *testing.T) {
 			require.Equal(t, data.Row(i), gotData.Row(i))
 		}
 	})
+	t.Run("InsertMapOfStringMap", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+		createTable := Query{
+			Body: "CREATE TABLE test_table (v Map(String, Map(String, String))) ENGINE = MergeTree ORDER BY tuple()",
+		}
+		require.NoError(t, conn.Do(ctx, createTable), "create table")
+
+		newData := func() *proto.ColMap[string, map[string]string] {
+			return proto.NewMap[string, map[string]string](new(proto.ColStr),
+				proto.NewMap[string, string](new(proto.ColStr), new(proto.ColStr)),
+			)
+		}
+		data := newData()
+		data.AppendArr([]map[string]map[string]string{
+			{"foo": {"a": "b"}},
+			{"bar": {}, "baz": {"c": "d"}},
+		})
+
+		insertQuery := Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, insertQuery), "insert")
+
+		gotData := newData()
+		selectData := Query{
+			Body: "SELECT * FROM test_table",
+			Result: proto.Results{
+				{Name: "v", Data: gotData},
+			},
+		}
+		require.NoError(t, conn.Do(ctx, selectData), "select")
+		require.Equal(t, data.Rows(), gotData.Rows())
+		for i := 0; i < data.Rows(); i++ {
+			require.Equal(t, data.Row(i), gotData.Row(i))
+		}
+	})
+	t.Run("SelectMapOfStringDateTime64", func(t *testing.T) {
+		t.Parallel()
+		data := proto.NewMap[string, time.Time](new(proto.ColStr), new(proto.ColDateTime64))
+		selectData := Query{
+			Body: "SELECT map('k', toDateTime64('2024-01-02 03:04:05.678', 3, 'UTC')) AS v",
+			Result: proto.Results{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectData), "select")
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, map[string]time.Time{
+			"k": time.Date(2024, 1, 2, 3, 4, 5, 678_000_000, time.UTC),
+		}, data.Row(0))
+	})
+	t.Run("SelectMapOfStringEnum8", func(t *testing.T) {
+		t.Parallel()
+		data := proto.NewMap[string, int8](new(proto.ColStr), new(proto.ColInt8))
+		selectData := Query{
+			Body: `SELECT map('k', CAST(1, 'Enum8(\'a\' = 1)')) AS v`,
+			Result: proto.Results{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectData), "select")
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, map[string]int8{"k": 1}, data.Row(0))
+	})
+	t.Run("SelectMapOfStringDecimal", func(t *testing.T) {
+		t.Parallel()
+		data := proto.NewMap[string, proto.Decimal64](new(proto.ColStr), new(proto.ColDecimal64))
+		selectData := Query{
+			Body: `SELECT map('k', CAST(1.25, 'Decimal(10, 2)')) AS v`,
+			Result: proto.Results{
+				{Name: "v", Data: data},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectData), "select")
+		require.Equal(t, 1, data.Rows())
+		require.Equal(t, map[string]proto.Decimal64{"k": 125}, data.Row(0))
+	})
+	t.Run("SelectTupleOfEnum8AndDecimal", func(t *testing.T) {
+		t.Parallel()
+		var (
+			enum8 proto.ColInt8
+			dec   proto.ColDecimal64
+			str   proto.ColStr
+		)
+		selectData := Query{
+			Body: `SELECT tuple(CAST(1, 'Enum8(\'a\' = 1)'), CAST(1.25, 'Decimal(10, 2)'), 'v') AS v`,
+			Result: proto.Results{
+				{Name: "v", Data: proto.ColTuple{&enum8, &dec, &str}},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectData), "select")
+		require.Equal(t, proto.ColInt8{1}, enum8)
+		require.Equal(t, proto.ColDecimal64{125}, dec)
+		require.Equal(t, "v", str.Row(0))
+	})
+	t.Run("SelectNamedTupleOfEnum8", func(t *testing.T) {
+		t.Parallel()
+		var (
+			enum8 proto.ColInt8
+			str   proto.ColStr
+		)
+		selectData := Query{
+			Body: `SELECT CAST((1, 'v'), 'Tuple(a Enum8(\'x\' = 1), b String)') AS v`,
+			Result: proto.Results{
+				{Name: "v", Data: proto.ColTuple{
+					proto.Named[int8](&enum8, "a"),
+					proto.Named[string](&str, "b"),
+				}},
+			},
+		}
+		require.NoError(t, Conn(t).Do(ctx, selectData), "select")
+		require.Equal(t, proto.ColInt8{1}, enum8)
+		require.Equal(t, "v", str.Row(0))
+	})
 	t.Run("InsertNullableString", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)
