@@ -125,10 +125,10 @@ func IntoTime64(t time.Duration) Time64 {
 
 // IntoTime64WithPrecision converts time.Duration to Time64 with specified precision
 func IntoTime64WithPrecision(d time.Duration, precision Precision) Time64 {
-	res := truncateDuration(d, precision)
-	// When the column type is say Time64(6) we store Time64 as microseconds. Basically scale to
-	// it's precission
-	return Time64(res.Nanoseconds() / precision.Scale())
+	if !precision.Valid() {
+		return Time64(d.Truncate(time.Millisecond))
+	}
+	return Time64(d / precision.Duration())
 }
 
 // Duration converts Time32 into time.Duration up to seconds precision
@@ -145,28 +145,8 @@ func (t Time64) Duration() time.Duration {
 // ToDurationWithPrecision converts Time64 to time.Duration with specified precision
 // up until PrecisionMax (nanoseconds)
 func (t Time64) ToDurationWithPrecision(precision Precision) time.Duration {
-	// `t` is stored with precision `precision`. Scale it to nanoseconds before converting it into
-	// time.Duration. Because time.Duration is always nanoseconds.
-	res := time.Duration(int64(t) * precision.Scale())
-	return truncateDuration(res, precision)
-}
-
-func truncateDuration(d time.Duration, precision Precision) time.Duration {
-	var res time.Duration
-	switch precision {
-	case PrecisionSecond:
-		res = d.Truncate(time.Second)
-	case PrecisionMilli:
-		res = d.Truncate(time.Millisecond)
-	case PrecisionMicro:
-		res = d.Truncate(time.Microsecond)
-	// NOTE: NO additional case needed for PrecisionMax, given it's type alias for PrecisionNano
-	case PrecisionNano:
-		res = d
-	default:
-		// if wrong precision, treat it as Millisecond.
-		res = d.Truncate(time.Millisecond)
+	if !precision.Valid() {
+		return time.Duration(t).Truncate(time.Millisecond)
 	}
-
-	return res
+	return time.Duration(t) * precision.Duration()
 }
