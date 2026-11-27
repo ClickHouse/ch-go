@@ -656,6 +656,35 @@ func TestClient_Query(t *testing.T) {
 			},
 		}), "insert")
 	})
+	t.Run("NullableFixedStr", func(t *testing.T) {
+		t.Parallel()
+		conn := Conn(t)
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "CREATE TABLE test_table (id UInt8, v Nullable(FixedString(2))) ENGINE = MergeTree ORDER BY id",
+		}), "create table")
+
+		v := proto.NewColNullable[[]byte](&proto.ColFixedStr{Size: 2})
+		v.Append(proto.NewNullable([]byte("ab")))
+		v.Append(proto.Null[[]byte]())
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "INSERT INTO test_table VALUES",
+			Input: []proto.InputColumn{
+				{Name: "id", Data: proto.ColUInt8{1, 2}},
+				{Name: "v", Data: v},
+			},
+		}), "insert")
+
+		got := proto.NewColNullable[[]byte](&proto.ColFixedStr{Size: 2})
+		require.NoError(t, conn.Do(ctx, Query{
+			Body: "SELECT v FROM test_table ORDER BY id",
+			Result: proto.Results{
+				{Name: "v", Data: got},
+			},
+		}), "select")
+		require.Equal(t, 2, got.Rows())
+		require.Equal(t, proto.NewNullable([]byte("ab")), got.Row(0))
+		require.Equal(t, proto.Nullable[[]byte]{Value: []byte{0, 0}}, got.Row(1))
+	})
 	t.Run("ArrayLowCardinality", func(t *testing.T) {
 		t.Parallel()
 		conn := Conn(t)

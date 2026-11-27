@@ -66,6 +66,15 @@ func (c *ColFixedStr) Append(b []byte) {
 	c.Buf = append(c.Buf, b...)
 }
 
+// appendNull appends Size zero bytes, the value of a NULL row in
+// Nullable(FixedString(Size)). Panics if Size is not set.
+func (c *ColFixedStr) appendNull() {
+	if c.Size == 0 {
+		panic("invalid size: set Size before appending NULL")
+	}
+	c.Buf = append(c.Buf, make([]byte, c.Size)...)
+}
+
 func (c *ColFixedStr) AppendArr(vs [][]byte) {
 	for _, v := range vs {
 		c.Append(v)

@@ -102,3 +102,47 @@ func TestColNullable(t *testing.T) {
 		requireNoShortRead(t, buf.Buf, colAware(dec, col.Rows()))
 	})
 }
+
+func TestColNullable_FixedStr(t *testing.T) {
+	col := NewColNullable[[]byte](&ColFixedStr{Size: 2})
+	v := []Nullable[[]byte]{
+		NewNullable([]byte("ab")),
+		Null[[]byte](),
+		NewNullable([]byte("cd")),
+	}
+	col.AppendArr(v)
+	require.Equal(t, 3, col.Rows())
+	require.Equal(t, 3, col.Values.Rows())
+	require.Equal(t, Nullable[[]byte]{Value: []byte{0, 0}}, col.Row(1))
+
+	var buf Buffer
+	col.EncodeColumn(&buf)
+	t.Run("Ok", func(t *testing.T) {
+		r := NewReader(bytes.NewReader(buf.Buf))
+		dec := NewColNullable[[]byte](&ColFixedStr{Size: 2})
+		require.NoError(t, dec.DecodeColumn(r, col.Rows()))
+		for i := range v {
+			assert.Equal(t, col.Row(i), dec.Row(i))
+		}
+	})
+	t.Run("Array", func(t *testing.T) {
+		arr := NewColNullable[[]byte](&ColFixedStr{Size: 2}).Array()
+		arr.Append([]Nullable[[]byte]{Null[[]byte](), NewNullable([]byte("ab"))})
+		require.Equal(t, 1, arr.Rows())
+		require.Equal(t, []Nullable[[]byte]{
+			{Value: []byte{0, 0}},
+			NewNullable([]byte("ab")),
+		}, arr.Row(0))
+	})
+	t.Run("AutoSize", func(t *testing.T) {
+		auto := NewColNullable[[]byte](&ColFixedStr{})
+		auto.Append(NewNullable([]byte("ab")))
+		auto.Append(Null[[]byte]())
+		require.Equal(t, 2, auto.Values.Rows())
+
+		first := NewColNullable[[]byte](&ColFixedStr{})
+		require.Panics(t, func() {
+			first.Append(Null[[]byte]())
+		})
+	})
+}
