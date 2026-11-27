@@ -110,7 +110,17 @@ func (c *ColNullable[T]) Append(v Nullable[T]) {
 		null = boolFalse
 	}
 	c.Nulls.Append(null)
+	if n, ok := c.Values.(nullAppender); ok && !v.Set {
+		n.appendNull()
+		return
+	}
 	c.Values.Append(v.Value)
+}
+
+// nullAppender is a column where the zero value of T is not a valid row,
+// so a NULL row needs its own value.
+type nullAppender interface {
+	appendNull()
 }
 
 func (c *ColNullable[T]) AppendArr(v []Nullable[T]) {
