@@ -28,32 +28,53 @@ type Writer struct {
 }
 
 // Compress buf into Data.
+//
+// Data is a sequence of compressed blocks, each holding at most
+// maxCompressBlockSize bytes of buf, like the blocks of `clickhouse-client`.
 func (w *Writer) Compress(buf []byte) error {
+	w.Data = w.Data[:0]
+	for {
+		n := min(len(buf), maxCompressBlockSize)
+		if err := w.compressBlock(buf[:n]); err != nil {
+			return err
+		}
+		buf = buf[n:]
+		if len(buf) == 0 {
+			return nil
+		}
+	}
+}
+
+// compressBlock appends buf to Data as one compressed block.
+func (w *Writer) compressBlock(buf []byte) error {
+	start := len(w.Data)
 	maxSize := lz4.CompressBlockBound(len(buf))
-	w.Data = append(w.Data[:0], make([]byte, maxSize+headerSize)...)
-	_ = w.Data[:headerSize]
-	w.Data[hMethod] = byte(methodTable[w.method])
+	w.Data = append(w.Data, make([]byte, maxSize+headerSize)...)
+	block := w.Data[start:]
+	_ = block[:headerSize]
+	block[hMethod] = byte(methodTable[w.method])
 
 	var n int
 
 	switch w.method {
 	case LZ4:
-		compressedSize, err := w.lz4.CompressBlock(buf, w.Data[headerSize:])
+		compressedSize, err := w.lz4.CompressBlock(buf, block[headerSize:])
 		if err != nil {
 			return errors.Wrap(err, "block")
 		}
 		n = compressedSize
 	case LZ4HC:
-		compressedSize, err := w.lz4hc.CompressBlock(buf, w.Data[headerSize:])
+		compressedSize, err := w.lz4hc.CompressBlock(buf, block[headerSize:])
 		if err != nil {
 			return errors.Wrap(err, "block")
 		}
 		n = compressedSize
 	case ZSTD:
-		w.Data = w.zstd.EncodeAll(buf, w.Data[:headerSize])
-		n = len(w.Data) - headerSize
+		w.Data = w.zstd.EncodeAll(buf, w.Data[:start+headerSize])
+		block = w.Data[start:]
+		n = len(block) - headerSize
 	case None:
-		n = copy(w.Data[headerSize:], buf)
+		n = copy(block[headerSize:], buf)
 	}
 
 	// security: https://github.com/ClickHouse/ch-go/pull/1041
@@ -61,12 +82,13 @@ func (w *Writer) Compress(buf []byte) error {
 		return errors.New("compressed size overflows uint32")
 	}
 
-	w.Data = w.Data[:n+headerSize]
-	binary.LittleEndian.PutUint32(w.Data[hRawSize:], uint32(n+compressHeaderSize))
-	binary.LittleEndian.PutUint32(w.Data[hDataSize:], uint32(len(buf)))
-	h := city.CH128(w.Data[hMethod:])
-	binary.LittleEndian.PutUint64(w.Data[0:8], h.Low)
-	binary.LittleEndian.PutUint64(w.Data[8:16], h.High)
+	w.Data = w.Data[:start+n+headerSize]
+	block = w.Data[start:]
+	binary.LittleEndian.PutUint32(block[hRawSize:], uint32(n+compressHeaderSize))
+	binary.LittleEndian.PutUint32(block[hDataSize:], uint32(len(buf)))
+	h := city.CH128(block[hMethod:])
+	binary.LittleEndian.PutUint64(block[0:8], h.Low)
+	binary.LittleEndian.PutUint64(block[8:16], h.High)
 
 	return nil
 }
