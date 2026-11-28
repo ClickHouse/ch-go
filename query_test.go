@@ -1184,6 +1184,27 @@ func TestClientCompression(t *testing.T) {
 					},
 				}
 				require.NoError(t, client.Do(ctx, insertQuery), "insert")
+
+				// The block is above 1MB, so it is sent as more than one compressed block.
+				var (
+					gotData proto.ColStr
+					gotRows int
+				)
+				selectData := Query{
+					Body: "SELECT v FROM test_table_big",
+					Result: proto.Results{
+						{Name: "v", Data: &gotData},
+					},
+					OnResult: func(ctx context.Context, b proto.Block) error {
+						for i := 0; i < gotData.Rows(); i++ {
+							require.Equal(t, buf, gotData.RowBytes(i))
+						}
+						gotRows += gotData.Rows()
+						return nil
+					},
+				}
+				require.NoError(t, client.Do(ctx, selectData), "select")
+				require.Equal(t, data.Rows(), gotRows)
 			})
 		}
 	}

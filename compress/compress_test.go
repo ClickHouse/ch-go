@@ -2,6 +2,7 @@ package compress
 
 import (
 	"bytes"
+	"encoding/binary"
 	"io"
 	"math/rand"
 	"os"
@@ -73,6 +74,33 @@ func TestCompress(t *testing.T) {
 					}
 				}
 			})
+		})
+	}
+}
+
+func TestCompressBlockSize(t *testing.T) {
+	data := randData(maxCompressBlockSize*2 + 100)
+
+	for i := range MethodValues() {
+		m := MethodValues()[i]
+		t.Run(m.String(), func(t *testing.T) {
+			w := NewWriter(LevelZero, m)
+			require.NoError(t, w.Compress(data))
+
+			var sizes []int
+			for b := w.Data; len(b) > 0; {
+				require.GreaterOrEqual(t, len(b), headerSize)
+				rawSize := int(binary.LittleEndian.Uint32(b[hRawSize:]))
+				require.LessOrEqual(t, checksumSize+rawSize, len(b))
+				sizes = append(sizes, int(binary.LittleEndian.Uint32(b[hDataSize:])))
+				b = b[checksumSize+rawSize:]
+			}
+			require.Equal(t, []int{maxCompressBlockSize, maxCompressBlockSize, 100}, sizes)
+
+			out := make([]byte, len(data))
+			_, err := io.ReadFull(NewReader(bytes.NewReader(w.Data)), out)
+			require.NoError(t, err)
+			require.Equal(t, data, out)
 		})
 	}
 }

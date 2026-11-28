@@ -52,6 +52,11 @@ const (
 	maxDataSize  = 1024 * 1024 * 128 // 128MB
 	maxBlockSize = maxDataSize
 
+	// maxCompressBlockSize is the maximum uncompressed size of a block
+	// written by Writer, the default `max_compress_block_size` of ClickHouse.
+	// The server rejects a block above 256 MiB uncompressed.
+	maxCompressBlockSize = 1024 * 1024 // 1MB
+
 	hRawSize  = 17
 	hDataSize = 21
 	hMethod   = 16
